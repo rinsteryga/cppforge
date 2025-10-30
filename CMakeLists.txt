@@ -1,20 +1,29 @@
 cmake_minimum_required(VERSION 3.19)
-project(Qtlearning LANGUAGES CXX)
+project(cppforge VERSION 1.0.0 LANGUAGES CXX)
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-add_executable(Qtlearning
-    main.cpp
-    src/gui/src/mainwindow.cpp
-    src/gui/include//mainwindow.hpp
-    src/gui/src/authwindow.cpp
-    src/gui/include/authwindow.hpp
-    src/gui/src/signupwindow.cpp
-    src/gui/include/signupwindow.hpp
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+
+add_subdirectory(src)
+
+add_executable(cppforge main.cpp)
+
+target_link_libraries(cppforge
+    PRIVATE 
+    cppforge_core
+    cppforge_gui
+    Qt5::Widgets
+    Qt5::Core
 )
 
-target_link_libraries(Qtlearning Qt5::Core Qt5::Widgets)
+set_target_properties(cppforge PROPERTIES
+    WIN32_EXECUTABLE ON
+    MACOSX_BUNDLE ON
+)
