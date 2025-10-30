@@ -1,11 +1,11 @@
 add_library(cppforge_gui STATIC
-    include/mainwindow.hpp
-    include/authwindow.hpp
-    include/signupwindow.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/mainwindow.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/authwindow.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/signupwindow.hpp
     
-    src/mainwindow.cpp
-    src/authwindow.cpp
-    src/signupwindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/authwindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/signupwindow.cpp
 )
 
 target_include_directories(cppforge_gui PUBLIC
