@@ -1,5 +1,5 @@
-#include "User.hpp"
-#include "Achievement.hpp"
+#include "../../include/entities/User.hpp"
+#include "../../include/entities/Achievement.hpp"
 
 namespace cppforge::entities
 {
