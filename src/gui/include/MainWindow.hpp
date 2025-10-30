@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/authwindow.hpp"
+#include "AuthWindow.hpp"
 
 #include <QMainWindow>
 #include <QWidget>

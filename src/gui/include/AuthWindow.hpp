@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/signupwindow.hpp"
+#include "SignUpWindow.hpp"
 
 #include <QWidget>
 #include <QLabel>
