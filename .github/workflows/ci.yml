@@ -11,7 +11,7 @@ jobs:
     - name: Install Qt5 and Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qt5-default cmake build-essential
+        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential
     
     - name: Build Core
       run: |
@@ -22,5 +22,5 @@ jobs:
     - name: Build GUI
       run: |
         mkdir build-gui && cd build-gui
-        cmake ../src/gui -DCMAKE_CXX_STANDARD=20 -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/cmake/Qt5
+        cmake ../src/gui -DCMAKE_CXX_STANDARD=20
         make
