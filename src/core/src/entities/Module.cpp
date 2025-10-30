@@ -1,4 +1,4 @@
-#include "../../include/entities/Module.hpp"
+#include "Module.hpp"
 
 namespace cppforge::entities
 {
