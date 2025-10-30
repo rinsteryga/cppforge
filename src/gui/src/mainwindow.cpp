@@ -1,4 +1,4 @@
-#include "../include/mainwindow.hpp"
+#include "MainWindow.hpp"
 
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -132,7 +132,7 @@ void MainWindow::setupFaviconLabel()
 {
     faviconLabel_ = std::make_unique<QLabel>(titleBar_.get());
     qDebug() << "Setting favicon";
-    faviconLabel_->setPixmap(QIcon("icons/icon.ico").pixmap(24, 24));
+    faviconLabel_->setPixmap(QIcon("src/gui/resources/icons/icon.ico").pixmap(24, 24));
     faviconLabel_->setStyleSheet("background-color: transparent;");
 }
 

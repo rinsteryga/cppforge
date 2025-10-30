@@ -1,4 +1,4 @@
-#include "../include/authwindow.hpp"
+#include "AuthWindow.hpp"
 
 #include <QIcon>
 #include <QDebug>

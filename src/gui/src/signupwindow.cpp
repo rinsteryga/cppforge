@@ -1,4 +1,4 @@
-#include "../include/signupwindow.hpp"
+#include "SignUpWindow.hpp"
 
 #include <QIcon>
 #include <QDebug>
