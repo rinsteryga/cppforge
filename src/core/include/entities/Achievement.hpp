@@ -24,7 +24,7 @@ namespace cppforge
             bool operator==(const Achievement &other) const;
 
         private:
-            int64_t id_;
+            uint64_t id_;
             QString name_;
             QString description_;
 

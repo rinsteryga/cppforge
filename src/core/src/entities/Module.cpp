@@ -2,7 +2,7 @@
 
 namespace cppforge::entities
 {
-    Module::Module(int64_t id, const QString &name, const QString &description)
+    Module::Module(uint64_t id, const QString &name, const QString &description)
         : id_(id), name_(name), description_(description) {}
 
     uint64_t Module::getId() const
