@@ -16,6 +16,8 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 
+icons/
+
 *.db
 *.sqlite
 *.sqlite3
