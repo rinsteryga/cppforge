@@ -2,10 +2,15 @@
 
 namespace cppforge::entities
 {
-    ExecutionResult::ExecutionResult(bool isSuccess, const QString &output, const QString &errors,
+    ExecutionResult::ExecutionResult(uint64_t submissionId, bool isSuccess, const QString &output, const QString &errors,
                                      int32_t timeMs, uint32_t passedTestsCount)
-        : isSuccess_(isSuccess), output_(output), errors_(errors),
+        : submissionId_(submissionId), isSuccess_(isSuccess), output_(output), errors_(errors),
           timeMs_(timeMs), passedTestsCount_(passedTestsCount) {}
+
+    uint64_t ExecutionResult::getSubmissionId() const
+    {
+        return submissionId_;
+    }
 
     bool ExecutionResult::isSuccess() const
     {

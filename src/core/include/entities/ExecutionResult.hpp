@@ -10,9 +10,10 @@ namespace cppforge
         class ExecutionResult
         {
         public:
-            ExecutionResult(bool isSuccess, const QString &output, const QString &errors,
+            ExecutionResult(uint64_t submissionId, bool isSuccess, const QString &output, const QString &errors,
                             int32_t timeMs, uint32_t passedTestsCount);
 
+            uint64_t getSubmissionId() const;
             bool isSuccess() const;
             QString getOutput() const;
             QString getErrors() const;
@@ -20,6 +21,7 @@ namespace cppforge
             uint32_t getPassedTestsCount() const;
 
         private:
+            uint64_t submissionId_;
             bool isSuccess_;
             QString output_;
             QString errors_;
