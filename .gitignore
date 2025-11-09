@@ -2,14 +2,11 @@ build/
 */build/
 *.build/
 
-*.exe
-*.app
-*.so
-*.dll
-*.dylib
+.env
+*.env
+!*.env.example
 
-*.pro.user
-*.autosave
+*.exe
 
 CMakeCache.txt
 CMakeFiles/
@@ -19,12 +16,8 @@ Makefile
 icons/
 
 *.db
-*.sqlite
-*.sqlite3
 
 .vscode/
 .idea/
-*.swp
-*.swo
 
 *.log
