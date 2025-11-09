@@ -8,7 +8,9 @@ add_library(cppforge_core STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/ExecutionResult.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/UserProgress.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/Submission.hpp
-    
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/repositories/IUserRepository.hpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/User.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Achievement.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Module.cpp
