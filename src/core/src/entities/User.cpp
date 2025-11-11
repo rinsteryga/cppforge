@@ -3,8 +3,11 @@
 
 namespace cppforge::entities
 {
-    User::User(int64_t id, const QString &username, const QString &email, const QString &passwordHash, const std::chrono::system_clock::time_point &createdAt)
+    User::User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash, const std::chrono::system_clock::time_point &createdAt)
         : id_(id), username_(username), email_(email), passwordHash_(passwordHash), createdAt_(createdAt) {}
+
+    User::User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash)
+        : id_(id), username_(username), email_(email), passwordHash_(passwordHash), createdAt_(std::chrono::system_clock::now()) {}
 
     uint64_t User::getId() const
     {

@@ -14,7 +14,8 @@ namespace cppforge
         class User
         {
         public:
-            User(int64_t id, const QString &username, const QString &email, const QString &passwordHash, const std::chrono::system_clock::time_point &createdAt);
+            User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash, const std::chrono::system_clock::time_point &createdAt);
+            User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash);
 
             uint64_t getId() const;
             QString getUsername() const;
