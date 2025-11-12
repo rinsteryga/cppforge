@@ -3,8 +3,7 @@ enable_testing()
 find_package(Qt5 REQUIRED COMPONENTS Test)
 
 add_executable(TestCore
-    unit/test_auth.cpp
-    unit/test_user.cpp
+    unit/test_PasswordHashGenerator.cpp
 )
 
 target_link_libraries(TestCore
