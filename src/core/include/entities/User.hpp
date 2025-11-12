@@ -1,16 +1,17 @@
 #pragma once
 
+#include "Achievement.hpp"
+
 #include <cstdint>
 #include <set>
 #include <chrono>
 #include <QString>
 
+
 namespace cppforge
 {
     namespace entities
     {
-        class Achievement;
-        
         class User
         {
         public:
