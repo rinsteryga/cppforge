@@ -11,6 +11,11 @@ add_library(cppforge_core STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/include/repositories/IUserRepository.hpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/services/AuthManager.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/security/PasswordHashGenerator.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/EnvLoader.hpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/User.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Achievement.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Module.cpp
@@ -20,6 +25,12 @@ add_library(cppforge_core STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/ExecutionResult.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/UserProgress.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Submission.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/AuthManager.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/security/PasswordHashGenerator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/EnvLoader.cpp
+
 )
 
 target_include_directories(cppforge_core PUBLIC
