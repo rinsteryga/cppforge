@@ -36,8 +36,7 @@ CREATE TABLE achievements (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
-    icon_path TEXT,
-    date_earned TIMESTAMP
+    icon_path TEXT
 );
 
 -- User ↔ Achievement (many-to-many)
