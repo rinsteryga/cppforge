@@ -11,7 +11,10 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
 
+enable_testing()
+
 add_subdirectory(src)
+add_subdirectory(tests)
 
 add_executable(cppforge main.cpp)
 
