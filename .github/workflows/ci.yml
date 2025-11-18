@@ -18,3 +18,8 @@ jobs:
         mkdir build && cd build
         cmake .. -DCMAKE_CXX_STANDARD=20 -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt5
         make
+        
+    - name: Run Tests
+      run: |
+        cd build
+        ctest --output-on-failure
