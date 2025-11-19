@@ -2,7 +2,6 @@
 
 #include "../../core/include/repositories/IUserRepository.hpp"
 
-#include <cstdint>
 #include <optional>
 #include <QString>
 #include <QtSql/QSqlDatabase>
