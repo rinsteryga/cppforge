@@ -2,7 +2,6 @@
 #include <QIcon>
 #include <QDebug>
 
-// Конструктор с БД
 AuthWindow::AuthWindow(QSqlDatabase& database, QWidget *parent) 
     : QWidget(parent, Qt::Window)
     , database_(&database)
@@ -12,7 +11,6 @@ AuthWindow::AuthWindow(QSqlDatabase& database, QWidget *parent)
     setupUI();
 }
 
-// Конструктор без БД
 AuthWindow::AuthWindow(QWidget *parent) 
     : QWidget(parent, Qt::Window)
     , database_(nullptr)

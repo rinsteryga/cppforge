@@ -1,13 +1,14 @@
-// SignUpWindow.hpp - ТОЛЬКО объявления
 #pragma once
 
 #include <QtSql/QSqlDatabase>
+
 #include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QFont>
 #include <QVBoxLayout>
+
 #include <memory>
 
 class SignUpWindow : public QWidget
@@ -23,19 +24,26 @@ private:
     void onCloseButtonClicked();
 
     void setupUI();
+
     void setupWindowProperties();
+
     void setupLabelFont(QLabel *label_);
     void setupButtonFont(QPushButton *button_);
     void setupEditFieldFont(QLineEdit *editField_);
+
     void setupMainLabel();
     void setupUsernameLabel();
     void setupEmailLabel();
     void setupPasswordLabel();
     void setupConfirmPasswordLabel();
+
     void setupSignUpButton();
     void setupCloseButton();
+
     void setupEditFields();
+
     void setupLayout();
+
     void setupConnections();
 
     QSqlDatabase* database_ = nullptr;

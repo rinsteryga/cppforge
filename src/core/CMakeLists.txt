@@ -39,7 +39,7 @@ target_include_directories(cppforge_core PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-target_compile_features(cppforge_core PRIVATE cxx_std_17)
+target_compile_features(cppforge_core PRIVATE cxx_std_20)
 
 target_link_libraries(cppforge_core
     PRIVATE 
@@ -48,10 +48,3 @@ target_link_libraries(cppforge_core
     # Qt5::Gui
     # Qt5::Widgets
 )
-
-# Опционально: настройки компиляции
-if(MSVC)
-    target_compile_options(cppforge_core PRIVATE /W4 /WX)
-else()
-    target_compile_options(cppforge_core PRIVATE -Wall -Wextra -Werror)
-endif()
