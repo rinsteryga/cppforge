@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SignUpWindow.hpp"
+#include <QtSql/QSqlDatabase>  // Добавляем
 
 #include <QWidget>
 #include <QLabel>
@@ -16,6 +17,8 @@ class AuthWindow : public QWidget
     Q_OBJECT
 
 public:
+    // Два конструктора
+    explicit AuthWindow(QSqlDatabase& database, QWidget *parent = nullptr);
     explicit AuthWindow(QWidget *parent = nullptr);
 
 private:
@@ -24,29 +27,23 @@ private:
     void onSignUpButtonClicked();
 
     void setupUI();
-
     void setupWindowProperties();
-    
     void setupLabelFont(QLabel *label_);
     void setupButtonFont(QPushButton *button_);
     void setupEditFieldFont(QLineEdit *editField_);
-
     void setupMainLabel();
     void setupUsernameLabel();
     void setupPasswordLabel();
     void setupSignUpLabel();
-
     void setupSignUpButton();
     void setupLogInButton();
     void setupCloseButton();
-
     void setupEditFields();
-    
     void setupLayout();
-
     void openSignUpWindow();
-
     void setupConnections();
+
+    QSqlDatabase* database_ = nullptr;  // Указатель на БД
 
     std::unique_ptr<QLabel> mainLabel_;
     std::unique_ptr<QLabel> usernameLabel_;

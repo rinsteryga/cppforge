@@ -1,18 +1,33 @@
+// SignUpWindow.cpp
 #include "SignUpWindow.hpp"
-
 #include <QIcon>
 #include <QDebug>
 
-SignUpWindow::SignUpWindow(QWidget *parent) : QWidget(parent, Qt::Window)
+// Конструкторы
+SignUpWindow::SignUpWindow(QSqlDatabase& database, QWidget *parent)
+    : QWidget(parent, Qt::Window), database_(&database)
 {
     setAttribute(Qt::WA_TranslucentBackground, false);
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     setupUI();
 }
 
+SignUpWindow::SignUpWindow(QWidget *parent)
+    : QWidget(parent, Qt::Window), database_(nullptr)
+{
+    setAttribute(Qt::WA_TranslucentBackground, false);
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    setupUI();
+}
+
+// Реализации методов...
 void SignUpWindow::onSignUpButtonClicked()
 {
-    qDebug() << "SignUp button clicked"; // future
+    qDebug() << "SignUp button clicked";
+    if (database_ && database_->isOpen())
+    {
+        qDebug() << "Database is available for registration";
+    }
 }
 
 void SignUpWindow::onCloseButtonClicked()
@@ -23,27 +38,23 @@ void SignUpWindow::onCloseButtonClicked()
 void SignUpWindow::setupUI()
 {
     setupWindowProperties();
-
     setupMainLabel();
     setupUsernameLabel();
     setupEmailLabel();
     setupPasswordLabel();
-
-    setupEditFields();
-
+    setupConfirmPasswordLabel();
     setupSignUpButton();
+    setupEditFields();
     setupCloseButton();
-
     setupLayout();
-
     setupConnections();
 }
 
 void SignUpWindow::setupWindowProperties()
 {
-    setFixedSize(500, 350);
+    setFixedSize(650, 500);
     setWindowIcon(QIcon("../icons/icon.ico"));
-    setWindowTitle("Authentication");
+    setWindowTitle("Sign Up");
     setStyleSheet("background-color: #2e2e2e; border-radius: 10px;");
     setCursor(Qt::ArrowCursor);
 }
@@ -52,58 +63,75 @@ void SignUpWindow::setupLabelFont(QLabel *label_)
 {
     labelFont_ = std::make_unique<QFont>();
     labelFont_->setFamily("Cascadia");
-    labelFont_->setPixelSize(28);
+    labelFont_->setPixelSize(24);
     labelFont_->setBold(true);
-    labelFont_->setItalic(true);
-    label_->setFont(*labelFont_);
-    label_->setWordWrap(true);
     label_->setStyleSheet("color: white;");
+    label_->setWordWrap(true);
+    label_->setFont(*labelFont_);
+}
+
+void SignUpWindow::setupMainLabel()
+{
+    mainLabel_ = std::make_unique<QLabel>("Create Account");
+    setupLabelFont(mainLabel_.get());
+    mainLabel_->setAlignment(Qt::AlignCenter);
+}
+
+void SignUpWindow::setupUsernameLabel()
+{
+    usernameLabel_ = std::make_unique<QLabel>("Username:");
+    setupLabelFont(usernameLabel_.get());
+}
+
+void SignUpWindow::setupEmailLabel()
+{
+    emailLabel_ = std::make_unique<QLabel>("Email:");
+    setupLabelFont(emailLabel_.get());
+}
+
+void SignUpWindow::setupPasswordLabel()
+{
+    passwordLabel_ = std::make_unique<QLabel>("Password:");
+    setupLabelFont(passwordLabel_.get());
+}
+
+void SignUpWindow::setupConfirmPasswordLabel()
+{
+    confirmPasswordLabel_ = std::make_unique<QLabel>("Confirm Password:");
+    setupLabelFont(confirmPasswordLabel_.get());
+}
+
+void SignUpWindow::setupButtonFont(QPushButton *button_)
+{
+    auto buttonFont = std::make_unique<QFont>();
+    buttonFont->setFamily("Cascadia");
+    buttonFont->setPixelSize(28);
+    buttonFont->setBold(true);
+    button_->setCursor(Qt::PointingHandCursor);
+    button_->setStyleSheet("background-color: #3db047ff; "
+                           "color: white; "
+                           "border: none; "
+                           "padding: 10px;");
+    button_->setFont(*buttonFont);
+}
+
+void SignUpWindow::setupSignUpButton()
+{
+    signUpButton_ = std::make_unique<QPushButton>("Sign Up");
+    setupButtonFont(signUpButton_.get());
 }
 
 void SignUpWindow::setupEditFieldFont(QLineEdit *editField_)
 {
     editFieldFont_ = std::make_unique<QFont>();
     editFieldFont_->setFamily("Cascadia");
-    editFieldFont_->setPixelSize(24);
+    editFieldFont_->setPixelSize(20);
     editFieldFont_->setBold(true);
     editField_->setFont(*editFieldFont_);
     editField_->setStyleSheet("background-color: transparent; "
                               "color: white; "
                               "border: none; "
                               "padding: 10px;");
-}
-
-void SignUpWindow::setupButtonFont(QPushButton *button_)
-{
-    buttonFont_ = std::make_unique<QFont>();
-    buttonFont_->setFamily("Cascadia");
-    buttonFont_->setPixelSize(24);
-    buttonFont_->setBold(true);
-    button_->setFont(*buttonFont_);
-}
-
-void SignUpWindow::setupMainLabel()
-{
-    mainLabel_ = std::make_unique<QLabel>("Sign Up");
-    setupLabelFont(mainLabel_.get());
-}
-
-void SignUpWindow::setupUsernameLabel()
-{
-    usernameLabel_ = std::make_unique<QLabel>("Enter your username");
-    setupLabelFont(usernameLabel_.get());
-}
-
-void SignUpWindow::setupEmailLabel()
-{
-    emailLabel_ = std::make_unique<QLabel>("Enter your Email");
-    setupLabelFont(emailLabel_.get());
-}
-
-void SignUpWindow::setupPasswordLabel()
-{
-    passwordLabel_ = std::make_unique<QLabel>("Enter your password");
-    setupLabelFont(passwordLabel_.get());
 }
 
 void SignUpWindow::setupEditFields()
@@ -113,13 +141,27 @@ void SignUpWindow::setupEditFields()
     emailInput_ = std::make_unique<QLineEdit>();
     setupEditFieldFont(emailInput_.get());
     passwordInput_ = std::make_unique<QLineEdit>();
+    passwordInput_->setEchoMode(QLineEdit::Password);
     setupEditFieldFont(passwordInput_.get());
+    confirmPasswordInput_ = std::make_unique<QLineEdit>();
+    confirmPasswordInput_->setEchoMode(QLineEdit::Password);
+    setupEditFieldFont(confirmPasswordInput_.get());
 }
 
-void SignUpWindow::setupSignUpButton()
+void SignUpWindow::setupLayout()
 {
-    signUpButton_ = std::make_unique<QPushButton>("Save");
-    setupButtonFont(signUpButton_.get());
+    mainLayout_ = std::make_unique<QVBoxLayout>(this);
+    mainLayout_->addWidget(closeButton_.get());
+    mainLayout_->addWidget(mainLabel_.get());
+    mainLayout_->addWidget(usernameLabel_.get());
+    mainLayout_->addWidget(usernameInput_.get());
+    mainLayout_->addWidget(emailLabel_.get());
+    mainLayout_->addWidget(emailInput_.get());
+    mainLayout_->addWidget(passwordLabel_.get());
+    mainLayout_->addWidget(passwordInput_.get());
+    mainLayout_->addWidget(confirmPasswordLabel_.get());
+    mainLayout_->addWidget(confirmPasswordInput_.get());
+    mainLayout_->addWidget(signUpButton_.get());
 }
 
 void SignUpWindow::setupCloseButton()
@@ -150,28 +192,8 @@ void SignUpWindow::setupCloseButton()
     closeButton_->move(460, 10);
 }
 
-void SignUpWindow::setupLayout()
-{
-    mainLayout_ = std::make_unique<QVBoxLayout>(this);
-
-    mainLayout_->addWidget(closeButton_.get());
-
-    mainLayout_->addWidget(mainLabel_.get());
-
-    mainLayout_->addWidget(usernameLabel_.get());
-    mainLayout_->addWidget(usernameInput_.get());
-
-    mainLayout_->addWidget(emailLabel_.get());
-    mainLayout_->addWidget(emailInput_.get());
-
-    mainLayout_->addWidget(passwordLabel_.get());
-    mainLayout_->addWidget(passwordInput_.get());
-
-    mainLayout_->addWidget(signUpButton_.get());
-}
-
 void SignUpWindow::setupConnections()
 {
-    connect(closeButton_.get(), &QPushButton::clicked, this, &SignUpWindow::onCloseButtonClicked);
     connect(signUpButton_.get(), &QPushButton::clicked, this, &SignUpWindow::onSignUpButtonClicked);
+    connect(closeButton_.get(), &QPushButton::clicked, this, &SignUpWindow::onCloseButtonClicked);
 }

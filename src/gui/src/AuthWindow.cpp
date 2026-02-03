@@ -1,9 +1,21 @@
 #include "AuthWindow.hpp"
-
 #include <QIcon>
 #include <QDebug>
 
-AuthWindow::AuthWindow(QWidget *parent) : QWidget(parent, Qt::Window)
+// Конструктор с БД
+AuthWindow::AuthWindow(QSqlDatabase& database, QWidget *parent) 
+    : QWidget(parent, Qt::Window)
+    , database_(&database)
+{
+    setAttribute(Qt::WA_TranslucentBackground, false);
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+    setupUI();
+}
+
+// Конструктор без БД
+AuthWindow::AuthWindow(QWidget *parent) 
+    : QWidget(parent, Qt::Window)
+    , database_(nullptr)
 {
     setAttribute(Qt::WA_TranslucentBackground, false);
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
@@ -12,7 +24,17 @@ AuthWindow::AuthWindow(QWidget *parent) : QWidget(parent, Qt::Window)
 
 void AuthWindow::onSignInButtonClicked()
 {
-    qDebug() << "LogIn button clicked"; // future
+    qDebug() << "LogIn button clicked";
+    
+    if (database_ && database_->isOpen())
+    {
+        qDebug() << "Database is available for authentication";
+        // TODO: Реализовать проверку логина/пароля в БД
+    }
+    else
+    {
+        qDebug() << "Database not available";
+    }
 }
 
 void AuthWindow::onCloseButtonClicked()
@@ -176,7 +198,14 @@ void AuthWindow::openSignUpWindow()
     if (!signUpWindow_)
     {
         qDebug() << "Creating SignUp Window";
-        signUpWindow_ = std::make_unique<SignUpWindow>(this);
+        if (database_)
+        {
+            signUpWindow_ = std::make_unique<SignUpWindow>(*database_, this);
+        }
+        else
+        {
+            signUpWindow_ = std::make_unique<SignUpWindow>(this);
+        }
         signUpWindow_->setWindowModality(Qt::ApplicationModal);
     }
     qDebug() << "Showing SignUp Window";

@@ -9,7 +9,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+# Найти ВСЕ нужные компоненты Qt
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets Sql)
 
 enable_testing()
 
@@ -18,12 +19,22 @@ add_subdirectory(tests)
 
 add_executable(cppforge main.cpp)
 
+# Включаем директории
+target_include_directories(cppforge PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data
+)
+
+# Связываем ВСЕ библиотеки
 target_link_libraries(cppforge
     PRIVATE 
     cppforge_core
     cppforge_gui
+    cppforge_data  # Добавляем библиотеку данных
     Qt5::Widgets
     Qt5::Core
+    Qt5::Sql       # Добавляем Sql
 )
 
 set_target_properties(cppforge PROPERTIES

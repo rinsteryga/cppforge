@@ -1,3 +1,5 @@
+# src/core/CMakeLists.txt
+
 add_library(cppforge_core STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/User.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/Achievement.hpp
@@ -30,7 +32,6 @@ add_library(cppforge_core STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/security/PasswordHashGenerator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/EnvLoader.cpp
-
 )
 
 target_include_directories(cppforge_core PUBLIC
@@ -38,7 +39,19 @@ target_include_directories(cppforge_core PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+target_compile_features(cppforge_core PRIVATE cxx_std_17)
+
 target_link_libraries(cppforge_core
     PRIVATE 
     Qt5::Core
+    # Добавляем зависимости для безопасности если нужно
+    # Qt5::Gui
+    # Qt5::Widgets
 )
+
+# Опционально: настройки компиляции
+if(MSVC)
+    target_compile_options(cppforge_core PRIVATE /W4 /WX)
+else()
+    target_compile_options(cppforge_core PRIVATE -Wall -Wextra -Werror)
+endif()
