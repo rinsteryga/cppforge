@@ -1,9 +1,10 @@
 #include "src/gui/include/MainWindow.hpp"
 #include "src/data/repositories/DataBaseConnection.hpp"
+#include "../core/include/utils/EnvLoader.hpp"
+
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>
-#include "../core/include/utils/EnvLoader.hpp"
 
 int main(int argc, char **argv)
 {
