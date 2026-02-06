@@ -8,6 +8,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Create .env file
+      run: |
+        echo "DB_HOSTNAME=localhost" >> .env
+        echo "DB_PORT=5432" >> .env
+        echo "DB_NAME=app" >> .env
+        echo "DB_USER=app" >> .env
+        echo "DB_PASSWORD=secret" >> .env
+
+    - name: Start Docker Services
+      run: |
+        docker compose up -d
+        docker compose ps
+
     - name: Install Qt5 and Dependencies
       run: |
         sudo apt-get update
@@ -19,6 +32,12 @@ jobs:
         cmake .. -DCMAKE_CXX_STANDARD=20 -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt5
         make
         
+    - name: Wait for DB
+      run: |
+        echo "Waiting for Postgres..."
+        timeout 30s bash -c 'until echo > /dev/tcp/localhost/5432; do sleep 2; done'
+        echo "Postgres is ready!"
+
     - name: Run Tests
       run: |
         cd build
