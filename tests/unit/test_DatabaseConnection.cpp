@@ -1,7 +1,7 @@
-#include <QtTest>
-#include <QFile>
 #include "../../src/core/include/utils/EnvLoader.hpp"
 #include "../../src/data/repositories/DataBaseConnection.hpp"
+#include <QtTest>
+#include <QFile>
 
 using namespace cppforge::utils;
 
