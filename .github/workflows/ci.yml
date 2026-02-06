@@ -11,7 +11,7 @@ jobs:
     - name: Install Qt5 and Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev
+        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev libqt5sql5-psql
     
     - name: Build Project
       run: |
