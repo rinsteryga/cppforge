@@ -10,7 +10,6 @@ namespace cppforge::data
     QSqlDatabase connectDatabase()
     {
         // Загружаем переменные из .env файла
-        cppforge::utils::loadEnvFile("../../.env");
         
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         

@@ -3,10 +3,12 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QDebug>
+#include "../core/include/utils/EnvLoader.hpp"
 
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
+    cppforge::utils::loadEnvFile("../.env");
     
     QSqlDatabase db = cppforge::data::connectDatabase();
     

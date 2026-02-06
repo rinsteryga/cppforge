@@ -31,11 +31,22 @@ namespace cppforge::utils
 
             QString key = line.left(eqPos).trimmed();
             QString value = line.mid(eqPos + 1).trimmed();
+            if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.mid(1, value.length() - 2);
+                } else if (value.startsWith('\'') && value.endsWith('\'')) {
+                    value = value.mid(1, value.length() - 2);
+                }
 
-            qputenv(key.toUtf8(), value.toUtf8());
+            qputenv(key.toUtf8().constData(), value.toUtf8());
             loadedCount++;
         }
-
+        // вручную засунул для теста
+        // qputenv("PG_HOST", "localhost");
+        // qputenv("PG_PORT", "5432");
+        // qputenv("PG_DB", "app");
+        // qputenv("PG_USER", "app");
+        // qputenv("PG_PASSWORD", "secret");
+        // loadedCount=5;
         qDebug() << "Loaded" << loadedCount << "environment variables from:" << filePath;
         return loadedCount > 0;
     }
