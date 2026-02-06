@@ -40,13 +40,7 @@ namespace cppforge::utils
             qputenv(key.toUtf8().constData(), value.toUtf8());
             loadedCount++;
         }
-        // вручную засунул для теста
-        // qputenv("PG_HOST", "localhost");
-        // qputenv("PG_PORT", "5432");
-        // qputenv("PG_DB", "app");
-        // qputenv("PG_USER", "app");
-        // qputenv("PG_PASSWORD", "secret");
-        // loadedCount=5;
+        
         qDebug() << "Loaded" << loadedCount << "environment variables from:" << filePath;
         return loadedCount > 0;
     }
