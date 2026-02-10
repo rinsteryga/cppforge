@@ -2,8 +2,6 @@
 
 #include "SignUpWindow.hpp"
 
-#include <QtSql/QSqlDatabase>
-
 #include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
@@ -18,7 +16,6 @@ class AuthWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit AuthWindow(QSqlDatabase& database, QWidget *parent = nullptr);
     explicit AuthWindow(QWidget *parent = nullptr);
 
 private:
@@ -50,8 +47,6 @@ private:
     void openSignUpWindow();
 
     void setupConnections();
-
-    QSqlDatabase* database_ = nullptr;
 
     std::unique_ptr<QLabel> mainLabel_;
     std::unique_ptr<QLabel> usernameLabel_;

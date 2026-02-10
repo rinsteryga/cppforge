@@ -1,52 +1,49 @@
-#include "repositories/DataBaseConnection.hpp"
 #include "../core/include/utils/EnvLoader.hpp"
+
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
 #include <QProcessEnvironment>
 #include <QDebug>
 
-namespace cppforge::data
+namespace cppforge
 {
-    QSqlDatabase connectDatabase()
+    namespace data
     {
-        // Загружаем переменные из .env файла
-        
-        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        
-        // Получаем настройки из переменных окружения
-        QString host = env.value("PG_HOST");
-        QString port = env.value("PG_PORT");
-        QString dbName = env.value("PG_DB");
-        QString user = env.value("PG_USER");
-        QString password = env.value("PG_PASSWORD");
-        
-        // Проверяем обязательные параметры
-        if (host.isEmpty() || port.isEmpty() || dbName.isEmpty() || user.isEmpty())
+        QSqlDatabase connectDatabase()
         {
-            qCritical() << "Missing PostgreSQL environment variables";
-            qCritical() << "PG_HOST:" << (host.isEmpty() ? "MISSING" : host);
-            qCritical() << "PG_PORT:" << (port.isEmpty() ? "MISSING" : port);
-            qCritical() << "PG_DB:" << (dbName.isEmpty() ? "MISSING" : dbName);
-            qCritical() << "PG_USER:" << (user.isEmpty() ? "MISSING" : user);
-            return QSqlDatabase();
+            cppforge::utils::loadEnvFile("../../.env");
+
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+
+            QString host = env.value("PG_HOST");
+            QString port = env.value("PG_PORT");
+            QString dbName = env.value("PG_DB");
+            QString user = env.value("PG_USER");
+            QString password = env.value("PG_PASSWORD");
+
+            if (host.isEmpty() || port.isEmpty() || dbName.isEmpty() || user.isEmpty())
+            {
+                qCritical() << "Missing environment variables PG_*";
+                return QSqlDatabase();
+            }
+
+            QSqlDatabase db = QSqlDatabase::addDatabase("QPSQL");
+            db.setHostName(host);
+            db.setPort(port.toInt());
+            db.setDatabaseName(dbName);
+            db.setUserName(user);
+            db.setPassword(password);
+
+            if (!db.open())
+            {
+                qCritical() << "Database connection failed:" << db.lastError().text();
+            }
+            else
+            {
+                qDebug() << "Connected to database:" << dbName;
+            }
+
+            return db;
         }
-        
-        // Создаем подключение
-        QSqlDatabase db = QSqlDatabase::addDatabase("QPSQL");
-        db.setHostName(host);
-        db.setPort(port.toInt());
-        db.setDatabaseName(dbName);
-        db.setUserName(user);
-        db.setPassword(password);
-        
-        // Открываем подключение
-        if (!db.open())
-        {
-            qCritical() << "Database connection failed:" << db.lastError().text();
-            return QSqlDatabase();
-        }
-        
-        qDebug() << "Connected to PostgreSQL database:" << dbName;
-        return db;
-    }
-}
+    } // namespace data
+} // namespace cppforge
