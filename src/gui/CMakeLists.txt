@@ -5,7 +5,8 @@ add_library(cppforge_gui STATIC
     
     ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/AuthWindow.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SignUpWindow.cpp  
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SignUpWindow.cpp
+    
 )
 
 target_include_directories(cppforge_gui PUBLIC
