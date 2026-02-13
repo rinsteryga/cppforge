@@ -11,12 +11,12 @@
 #include <memory>
 
 
-class MainWindow : public QMainWindow
+class AuthWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit AuthWindow(QWidget *parent = nullptr);
 
 private:
     void setupUI();

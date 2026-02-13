@@ -1,4 +1,4 @@
-#include "MainWindow.hpp"
+#include "AuthWindow.hpp"
 
 #include <QMessageBox>
 #include <QDebug>
@@ -15,15 +15,15 @@
 #include <QIcon>
 #include <QPainter>
 
-MainWindow::MainWindow(QWidget *parent)
+AuthWindow::AuthWindow(QWidget *parent)
     : QMainWindow(parent), signUpWindow_(nullptr), passwordVisible_(false)
 {
     setupUI();
     
-    QTimer::singleShot(50, this, &MainWindow::centerWindow);
+    QTimer::singleShot(50, this, &AuthWindow::centerWindow);
 }
 
-void MainWindow::setupWindowProperties() {
+void AuthWindow::setupWindowProperties() {
     resize(1160, 800); 
     setWindowTitle("CppForge Log in");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
@@ -34,7 +34,7 @@ void MainWindow::setupWindowProperties() {
     setCentralWidget(centralWidget_.get());
 }
 
-void MainWindow::setupUI()
+void AuthWindow::setupUI()
 {   
     setupWindowProperties();
     setupLogo();
@@ -44,12 +44,12 @@ void MainWindow::setupUI()
     setupCreateAccountLink();
     setupLayout();
     
-    connect(loginButton_.get(), &QPushButton::clicked, this, &MainWindow::onLoginClicked);
-    connect(createAccountButton_.get(), &QPushButton::clicked, this, &MainWindow::onCreateAccountClicked);
-    connect(passwordToggleButton_.get(), &QPushButton::clicked, this, &MainWindow::togglePasswordVisibility);
+    connect(loginButton_.get(), &QPushButton::clicked, this, &AuthWindow::onLoginClicked);
+    connect(createAccountButton_.get(), &QPushButton::clicked, this, &AuthWindow::onCreateAccountClicked);
+    connect(passwordToggleButton_.get(), &QPushButton::clicked, this, &AuthWindow::togglePasswordVisibility);
 }
 
-void MainWindow::centerWindow()
+void AuthWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen) {
@@ -60,7 +60,7 @@ void MainWindow::centerWindow()
     }
 }
 
-void MainWindow::setupLogo()
+void AuthWindow::setupLogo()
 {
     iconLabel_ = std::make_unique<QLabel>();
     iconLabel_->setAlignment(Qt::AlignCenter);
@@ -79,7 +79,7 @@ void MainWindow::setupLogo()
     }
 }
 
-void MainWindow::showFallbackLogo()
+void AuthWindow::showFallbackLogo()
 {
     iconLabel_->setFixedSize(200, 200);
     iconLabel_->setStyleSheet(
@@ -96,7 +96,7 @@ void MainWindow::showFallbackLogo()
     iconLabel_->setAlignment(Qt::AlignCenter);
 }
 
-void MainWindow::setupTitle()
+void AuthWindow::setupTitle()
 {
     titleLabel_ = std::make_unique<QLabel>("Log into CppForge");
     QFont titleFont("Segoe UI", 32, QFont::Bold);
@@ -106,7 +106,7 @@ void MainWindow::setupTitle()
     titleLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
-void MainWindow::setupInputFields()
+void AuthWindow::setupInputFields()
 {
     usernameInput_ = std::make_unique<QLineEdit>();
     usernameInput_->setPlaceholderText("Username or email address");
@@ -182,7 +182,7 @@ void MainWindow::setupInputFields()
     }
 }
 
-void MainWindow::togglePasswordVisibility()
+void AuthWindow::togglePasswordVisibility()
 {
     passwordVisible_ = !passwordVisible_;
     
@@ -204,7 +204,7 @@ void MainWindow::togglePasswordVisibility()
     }
 }
 
-void MainWindow::setupLoginButton()
+void AuthWindow::setupLoginButton()
 {
     loginButton_ = std::make_unique<QPushButton>("Log in");
     loginButton_->setFixedHeight(85);
@@ -233,7 +233,7 @@ void MainWindow::setupLoginButton()
     );
 }
 
-void MainWindow::setupCreateAccountLink()
+void AuthWindow::setupCreateAccountLink()
 {
     createAccountButton_ = std::make_unique<QPushButton>("New to CppForge? Create an account");
     createAccountButton_->setFlat(true);
@@ -259,7 +259,7 @@ void MainWindow::setupCreateAccountLink()
     );
 }
 
-void MainWindow::setupLayout()
+void AuthWindow::setupLayout()
 {
     mainLayout_ = std::make_unique<QVBoxLayout>(centralWidget_.get());
     mainLayout_->setAlignment(Qt::AlignCenter);
@@ -300,7 +300,7 @@ void MainWindow::setupLayout()
     mainLayout_->addWidget(centerContainer);
 }
 
-void MainWindow::onLoginClicked()
+void AuthWindow::onLoginClicked()
 {
     QString username = usernameInput_->text();
     QString password = passwordInput_->text();
@@ -317,7 +317,7 @@ void MainWindow::onLoginClicked()
     );
 }
 
-void MainWindow::openSignUpWindow() {
+void AuthWindow::openSignUpWindow() {
     qDebug() << "Opening SignUpWindow...";
     
     if (!signUpWindow_) {
@@ -350,10 +350,10 @@ void MainWindow::openSignUpWindow() {
     signUpWindow_->raise();
     signUpWindow_->activateWindow();
     
-    qDebug() << "SignUpWindow shown, MainWindow disabled";
+    qDebug() << "SignUpWindow shown, AuthWindow disabled";
 }
 
-void MainWindow::onCreateAccountClicked()
+void AuthWindow::onCreateAccountClicked()
 {
     qDebug() << "Create Account button clicked";
     openSignUpWindow();
