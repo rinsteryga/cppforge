@@ -1,11 +1,24 @@
-#include "MainWindow.hpp"
+#include "AuthWindow.hpp"
 
 #include <QApplication>
+#include <QDebug>
+#include <QDir>
+#include <QResource>
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
+    Q_INIT_RESOURCE(resources);
     QApplication app(argc, argv);
-    MainWindow window;
+
+    qDebug() << "Logo exists? " << !QPixmap(":/icons/main_logo.ico").isNull();
+    qDebug() << "Open eye exists? " << !QPixmap(":/images/eye_open.png").isNull();
+
+    AuthWindow window;
     window.show();
-    return app.exec();
+
+    int result = app.exec();
+
+    qDebug() << "Application exiting with code:" << result;
+    
+    return result;
 }

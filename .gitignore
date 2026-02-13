@@ -13,8 +13,6 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 
-icons/
-
 *.db
 
 .vscode/
