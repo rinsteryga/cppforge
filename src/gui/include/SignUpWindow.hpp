@@ -14,16 +14,15 @@ class SignUpWindow : public QWidget
 
 public:
     explicit SignUpWindow(QWidget *parent = nullptr);
-    
-signals:
-    void switchToLogin();  // Сигнал для возврата к окну входа
 
-private slots:
+signals:
+    void switchToLogin();
+
+private:
     void onSignUpButtonClicked();
     void onBackToLoginClicked();
     void togglePasswordVisibility();
 
-private:
     void setupUI();
     void setupWindowProperties();
     void centerWindow();
@@ -37,20 +36,19 @@ private:
     void setupConnections();
     
     void showFallbackLogo();
+
+    std::unique_ptr<QLabel> iconLabel_;
+    std::unique_ptr<QLabel> titleLabel_;
     
-    // Виджеты
-    std::unique_ptr<QLabel> iconLabel;
-    std::unique_ptr<QLabel> titleLabel;
+    std::unique_ptr<QLineEdit> usernameInput_;
+    std::unique_ptr<QLineEdit> emailInput_;
+    std::unique_ptr<QLineEdit> passwordInput_;
     
-    std::unique_ptr<QLineEdit> usernameInput;
-    std::unique_ptr<QLineEdit> emailInput;
-    std::unique_ptr<QLineEdit> passwordInput;
+    std::unique_ptr<QPushButton> signUpButton_;
+    std::unique_ptr<QPushButton> backToLoginButton_;
+    std::unique_ptr<QPushButton> passwordToggleButton_;
     
-    std::unique_ptr<QPushButton> signUpButton;
-    std::unique_ptr<QPushButton> backToLoginButton;
-    std::unique_ptr<QPushButton> passwordToggleButton;
+    std::unique_ptr<QVBoxLayout> mainLayout_;
     
-    std::unique_ptr<QVBoxLayout> mainLayout;
-    
-    bool passwordVisible = false;
+    bool passwordVisible_ = false;
 };
