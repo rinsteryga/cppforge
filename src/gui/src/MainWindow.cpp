@@ -16,7 +16,7 @@
 #include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), signUpWindow_(nullptr), passwordVisible(false)
+    : QMainWindow(parent), signUpWindow_(nullptr), passwordVisible_(false)
 {
     setupUI();
     
@@ -26,12 +26,12 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::setupWindowProperties() {
     resize(1160, 800); 
     setWindowTitle("CppForge Log in");
-    setWindowIcon(QIcon("../src/gui/resources/images/main_logo.png"));
-    
+    setWindowIcon(QIcon(":/icons/main_logo.ico"));
+
     setStyleSheet("background-color: white;");
     
-    centralWidget = std::make_unique<QWidget>(this);
-    setCentralWidget(centralWidget.get());
+    centralWidget_ = std::make_unique<QWidget>(this);
+    setCentralWidget(centralWidget_.get());
 }
 
 void MainWindow::setupUI()
@@ -44,9 +44,9 @@ void MainWindow::setupUI()
     setupCreateAccountLink();
     setupLayout();
     
-    connect(loginButton.get(), &QPushButton::clicked, this, &MainWindow::onLoginClicked);
-    connect(createAccountButton.get(), &QPushButton::clicked, this, &MainWindow::onCreateAccountClicked);
-    connect(passwordToggleButton.get(), &QPushButton::clicked, this, &MainWindow::togglePasswordVisibility);
+    connect(loginButton_.get(), &QPushButton::clicked, this, &MainWindow::onLoginClicked);
+    connect(createAccountButton_.get(), &QPushButton::clicked, this, &MainWindow::onCreateAccountClicked);
+    connect(passwordToggleButton_.get(), &QPushButton::clicked, this, &MainWindow::togglePasswordVisibility);
 }
 
 void MainWindow::centerWindow()
@@ -62,16 +62,16 @@ void MainWindow::centerWindow()
 
 void MainWindow::setupLogo()
 {
-    iconLabel = std::make_unique<QLabel>();
-    iconLabel->setAlignment(Qt::AlignCenter);
-    iconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    iconLabel_ = std::make_unique<QLabel>();
+    iconLabel_->setAlignment(Qt::AlignCenter);
+    iconLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     
-    QPixmap logoPixmap("../src/gui/resources/images/main_logo.png");
+    QPixmap logoPixmap(":/icons/main_logo.ico");
     
     if (!logoPixmap.isNull()) {
         logoPixmap = logoPixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        iconLabel->setPixmap(logoPixmap);
-        iconLabel->setFixedSize(200, 200);
+        iconLabel_->setPixmap(logoPixmap);
+        iconLabel_->setFixedSize(200, 200);
         qDebug() << "Logo loaded from relative path";
     } else {
         qDebug() << "Logo not found, using fallback";
@@ -81,8 +81,8 @@ void MainWindow::setupLogo()
 
 void MainWindow::showFallbackLogo()
 {
-    iconLabel->setFixedSize(200, 200);
-    iconLabel->setStyleSheet(
+    iconLabel_->setFixedSize(200, 200);
+    iconLabel_->setStyleSheet(
         "QLabel {"
         "   background-color: #4285f4;"
         "   border-radius: 20px;"
@@ -92,30 +92,30 @@ void MainWindow::showFallbackLogo()
         "   font-weight: bold;"
         "}"
     );
-    iconLabel->setText("C++");
-    iconLabel->setAlignment(Qt::AlignCenter);
+    iconLabel_->setText("C++");
+    iconLabel_->setAlignment(Qt::AlignCenter);
 }
 
 void MainWindow::setupTitle()
 {
-    titleLabel = std::make_unique<QLabel>("Log into CppForge");
+    titleLabel_ = std::make_unique<QLabel>("Log into CppForge");
     QFont titleFont("Segoe UI", 32, QFont::Bold);
-    titleLabel->setFont(titleFont);
-    titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setStyleSheet("color: #333333; padding: 10px;");
-    titleLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    titleLabel_->setFont(titleFont);
+    titleLabel_->setAlignment(Qt::AlignCenter);
+    titleLabel_->setStyleSheet("color: #333333; padding: 10px;");
+    titleLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
 void MainWindow::setupInputFields()
 {
-    usernameInput = std::make_unique<QLineEdit>();
-    usernameInput->setPlaceholderText("Username or email address");
-    usernameInput->setFixedHeight(65);
-    usernameInput->setFixedWidth(500);
+    usernameInput_ = std::make_unique<QLineEdit>();
+    usernameInput_->setPlaceholderText("Username or email address");
+    usernameInput_->setFixedHeight(65);
+    usernameInput_->setFixedWidth(500);
     
     QFont inputFont("Segoe UI", 16);
-    usernameInput->setFont(inputFont);
-    usernameInput->setStyleSheet(
+    usernameInput_->setFont(inputFont);
+    usernameInput_->setStyleSheet(
         "QLineEdit {"
         "   padding: 18px 20px;"
         "   border: 2px solid #cccccc;"
@@ -132,14 +132,14 @@ void MainWindow::setupInputFields()
         "}"
     );
     
-    passwordInput = std::make_unique<QLineEdit>();
-    passwordInput->setPlaceholderText("Password");
-    passwordInput->setEchoMode(QLineEdit::Password);
-    passwordInput->setFixedHeight(65);
-    passwordInput->setFixedWidth(500);
+    passwordInput_ = std::make_unique<QLineEdit>();
+    passwordInput_->setPlaceholderText("Password");
+    passwordInput_->setEchoMode(QLineEdit::Password);
+    passwordInput_->setFixedHeight(65);
+    passwordInput_->setFixedWidth(500);
     
-    passwordInput->setFont(inputFont);
-    passwordInput->setStyleSheet(
+    passwordInput_->setFont(inputFont);
+    passwordInput_->setStyleSheet(
         "QLineEdit {"
         "   padding: 18px 50px 18px 20px;" 
         "   border: 2px solid #cccccc;"
@@ -156,10 +156,10 @@ void MainWindow::setupInputFields()
         "}"
     );
     
-    passwordToggleButton = std::make_unique<QPushButton>();
-    passwordToggleButton->setFixedSize(32, 32);
-    passwordToggleButton->setCursor(Qt::PointingHandCursor);
-    passwordToggleButton->setStyleSheet(
+    passwordToggleButton_ = std::make_unique<QPushButton>();
+    passwordToggleButton_->setFixedSize(32, 32);
+    passwordToggleButton_->setCursor(Qt::PointingHandCursor);
+    passwordToggleButton_->setStyleSheet(
         "QPushButton {"
         "   background-color: transparent;"
         "   border: none;"
@@ -171,11 +171,11 @@ void MainWindow::setupInputFields()
         "}"
     );
 
-    QPixmap openEyePixmap("../src/gui/resources/icons/eye_open.png");
+    QPixmap openEyePixmap(":/images/eye_open.png");
     if (!openEyePixmap.isNull()) {
         openEyePixmap = openEyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        passwordToggleButton->setIcon(QIcon(openEyePixmap));
-        passwordToggleButton->setIconSize(QSize(20, 20));
+        passwordToggleButton_->setIcon(QIcon(openEyePixmap));
+        passwordToggleButton_->setIconSize(QSize(20, 20));
         qDebug() << "Open eye icon loaded from relative path";
     } else {
         qDebug() << "Open eye icon not found in relative path";
@@ -184,21 +184,21 @@ void MainWindow::setupInputFields()
 
 void MainWindow::togglePasswordVisibility()
 {
-    passwordVisible = !passwordVisible;
+    passwordVisible_ = !passwordVisible_;
     
-    passwordInput->setEchoMode(passwordVisible ? QLineEdit::Normal : QLineEdit::Password);
+    passwordInput_->setEchoMode(passwordVisible_ ? QLineEdit::Normal : QLineEdit::Password);
     
-    QString resourcePath = passwordVisible ? 
-        "../src/gui/resources/icons/eye_slash.png" : 
-        "../src/gui/resources/icons/eye_open.png";
+    QString resourcePath = passwordVisible_ ? 
+        ":/images/eye_slash.png" : 
+        ":/images/eye_open.png";
     
     QPixmap eyePixmap(resourcePath);
     
     if (!eyePixmap.isNull()) {
         eyePixmap = eyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        passwordToggleButton->setIcon(QIcon(eyePixmap));
-        passwordToggleButton->setIconSize(QSize(20, 20));
-        qDebug() << (passwordVisible ? "Slash" : "Open") << "eye icon loaded from relative path";
+        passwordToggleButton_->setIcon(QIcon(eyePixmap));
+        passwordToggleButton_->setIconSize(QSize(20, 20));
+        qDebug() << (passwordVisible_ ? "Slash" : "Open") << "eye icon loaded from relative path";
     } else {
         qDebug() << "Eye icon not found:" << resourcePath;
     }
@@ -206,14 +206,14 @@ void MainWindow::togglePasswordVisibility()
 
 void MainWindow::setupLoginButton()
 {
-    loginButton = std::make_unique<QPushButton>("Log in");
-    loginButton->setFixedHeight(85);
-    loginButton->setFixedWidth(500);
+    loginButton_ = std::make_unique<QPushButton>("Log in");
+    loginButton_->setFixedHeight(85);
+    loginButton_->setFixedWidth(500);
     
     QFont buttonFont("Segoe UI", 22, QFont::Bold);
-    loginButton->setFont(buttonFont);
-    loginButton->setCursor(Qt::PointingHandCursor);
-    loginButton->setStyleSheet(
+    loginButton_->setFont(buttonFont);
+    loginButton_->setCursor(Qt::PointingHandCursor);
+    loginButton_->setStyleSheet(
         "QPushButton {"
         "   background-color: #B3BAD5;"
         "   color: white;"
@@ -235,13 +235,13 @@ void MainWindow::setupLoginButton()
 
 void MainWindow::setupCreateAccountLink()
 {
-    createAccountButton = std::make_unique<QPushButton>("New to CppForge? Create an account");
-    createAccountButton->setFlat(true);
+    createAccountButton_ = std::make_unique<QPushButton>("New to CppForge? Create an account");
+    createAccountButton_->setFlat(true);
     
     QFont linkFont("Segoe UI", 16);
-    createAccountButton->setFont(linkFont);
-    createAccountButton->setCursor(Qt::PointingHandCursor);
-    createAccountButton->setStyleSheet(
+    createAccountButton_->setFont(linkFont);
+    createAccountButton_->setCursor(Qt::PointingHandCursor);
+    createAccountButton_->setStyleSheet(
         "QPushButton {"
         "   color: #4285f4;"
         "   background-color: transparent;"
@@ -261,10 +261,10 @@ void MainWindow::setupCreateAccountLink()
 
 void MainWindow::setupLayout()
 {
-    mainLayout = std::make_unique<QVBoxLayout>(centralWidget.get());
-    mainLayout->setAlignment(Qt::AlignCenter);
-    mainLayout->setSpacing(0);
-    mainLayout->setContentsMargins(100, 50, 100, 50);
+    mainLayout_ = std::make_unique<QVBoxLayout>(centralWidget_.get());
+    mainLayout_->setAlignment(Qt::AlignCenter);
+    mainLayout_->setSpacing(0);
+    mainLayout_->setContentsMargins(100, 50, 100, 50);
     
     auto *centerContainer = new QWidget();
     centerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -272,11 +272,11 @@ void MainWindow::setupLayout()
     centerLayout->setAlignment(Qt::AlignCenter);
     centerLayout->setSpacing(35);
     
-    centerLayout->addWidget(iconLabel.get(), 0, Qt::AlignCenter);
+    centerLayout->addWidget(iconLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
-    centerLayout->addWidget(titleLabel.get(), 0, Qt::AlignCenter);
+    centerLayout->addWidget(titleLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
-    centerLayout->addWidget(usernameInput.get(), 0, Qt::AlignCenter);
+    centerLayout->addWidget(usernameInput_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
     
     QWidget *passwordContainer = new QWidget();
@@ -285,26 +285,25 @@ void MainWindow::setupLayout()
     
     passwordContainer->setLayout(nullptr); 
     
-    passwordInput->setParent(passwordContainer);
-    passwordInput->setGeometry(0, 0, 500, 65);
+    passwordInput_->setParent(passwordContainer);
+    passwordInput_->setGeometry(0, 0, 500, 65);
     
-    passwordToggleButton->setParent(passwordContainer);
-    
-    passwordToggleButton->setGeometry(500 - 42, 16, 32, 32);
+    passwordToggleButton_->setParent(passwordContainer);
+    passwordToggleButton_->setGeometry(500 - 42, 16, 32, 32);
     
     centerLayout->addWidget(passwordContainer, 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
-    centerLayout->addWidget(loginButton.get(), 0, Qt::AlignCenter);
+    centerLayout->addWidget(loginButton_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(30);
-    centerLayout->addWidget(createAccountButton.get(), 0, Qt::AlignCenter);
+    centerLayout->addWidget(createAccountButton_.get(), 0, Qt::AlignCenter);
     
-    mainLayout->addWidget(centerContainer);
+    mainLayout_->addWidget(centerContainer);
 }
 
 void MainWindow::onLoginClicked()
 {
-    QString username = usernameInput->text();
-    QString password = passwordInput->text();
+    QString username = usernameInput_->text();
+    QString password = passwordInput_->text();
     
     if (username.isEmpty() || password.isEmpty()) {
         QMessageBox::warning(this, "Error", "Please enter username and password");
@@ -324,13 +323,10 @@ void MainWindow::openSignUpWindow() {
     if (!signUpWindow_) {
         qDebug() << "Creating new SignUpWindow instance";
         
-        // Создаем как независимое окно
         signUpWindow_ = std::make_unique<SignUpWindow>(nullptr);
         
-        // Устанавливаем заголовок и иконку
         signUpWindow_->setWindowTitle("Create Account - CppForge");
         
-        // Соединяем сигнал возврата
         connect(signUpWindow_.get(), &SignUpWindow::switchToLogin, [this]() {
             qDebug() << "Received switchToLogin signal";
             
@@ -339,7 +335,6 @@ void MainWindow::openSignUpWindow() {
                 signUpWindow_.reset();
             }
             
-            // Активируем MainWindow
             this->setEnabled(true);
             this->show();
             this->raise();
@@ -349,10 +344,8 @@ void MainWindow::openSignUpWindow() {
         qDebug() << "SignUpWindow created and signals connected";
     }
 
-    // Делаем MainWindow неактивным
     this->setEnabled(false);
     
-    // Показываем SignUpWindow
     signUpWindow_->show();
     signUpWindow_->raise();
     signUpWindow_->activateWindow();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SignUpWindow.hpp"
+
 #include <QMainWindow>
 #include <QWidget>
 #include <QLabel>
@@ -8,7 +10,6 @@
 #include <QVBoxLayout>
 #include <memory>
 
-#include "SignUpWindow.hpp"
 
 class MainWindow : public QMainWindow
 {
@@ -35,21 +36,21 @@ private:
     void onLoginClicked();
     void onCreateAccountClicked();
     
-    std::unique_ptr<QWidget> centralWidget;
+    std::unique_ptr<QWidget> centralWidget_;
     
-    std::unique_ptr<QLabel> iconLabel;
-    std::unique_ptr<QLabel> titleLabel;
+    std::unique_ptr<QLabel> iconLabel_;
+    std::unique_ptr<QLabel> titleLabel_;
     
-    std::unique_ptr<QLineEdit> usernameInput;
-    std::unique_ptr<QLineEdit> passwordInput;
+    std::unique_ptr<QLineEdit> usernameInput_;
+    std::unique_ptr<QLineEdit> passwordInput_;
     
-    std::unique_ptr<QPushButton> loginButton;
-    std::unique_ptr<QPushButton> createAccountButton;
-    std::unique_ptr<QPushButton> passwordToggleButton;
+    std::unique_ptr<QPushButton> loginButton_;
+    std::unique_ptr<QPushButton> createAccountButton_;
+    std::unique_ptr<QPushButton> passwordToggleButton_;
 
     std::unique_ptr<SignUpWindow> signUpWindow_;
     
-    std::unique_ptr<QVBoxLayout> mainLayout;
+    std::unique_ptr<QVBoxLayout> mainLayout_;
     
-    bool passwordVisible = false;
+    bool passwordVisible_ = false;
 };
