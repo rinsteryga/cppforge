@@ -1,24 +1,30 @@
+#include "MainWindow.hpp"
+
 #include <QApplication>
 #include <QDebug>
-#include "MainWindow.hpp"
+#include <QDir>
+#include <QResource>
 
 int main(int argc, char *argv[])
 {
+    Q_INIT_RESOURCE(resources);
     QApplication app(argc, argv);
-    
+
     qDebug() << "Application starting...";
-    
+    qDebug() << "Logo exists? " << !QPixmap(":/icons/main_logo.ico").isNull();
+    qDebug() << "Open eye exists? " << !QPixmap(":/images/eye_open.png").isNull();
+
     MainWindow window;
     window.show();
-    
+
     int result = app.exec();
-    
+
     qDebug() << "Application exiting with code:" << result;
-    
-    // Принудительное завершение для Windows
-    #ifdef _WIN32
+    qDebug() << "Working dir:" << QDir::currentPath();
+
+#ifdef _WIN32
     _exit(result);
-    #endif
-    
+#endif
+
     return result;
 }
