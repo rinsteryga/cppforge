@@ -2,69 +2,55 @@
 
 #include "SignUpWindow.hpp"
 
+#include <QMainWindow>
 #include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QFont>
 #include <QVBoxLayout>
-
 #include <memory>
 
-class AuthWindow : public QWidget
+
+class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit AuthWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
 
 private:
-    void onSignInButtonClicked();
-    void onCloseButtonClicked();
-    void onSignUpButtonClicked();
-
     void setupUI();
-
+    void setupLogo();
+    void setupTitle();
+    void setupInputFields();
     void setupWindowProperties();
-    
-    void setupLabelFont(QLabel *label_);
-    void setupButtonFont(QPushButton *button_);
-    void setupEditFieldFont(QLineEdit *editField_);
-
-    void setupMainLabel();
-    void setupUsernameLabel();
-    void setupPasswordLabel();
-    void setupSignUpLabel();
-
-    void setupSignUpButton();
-    void setupLogInButton();
-    void setupCloseButton();
-
-    void setupEditFields();
-    
+    void setupLoginButton();
+    void setupCreateAccountLink();
     void setupLayout();
+    void showFallbackLogo();
+    void centerWindow();
+    void togglePasswordVisibility();
 
     void openSignUpWindow();
-
-    void setupConnections();
-
-    std::unique_ptr<QLabel> mainLabel_;
-    std::unique_ptr<QLabel> usernameLabel_;
-    std::unique_ptr<QLabel> passwordLabel_;
-    std::unique_ptr<QLabel> signUpLabel_;
-
-    std::unique_ptr<QFont> labelFont_;
-    std::unique_ptr<QFont> editFieldFont_;
-    std::unique_ptr<QFont> loginButtonFont_;
-
+    
+    void onLoginClicked();
+    void onCreateAccountClicked();
+    
+    std::unique_ptr<QWidget> centralWidget_;
+    
+    std::unique_ptr<QLabel> iconLabel_;
+    std::unique_ptr<QLabel> titleLabel_;
+    
     std::unique_ptr<QLineEdit> usernameInput_;
     std::unique_ptr<QLineEdit> passwordInput_;
     
-    std::unique_ptr<QPushButton> signUpButton_;
-    std::unique_ptr<QPushButton> logInButton_;
-    std::unique_ptr<QPushButton> closeButton_;
-
-    std::unique_ptr<QVBoxLayout> mainLayout_;
+    std::unique_ptr<QPushButton> loginButton_;
+    std::unique_ptr<QPushButton> createAccountButton_;
+    std::unique_ptr<QPushButton> passwordToggleButton_;
 
     std::unique_ptr<SignUpWindow> signUpWindow_;
+    
+    std::unique_ptr<QVBoxLayout> mainLayout_;
+    
+    bool passwordVisible_ = false;
 };
