@@ -10,7 +10,6 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(resources);
     QApplication app(argc, argv);
 
-    qDebug() << "Application starting...";
     qDebug() << "Logo exists? " << !QPixmap(":/icons/main_logo.ico").isNull();
     qDebug() << "Open eye exists? " << !QPixmap(":/images/eye_open.png").isNull();
 
@@ -20,11 +19,6 @@ int main(int argc, char *argv[])
     int result = app.exec();
 
     qDebug() << "Application exiting with code:" << result;
-    qDebug() << "Working dir:" << QDir::currentPath();
-
-#ifdef _WIN32
-    _exit(result);
-#endif
-
+    
     return result;
 }
