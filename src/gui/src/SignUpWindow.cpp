@@ -53,7 +53,7 @@ void SignUpWindow::setupUI()
 void SignUpWindow::setupWindowProperties()
 {
     
-    resize(1160, 800); 
+    setFixedSize(1280, 900); 
     
     setStyleSheet("background-color: white;");
 }
@@ -289,7 +289,7 @@ void SignUpWindow::setupLayout()
     mainLayout_ = std::make_unique<QVBoxLayout>(this);
     mainLayout_->setAlignment(Qt::AlignCenter);
     mainLayout_->setSpacing(0);
-    mainLayout_->setContentsMargins(100, 50, 100, 50);
+    mainLayout_->setContentsMargins(0, 0, 0, 0);
     
     auto *centerContainer = new QWidget();
     centerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -376,7 +376,11 @@ void SignUpWindow::onSignUpButtonClicked()
 
 void SignUpWindow::onBackToLoginClicked()
 {
-    qDebug() << "Back to login clicked";
-    emit switchToLogin();
-    close();
+    this->hide();  
+
+    if (parentWidget()) {
+        parentWidget()->show();
+        parentWidget()->raise();
+        parentWidget()->activateWindow();
+    }
 }
