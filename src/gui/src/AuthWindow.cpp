@@ -331,8 +331,7 @@ void AuthWindow::openSignUpWindow() {
             qDebug() << "Received switchToLogin signal";
             
             if (signUpWindow_) {
-                signUpWindow_->close();
-                signUpWindow_.reset();
+                signUpWindow_.release();
             }
             
             this->setEnabled(true);
