@@ -7,7 +7,7 @@ using namespace cppforge::utils::security;
 class TestPasswordHashGenerator : public QObject
 {
     Q_OBJECT
-    
+
 private:
     void test_GenerateAndVerify()
     {
