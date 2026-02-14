@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QFont>
+
 #include <memory>
 
 class SignUpWindow : public QWidget
