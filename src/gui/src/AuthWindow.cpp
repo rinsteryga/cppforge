@@ -16,7 +16,7 @@
 #include <QPainter>
 
 AuthWindow::AuthWindow(QWidget *parent)
-    : QMainWindow(parent), signUpWindow_(nullptr), passwordVisible_(false)
+    : QWidget(parent), signUpWindow_(nullptr), passwordVisible_(false)
 {
     setupUI();
     
@@ -24,14 +24,12 @@ AuthWindow::AuthWindow(QWidget *parent)
 }
 
 void AuthWindow::setupWindowProperties() {
-    resize(1160, 800); 
+    setFixedSize(1280, 900); 
     setWindowTitle("CppForge Log in");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
 
     setStyleSheet("background-color: white;");
     
-    centralWidget_ = std::make_unique<QWidget>(this);
-    setCentralWidget(centralWidget_.get());
 }
 
 void AuthWindow::setupUI()
@@ -261,10 +259,10 @@ void AuthWindow::setupCreateAccountLink()
 
 void AuthWindow::setupLayout()
 {
-    mainLayout_ = std::make_unique<QVBoxLayout>(centralWidget_.get());
+    mainLayout_ = std::make_unique<QVBoxLayout>(this);
     mainLayout_->setAlignment(Qt::AlignCenter);
     mainLayout_->setSpacing(0);
-    mainLayout_->setContentsMargins(100, 50, 100, 50);
+    mainLayout_->setContentsMargins(0, 0, 0, 0);
     
     auto *centerContainer = new QWidget();
     centerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -317,39 +315,21 @@ void AuthWindow::onLoginClicked()
     );
 }
 
-void AuthWindow::openSignUpWindow() {
-    qDebug() << "Opening SignUpWindow...";
-    
+void AuthWindow::openSignUpWindow()
+{
     if (!signUpWindow_) {
-        qDebug() << "Creating new SignUpWindow instance";
-        
-        signUpWindow_ = std::make_unique<SignUpWindow>(nullptr);
-        
-        signUpWindow_->setWindowTitle("Create Account - CppForge");
-        
-        connect(signUpWindow_.get(), &SignUpWindow::switchToLogin, [this]() {
-            qDebug() << "Received switchToLogin signal";
-            
-            if (signUpWindow_) {
-                signUpWindow_.release();
-            }
-            
-            this->setEnabled(true);
+        signUpWindow_ = std::make_unique<SignUpWindow>(this);
+
+        connect(signUpWindow_.get(), &SignUpWindow::switchToLogin, this, [this]() {
             this->show();
-            this->raise();
-            this->activateWindow();
         });
-        
-        qDebug() << "SignUpWindow created and signals connected";
     }
 
-    this->setEnabled(false);
-    
+
+    this->hide();
     signUpWindow_->show();
     signUpWindow_->raise();
     signUpWindow_->activateWindow();
-    
-    qDebug() << "SignUpWindow shown, AuthWindow disabled";
 }
 
 void AuthWindow::onCreateAccountClicked()
