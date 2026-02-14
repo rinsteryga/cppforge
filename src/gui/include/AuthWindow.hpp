@@ -37,7 +37,6 @@ private:
     void onLoginClicked();
     void onCreateAccountClicked();
     
-    
     std::unique_ptr<QLabel> iconLabel_;
     std::unique_ptr<QLabel> titleLabel_;
     
