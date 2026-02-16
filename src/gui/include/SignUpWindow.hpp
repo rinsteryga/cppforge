@@ -9,12 +9,15 @@
 
 #include <memory>
 
+class CustomTitleBar;
+
 class SignUpWindow : public QWidget
 {
     Q_OBJECT
 
 public:
     explicit SignUpWindow(QWidget *parent = nullptr);
+    ~SignUpWindow();
 
 signals:
     void switchToLogin();
@@ -24,7 +27,11 @@ private:
     void onBackToLoginClicked();
     void togglePasswordVisibility();
 
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
     void setupUI();
+    void setupTitleBar();
     void setupWindowProperties();
     void centerWindow();
     
@@ -40,6 +47,7 @@ private:
 
     std::unique_ptr<QLabel> iconLabel_;
     std::unique_ptr<QLabel> titleLabel_;
+    std::unique_ptr<CustomTitleBar> customTitleBar_;
     
     std::unique_ptr<QLineEdit> usernameInput_;
     std::unique_ptr<QLineEdit> emailInput_;

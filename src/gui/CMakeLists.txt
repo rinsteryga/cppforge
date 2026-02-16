@@ -7,9 +7,11 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 add_library(cppforge_gui STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/AuthWindow.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/SignUpWindow.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/CustomTitleBar.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/AuthWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SignUpWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/CustomTitleBar.cpp
 
     resources/resources.qrc
 )
