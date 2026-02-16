@@ -12,7 +12,7 @@
 #include <memory>
 
 
-class AuthWindow : public QMainWindow
+class AuthWindow : public QWidget
 {
     Q_OBJECT
 
@@ -36,8 +36,6 @@ private:
     
     void onLoginClicked();
     void onCreateAccountClicked();
-    
-    std::unique_ptr<QWidget> centralWidget_;
     
     std::unique_ptr<QLabel> iconLabel_;
     std::unique_ptr<QLabel> titleLabel_;
