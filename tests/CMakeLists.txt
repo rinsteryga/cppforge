@@ -18,7 +18,9 @@ foreach(TEST_FILE ${TEST_SOURCES})
     target_link_libraries(${TEST_NAME}
         PRIVATE
             cppforge_core
+            cppforge_data
             Qt5::Test
+            Qt5::Sql
     )
 
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
