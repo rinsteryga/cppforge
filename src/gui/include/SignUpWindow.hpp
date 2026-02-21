@@ -1,11 +1,14 @@
 #pragma once
 
+#include "../../core/include/services/AuthManager.hpp"
+
 #include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QFont>
+#include <QPropertyAnimation>
 
 #include <memory>
 
@@ -16,8 +19,10 @@ class SignUpWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit SignUpWindow(QWidget *parent = nullptr);
+    explicit SignUpWindow(std::shared_ptr<cppforge::services::AuthManager> authManager, QWidget *parent = nullptr);
     ~SignUpWindow();
+
+    void fadeIn();
 
 signals:
     void switchToLogin();
@@ -59,5 +64,7 @@ protected:
     
     std::unique_ptr<QVBoxLayout> mainLayout_;
     
+    std::shared_ptr<cppforge::services::AuthManager> authManager_;
     bool passwordVisible_ = false;
+    std::unique_ptr<QPropertyAnimation> transitionAnimation_;
 };
