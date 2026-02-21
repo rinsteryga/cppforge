@@ -5,6 +5,7 @@
 #include <QtSql/QSqlError>
 #include <QVariant>
 #include <QDateTime>
+#include <QDebug>
 
 namespace cppforge
 {
@@ -44,9 +45,38 @@ namespace cppforge
             return std::nullopt;
         }
 
-        void PgUserRepository::save(entities::User user)
+        std::optional<entities::User> PgUserRepository::findByUsername(const QString& username) const
         {
-            if (!database_.isOpen()) return;
+            if (!database_.isOpen()) return std::nullopt;
+
+            QSqlQuery query(database_);
+            query.prepare("SELECT id, username, email, password_hash, avatar_path, bio, created_at FROM users WHERE username = :username");
+            query.bindValue(":username", username);
+
+            if (query.exec() && query.next())
+            {
+                uint64_t id = query.value("id").toULongLong();
+                QString fetchedUsername = query.value("username").toString();
+                QString userEmail = query.value("email").toString();
+                QString passwordHash = query.value("password_hash").toString();
+                QString avatarPath = query.value("avatar_path").toString();
+                QString bio = query.value("bio").toString();
+                
+                auto createdAt = std::chrono::system_clock::from_time_t(query.value("created_at").toDateTime().toSecsSinceEpoch());
+
+                entities::User user(id, fetchedUsername, userEmail, passwordHash, createdAt);
+                user.setAvatarPath(avatarPath);
+                user.setBio(bio);
+
+                return user;
+            }
+
+            return std::nullopt;
+        }
+
+        bool PgUserRepository::save(entities::User user)
+        {
+            if (!database_.isOpen()) return false;
 
             QSqlQuery query(database_);
             if (user.getId() == 0)
@@ -58,7 +88,11 @@ namespace cppforge
                 query.bindValue(":avatar_path", user.getAvatarPath());
                 query.bindValue(":bio", user.getBio());
                 
-                query.exec();
+                if (!query.exec()) {
+                    qDebug() << "INSERT failed inside PgUserRepository:" << query.lastError().text();
+                    return false;
+                }
+                return true;
             }
             else
             {
@@ -70,7 +104,11 @@ namespace cppforge
                 query.bindValue(":bio", user.getBio());
                 query.bindValue(":id", QVariant::fromValue(user.getId()));
                 
-                query.exec();
+                if (!query.exec()) {
+                    qDebug() << "UPDATE failed inside PgUserRepository:" << query.lastError().text();
+                    return false;
+                }
+                return true;
             }
         }
     }
