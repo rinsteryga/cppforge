@@ -1,8 +1,13 @@
 #pragma once
 
+#include "../repositories/IUserRepository.hpp"
+#include "../entities/User.hpp"
+
 #include <QObject>
 #include <QString>
-#include <QHash>
+#include <QString>
+#include <memory>
+
 
 namespace cppforge
 {
@@ -13,18 +18,18 @@ namespace cppforge
             Q_OBJECT
 
         public:
-            AuthManager(QObject *parent = nullptr);
+            explicit AuthManager(std::unique_ptr<repositories::IUserRepository> userRepository, QObject *parent = nullptr);
 
-            bool login(const QString &username_, const QString &password_);
-            void logout() { currentUser_.clear(); }
-            bool registerUser(const QString &username_, const QString &email_, const QString &password_);
+            bool login(const QString &email, const QString &password);
+            void logout() { currentUser_.reset(); }
+            bool registerUser(const QString &username, const QString &email, const QString &password);
 
-            bool isAuthenticated() const { return !currentUser_.isEmpty(); }
-            QString getCurrentUser() const { return currentUser_; };
+            bool isAuthenticated() const { return currentUser_.has_value(); }
+            std::optional<cppforge::entities::User> getCurrentUser() const { return currentUser_; }
 
         private:
-            QHash<QString, QString> users_;
-            QString currentUser_;
+            std::unique_ptr<repositories::IUserRepository> userRepository_;
+            std::optional<cppforge::entities::User> currentUser_;
         };
 
     } // namespace services
