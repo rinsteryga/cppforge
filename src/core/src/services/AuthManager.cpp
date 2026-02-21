@@ -1,33 +1,39 @@
 #include "../../include/services/AuthManager.hpp"
 #include "../../include/utils/security/PasswordHashGenerator.hpp"
 
+#include <chrono>
+
 namespace cppforge::services
 {
-    AuthManager::AuthManager(QObject *parent)
-        : QObject(parent) {}
+    AuthManager::AuthManager(std::unique_ptr<repositories::IUserRepository> userRepository, QObject *parent)
+        : QObject(parent), userRepository_(std::move(userRepository)) {}
 
-    bool AuthManager::login(const QString &username, const QString &password)
+    bool AuthManager::login(const QString &email, const QString &password)
     {
-        if (!users_.contains(username))
+        auto userOpt = userRepository_->findByEmail(email);
+        if (!userOpt.has_value()) {
+            userOpt = userRepository_->findByUsername(email);
+        }
+
+        if (!userOpt.has_value())
             return false;
 
-        const QString storedHash = users_.value(username);
-        if (!cppforge::utils::security::PasswordHashGenerator::verify(password, storedHash))
+        if (!cppforge::utils::security::PasswordHashGenerator::verify(password, userOpt->getPasswordHash()))
             return false;
 
-        currentUser_ = username;
+        currentUser_ = userOpt.value();
         return true;
     }
 
     bool AuthManager::registerUser(const QString &username, const QString &email, const QString &password)
     {
-        Q_UNUSED(email);
-
-        if (users_.contains(username))
+        if (userRepository_->findByEmail(email).has_value())
             return false;
 
-        const QString hash =  cppforge::utils::security::PasswordHashGenerator::generate(password);
-        users_.insert(username, hash);
-        return true;
+        const QString hash = cppforge::utils::security::PasswordHashGenerator::generate(password);
+        
+        cppforge::entities::User newUser(0, username, email, hash, std::chrono::system_clock::now());
+        
+        return userRepository_->save(newUser);
     }
 }

@@ -17,9 +17,10 @@
 #include <QTimer>
 #include <QStyleOption>
 
-SignUpWindow::SignUpWindow(QWidget *parent) 
+SignUpWindow::SignUpWindow(std::shared_ptr<cppforge::services::AuthManager> authManager, QWidget *parent) 
     : QWidget(parent, Qt::Window),
-      passwordVisible_(false)
+      passwordVisible_(false),
+      authManager_(authManager)
 {    
     setupUI();
     QTimer::singleShot(50, this, &SignUpWindow::centerWindow);
@@ -47,6 +48,16 @@ void SignUpWindow::centerWindow()
     }
 }
 
+void SignUpWindow::fadeIn()
+{
+    setWindowOpacity(0.0);
+    transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
+    transitionAnimation_->setDuration(100);
+    transitionAnimation_->setStartValue(0.0);
+    transitionAnimation_->setEndValue(1.0);
+    transitionAnimation_->start();
+}
+
 void SignUpWindow::setupUI()
 {
     setupWindowProperties();
@@ -63,7 +74,7 @@ void SignUpWindow::setupUI()
 void SignUpWindow::setupWindowProperties()
 {
     setFixedSize(1280, 900);
-    setWindowTitle("Sign Up - CppForge");
+    setWindowTitle("Sign Up - cppforge");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
@@ -74,7 +85,7 @@ void SignUpWindow::setupWindowProperties()
 void SignUpWindow::setupTitleBar()
 {
     customTitleBar_ = std::make_unique<CustomTitleBar>(this);
-    customTitleBar_->setTitle("Sign Up - CppForge");
+    customTitleBar_->setTitle("Sign Up - cppforge");
     customTitleBar_->setIcon(windowIcon());
 }
 
@@ -253,7 +264,7 @@ void SignUpWindow::setupSignUpButton()
     signUpButton_->setCursor(Qt::PointingHandCursor);
     signUpButton_->setStyleSheet(
         "QPushButton {"
-        "   background-color: #B3BAD5;"
+        "   background-color: #62639b;"
         "   color: white;"
         "   border: none;"
         "   border-radius: 12px;"
@@ -263,10 +274,10 @@ void SignUpWindow::setupSignUpButton()
         "   margin: 0px;"
         "}"
         "QPushButton:hover {"
-        "   background-color: #B3BAD5;"
+        "   background-color: #7677B3;"
         "}"
         "QPushButton:pressed {"
-        "   background-color: #B3BAD5;"
+        "   background-color: #4B4C76;"
         "}"
     );
 }
@@ -376,17 +387,36 @@ void SignUpWindow::onSignUpButtonClicked()
         return;
     }
     
-    qDebug() << "SignUp attempt - Username:" << username << "Email:" << email
-             << "Password length:" << password.length();
-
-    QMessageBox::information(this, "Success", "Account created successfully!");
-    
-    emit switchToLogin();
-    close();
+    if (authManager_ && authManager_->registerUser(username, email, password))
+    {
+        QMessageBox::information(this, "Success", "Account created successfully!");
+        
+        transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
+        transitionAnimation_->setDuration(150);
+        transitionAnimation_->setStartValue(1.0);
+        transitionAnimation_->setEndValue(0.0);
+        connect(transitionAnimation_.get(), &QPropertyAnimation::finished, [this]() {
+            emit switchToLogin();
+            close();
+        });
+        transitionAnimation_->start();
+    }
+    else
+    {
+        QMessageBox::warning(this, "Error", "Registration failed. User may already exist.");
+    }
 }
 
 void SignUpWindow::onBackToLoginClicked() {
   qDebug() << "Back to login clicked";
-  emit switchToLogin();
-  close();
+  
+  transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
+  transitionAnimation_->setDuration(150);
+  transitionAnimation_->setStartValue(1.0);
+  transitionAnimation_->setEndValue(0.0);
+  connect(transitionAnimation_.get(), &QPropertyAnimation::finished, [this]() {
+      emit switchToLogin();
+      close();
+  });
+  transitionAnimation_->start();
 }

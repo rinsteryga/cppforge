@@ -2,12 +2,15 @@
 
 #include "SignUpWindow.hpp"
 #include "CustomTitleBar.hpp"
+#include "../../core/include/services/AuthManager.hpp"
 
 #include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QPropertyAnimation>
+
 #include <memory>
 
 class AuthWindow : public QWidget
@@ -15,8 +18,10 @@ class AuthWindow : public QWidget
     Q_OBJECT
 
 public:
-    explicit AuthWindow(QWidget *parent = nullptr);
+    explicit AuthWindow(std::shared_ptr<cppforge::services::AuthManager> authManager, QWidget *parent = nullptr);
     ~AuthWindow();
+
+    void fadeIn();
 
 private:
     void setupUI();
@@ -59,5 +64,7 @@ protected:
     
     std::unique_ptr<QVBoxLayout> mainLayout_;
     
+    std::shared_ptr<cppforge::services::AuthManager> authManager_;
     bool passwordVisible_ = false;
+    std::unique_ptr<QPropertyAnimation> transitionAnimation_;
 };

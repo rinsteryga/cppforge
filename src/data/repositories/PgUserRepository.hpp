@@ -16,7 +16,8 @@ namespace cppforge
             explicit PgUserRepository(QSqlDatabase &database);
 
             std::optional<entities::User> findByEmail(const QString& email) const override;
-            void save(entities::User user) override;
+            std::optional<entities::User> findByUsername(const QString& username) const override;
+            bool save(entities::User user) override;
 
         private:
             QSqlDatabase& database_;

@@ -20,7 +20,8 @@ namespace cppforge
             virtual ~IUserRepository() = default;
 
             virtual std::optional<entities::User> findByEmail(const QString& email) const = 0;
-            virtual void save(entities::User user) = 0;
+            virtual std::optional<entities::User> findByUsername(const QString& username) const = 0;
+            virtual bool save(entities::User user) = 0;
         };
     } // namespace repositories
 } // namespace cppforge
