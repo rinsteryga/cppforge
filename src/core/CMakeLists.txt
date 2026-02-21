@@ -41,4 +41,5 @@ target_include_directories(cppforge_core PUBLIC
 target_link_libraries(cppforge_core
     PRIVATE 
     Qt5::Core
+    Qt5::Sql
 )
