@@ -24,5 +24,7 @@ target_link_libraries(cppforge_gui
     PRIVATE 
     Qt5::Widgets 
     Qt5::Core 
+    Qt5::Sql
     cppforge_core
+    cppforge_data
 )
