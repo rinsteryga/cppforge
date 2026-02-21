@@ -5,6 +5,9 @@
 
 CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent) {
     setupUI();
+    if (parent) {
+        parent->installEventFilter(this);
+    }
 }
 
 void CustomTitleBar::setupUI() {
@@ -33,7 +36,7 @@ void CustomTitleBar::setupUI() {
         "   background-color: transparent;"
         "   border: none;"
         "   font-weight: bold;"
-        "   font-size: 14px;"
+        "   font-size: 18px;"
         "   color: #5f6368;"
         "}"
         "QPushButton:hover {"
@@ -50,7 +53,7 @@ void CustomTitleBar::setupUI() {
         "   background-color: transparent;"
         "   border: none;"
         "   font-weight: bold;"
-        "   font-size: 14px;"
+        "   font-size: 18px;"
         "   color: #5f6368;"
         "}"
         "QPushButton:hover {"
@@ -62,13 +65,13 @@ void CustomTitleBar::setupUI() {
         "   color: white;"
         "}";
 
-    minimizeButton_->setFixedSize(45, 40);
+    minimizeButton_->setFixedSize(60, 40);
     minimizeButton_->setStyleSheet(buttonStyle);
 
-    maximizeRestoreButton_->setFixedSize(45, 40);
+    maximizeRestoreButton_->setFixedSize(60, 40);
     maximizeRestoreButton_->setStyleSheet(buttonStyle);
 
-    closeButton_->setFixedSize(45, 40);
+    closeButton_->setFixedSize(60, 40);
     closeButton_->setStyleSheet(closeButtonStyle);
 
     layout_->addWidget(iconLabel_);
@@ -101,10 +104,8 @@ void CustomTitleBar::onMaximizeRestoreClicked() {
     if (parentWidget()) {
         if (parentWidget()->isMaximized()) {
             parentWidget()->showNormal();
-            maximizeRestoreButton_->setText("□");
         } else {
             parentWidget()->showMaximized();
-            maximizeRestoreButton_->setText("❐");
         }
     }
 }
@@ -136,4 +137,15 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event) {
         onMaximizeRestoreClicked();
         event->accept();
     }
+}
+
+bool CustomTitleBar::eventFilter(QObject *obj, QEvent *event) {
+    if (obj == parentWidget() && event->type() == QEvent::WindowStateChange) {
+        if (parentWidget()->isMaximized()) {
+            maximizeRestoreButton_->setText("❐");
+        } else {
+            maximizeRestoreButton_->setText("□");
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
