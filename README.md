@@ -1,1 +1,2 @@
-We are working on this project now. Dev branch will be merged to main when it`s ready...
+We are working on this project now. Dev branch will be merged to main when it`s ready
+Devs: @rinsteryga, @Sernock
