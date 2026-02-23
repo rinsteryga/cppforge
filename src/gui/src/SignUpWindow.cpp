@@ -316,9 +316,9 @@ void SignUpWindow::setupLayout()
 
     mainLayout_->addWidget(customTitleBar_.get());
     
-    auto *centerContainer = new QWidget();
+    auto centerContainer = std::make_unique<QWidget>();
     centerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    auto *centerLayout = new QVBoxLayout(centerContainer);
+    auto centerLayout = std::make_unique<QVBoxLayout>();
     centerLayout->setAlignment(Qt::AlignCenter);
     centerLayout->setSpacing(25);  
     
@@ -334,19 +334,19 @@ void SignUpWindow::setupLayout()
     centerLayout->addWidget(emailInput_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
     
-    QWidget *passwordContainer = new QWidget();
+    auto passwordContainer = std::make_unique<QWidget>();
     passwordContainer->setFixedWidth(500);
     passwordContainer->setFixedHeight(65);
     
     passwordContainer->setLayout(nullptr);
     
-    passwordInput_->setParent(passwordContainer);
+    passwordInput_->setParent(passwordContainer.get());
     passwordInput_->setGeometry(0, 0, 500, 65);
     
-    passwordToggleButton_->setParent(passwordContainer);
+    passwordToggleButton_->setParent(passwordContainer.get());
     passwordToggleButton_->setGeometry(500 - 42, 16, 32, 32);
     
-    centerLayout->addWidget(passwordContainer, 0, Qt::AlignCenter);
+    centerLayout->addWidget(passwordContainer.release(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
     
     centerLayout->addWidget(signUpButton_.get(), 0, Qt::AlignCenter);
@@ -354,7 +354,8 @@ void SignUpWindow::setupLayout()
     
     centerLayout->addWidget(backToLoginButton_.get(), 0, Qt::AlignCenter);
     
-    mainLayout_->addWidget(centerContainer);
+    centerContainer->setLayout(centerLayout.release());
+    mainLayout_->addWidget(centerContainer.release());
 }
 
 void SignUpWindow::setupConnections() {

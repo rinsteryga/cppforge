@@ -92,18 +92,18 @@ void AuthWindow::fadeIn()
 void AuthWindow::setupLogo()
 {
     iconLabel_ = std::make_unique<QLabel>();
-    iconLabel_->setAlignment(Qt::AlignCenter);
+    iconLabel_->setAlignment(Qt::AlignTop | Qt::AlignHCenter); 
     iconLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     
     QPixmap logoPixmap(":/icons/main_logo.ico");
     
     if (!logoPixmap.isNull()) {
-        logoPixmap = logoPixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        logoPixmap = logoPixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation);        
+        logoPixmap = logoPixmap.copy(0, 0, logoPixmap.width(), 165);
         iconLabel_->setPixmap(logoPixmap);
-        iconLabel_->setFixedSize(200, 200);
-        qDebug() << "Logo loaded";
+        iconLabel_->setFixedSize(logoPixmap.width(), 165); 
+        qDebug() << "Logo loaded and cropped safely";
     } else {
-        qDebug() << "Logo not found, using fallback";
         showFallbackLogo();
     }
 }
@@ -127,12 +127,11 @@ void AuthWindow::showFallbackLogo()
 
 void AuthWindow::setupTitle()
 {
-    titleLabel_ = std::make_unique<QLabel>("Log into cppforge");
+    titleLabel_ = std::make_unique<QLabel>("Log Into cppforge"); 
     QFont titleFont("Roboto", 32, QFont::Bold);
     titleLabel_->setFont(titleFont);
     titleLabel_->setAlignment(Qt::AlignCenter);
     titleLabel_->setStyleSheet("color: #000000; padding: 10px;");
-    titleLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
 void AuthWindow::setupInputFields()
@@ -296,30 +295,32 @@ void AuthWindow::setupLayout()
 
     mainLayout_->addWidget(customTitleBar_.get());
     
-    auto *centerContainer = new QWidget();
+    auto centerContainer = std::make_unique<QWidget>();
     centerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    auto *centerLayout = new QVBoxLayout(centerContainer);
+    auto centerLayout = std::make_unique<QVBoxLayout>();
     centerLayout->setAlignment(Qt::AlignCenter);
     centerLayout->setSpacing(25);
     
     centerLayout->addWidget(iconLabel_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(20);
+    centerLayout->addSpacing(5);
+
     centerLayout->addWidget(titleLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
+    
     centerLayout->addWidget(usernameInput_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
     
-    QWidget *passwordContainer = new QWidget();
+    auto passwordContainer = std::make_unique<QWidget>();
     passwordContainer->setFixedWidth(500);
     passwordContainer->setFixedHeight(65);
     
-    passwordInput_->setParent(passwordContainer);
+    passwordInput_->setParent(passwordContainer.get());
     passwordInput_->setGeometry(0, 0, 500, 65);
     
-    passwordToggleButton_->setParent(passwordContainer);
+    passwordToggleButton_->setParent(passwordContainer.get());
     passwordToggleButton_->setGeometry(500 - 42, 16, 32, 32);
     
-    centerLayout->addWidget(passwordContainer, 0, Qt::AlignCenter);
+    centerLayout->addWidget(passwordContainer.release(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
     
     centerLayout->addWidget(loginButton_.get(), 0, Qt::AlignCenter);
@@ -327,7 +328,8 @@ void AuthWindow::setupLayout()
     
     centerLayout->addWidget(createAccountButton_.get(), 0, Qt::AlignCenter);
     
-    mainLayout_->addWidget(centerContainer);
+    centerContainer->setLayout(centerLayout.release());
+    mainLayout_->addWidget(centerContainer.release());
 }
 
 void AuthWindow::onLoginClicked()
