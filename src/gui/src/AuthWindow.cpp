@@ -1,4 +1,5 @@
 #include "AuthWindow.hpp"
+#include "MainWindow.hpp"  // <-- ДОБАВИТЬ
 
 #include <QMessageBox>
 #include <QDebug>
@@ -332,6 +333,7 @@ void AuthWindow::setupLayout()
     mainLayout_->addWidget(centerContainer.release());
 }
 
+// ИСПРАВЛЕННЫЙ МЕТОД onLoginClicked
 void AuthWindow::onLoginClicked()
 {
     QString usernameOrEmail = usernameInput_->text();
@@ -344,10 +346,18 @@ void AuthWindow::onLoginClicked()
 
     if (authManager_ && authManager_->login(usernameOrEmail, password))
     {
-        QMessageBox::information(this, "Success", "Logged in successfully!\nWelcome to the Main Menu (Placeholder)!");
-        // Placeholder for transitioning to Main Menu
-        // this->hide();
-        // emit switchToMainMenu();
+        // Плавный переход к главному окну
+        transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
+        transitionAnimation_->setDuration(100);
+        transitionAnimation_->setStartValue(1.0);
+        transitionAnimation_->setEndValue(0.0);
+        
+        connect(transitionAnimation_.get(), &QPropertyAnimation::finished, [this]() {
+            this->hide();
+            emit switchToMainMenu();  // Сигнал для перехода к главному окну
+        });
+        
+        transitionAnimation_->start();
     }
     else
     {
