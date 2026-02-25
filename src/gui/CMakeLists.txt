@@ -8,10 +8,12 @@ add_library(cppforge_gui STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/AuthWindow.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/SignUpWindow.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/CustomTitleBar.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow.hpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/AuthWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/SignUpWindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/CustomTitleBar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow.cpp
 
     resources/resources.qrc
 )
