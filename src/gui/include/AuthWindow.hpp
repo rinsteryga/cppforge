@@ -23,6 +23,10 @@ public:
 
     void fadeIn();
 
+signals:
+    void loginSuccessful(); 
+    void switchToMainMenu();  // <-- ДОБАВЛЕНО
+
 private:
     void setupUI();
     void setupTitleBar();
