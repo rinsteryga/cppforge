@@ -68,7 +68,6 @@ void MainWindow::setupWindowProperties()
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
     setObjectName("MainWindow");
-    setStyleSheet("#MainWindow { background-color: white; border: 1px solid #cccccc; }");
 }
 
 void MainWindow::setupTitleBar()
@@ -84,48 +83,44 @@ void MainWindow::setupLeftPanel()
     sideBar->setObjectName("sideBar");
     sideBar->setFixedWidth(220);
 
-    auto layout = std::make_unique<QVBoxLayout>(sideBar.get());
-    layout->setContentsMargins(20, 30, 20, 30);
+    QVBoxLayout* layout = new QVBoxLayout(sideBar.get());
+    layout->setContentsMargins(20, 80, 20, 30);
     layout->setSpacing(15);
 
     auto logoIcon = std::make_unique<QLabel>();
     logoIcon->setAlignment(Qt::AlignCenter);
-    logoIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     
     QPixmap logoPixmap(":/icons/main_logo.ico");
     
     if (!logoPixmap.isNull()) {
-        logoPixmap = logoPixmap.scaled(120, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        logoPixmap = logoPixmap.scaled(80, 80, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         logoIcon->setPixmap(logoPixmap);
-        logoIcon->setFixedSize(120, 120);
+        logoIcon->setFixedSize(80, 80);
         qDebug() << "MainWindow: Logo loaded";
     } else {
         logoIcon->setText("CppForge");
-        logoIcon->setStyleSheet("color: #62639b; font-size: 24px; font-weight: bold;");
-        logoIcon->setFixedSize(120, 120);
+        logoIcon->setStyleSheet("color: #62639b; font-size: 20px; font-weight: bold;");
+        logoIcon->setFixedSize(80, 80);
         qDebug() << "MainWindow: Logo not found, using text fallback";
     }
 
-    auto learnBtn = std::make_unique<QPushButton>("  ОБУЧЕНИЕ");
-    auto ratingBtn = std::make_unique<QPushButton>("  РЕЙТИНГ");
-    auto profileBtn = std::make_unique<QPushButton>("  ПРОФИЛЬ");
+    auto learnBtn = std::make_unique<QPushButton>("ОБУЧЕНИЕ");
+    auto ratingBtn = std::make_unique<QPushButton>("РЕЙТИНГ");
+    auto profileBtn = std::make_unique<QPushButton>("ПРОФИЛЬ");
 
     QFont btnFont("Roboto", 14, QFont::Bold);
     for (auto btn : {learnBtn.get(), ratingBtn.get(), profileBtn.get()}) {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setFixedHeight(50);
-        btn->setStyleSheet("text-align: left; padding-left: 15px;");
     }
 
     layout->addWidget(logoIcon.release(), 0, Qt::AlignCenter);
-    layout->addSpacing(20);
+    layout->addSpacing(30);
     layout->addWidget(learnBtn.release());
     layout->addWidget(ratingBtn.release());
     layout->addWidget(profileBtn.release());
     layout->addStretch();
-
-    layout.release();
 }
 
 void MainWindow::setupCenterPanel()
@@ -133,10 +128,11 @@ void MainWindow::setupCenterPanel()
     centerPanelLayout_ = std::make_unique<QVBoxLayout>();
     centerPanelLayout_->setContentsMargins(0, 0, 0, 0);
     centerPanelLayout_->setSpacing(20);
+    centerPanelLayout_->setAlignment(Qt::AlignCenter);  // ЦЕНТРИРУЕМ ПО ВЕРТИКАЛИ
 
     eventCard = std::make_unique<QFrame>();
     eventCard->setProperty("class", QVariant("card"));
-    auto eLayout = std::make_unique<QVBoxLayout>(eventCard.get());
+    QVBoxLayout* eLayout = new QVBoxLayout(eventCard.get());
     eLayout->setContentsMargins(25, 25, 25, 25);
     eLayout->setSpacing(15);
     
@@ -148,7 +144,7 @@ void MainWindow::setupCenterPanel()
 
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", QVariant("card"));
-    auto dLayout = std::make_unique<QVBoxLayout>(dailyTaskCard.get());
+    QVBoxLayout* dLayout = new QVBoxLayout(dailyTaskCard.get());
     dLayout->setContentsMargins(25, 25, 25, 25);
     dLayout->setSpacing(15);
 
@@ -199,13 +195,12 @@ void MainWindow::setupCenterPanel()
     footerLinksLayout->addWidget(privacyBtnPtr.release());
     footerLinksLayout->addStretch();
 
+    // Добавляем всё в центр с правильным выравниванием
+    centerPanelLayout_->addStretch();  // Растяжка сверху
     centerPanelLayout_->addWidget(eventCard.get());
     centerPanelLayout_->addWidget(dailyTaskCard.get());
     centerPanelLayout_->addWidget(footerWidget.release());
-    centerPanelLayout_->addStretch();
-
-    eLayout.release();
-    dLayout.release();
+    centerPanelLayout_->addStretch();  // Растяжка снизу
 }
 
 void MainWindow::setupRightPanel()
@@ -234,7 +229,7 @@ void MainWindow::setupRightPanel()
     for (int i = 1; i <= 14; ++i) {
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", QVariant("card"));
-        auto mLayout = std::make_unique<QVBoxLayout>(moduleCard.get());
+        QVBoxLayout* mLayout = new QVBoxLayout(moduleCard.get());
         mLayout->setContentsMargins(20, 20, 20, 20);
         mLayout->setSpacing(10);
 
@@ -272,8 +267,6 @@ void MainWindow::setupRightPanel()
         
         modulesLayout->addWidget(moduleCard.get());
         moduleCards.push_back(std::move(moduleCard));
-
-        mLayout.release();
     }
 
     modulesLayout->addStretch();
@@ -286,7 +279,7 @@ void MainWindow::setupUI()
     setupTitleBar();
     setupStyles();
 
-    auto mainVerticalLayout = std::make_unique<QVBoxLayout>(this);
+    QVBoxLayout* mainVerticalLayout = new QVBoxLayout(this);
     mainVerticalLayout->setContentsMargins(0, 0, 0, 0);
     mainVerticalLayout->setSpacing(0);
     
@@ -294,7 +287,7 @@ void MainWindow::setupUI()
 
     auto contentContainer = std::make_unique<QWidget>();
     contentContainer->setObjectName("contentContainer");
-    auto containerLayout = std::make_unique<QHBoxLayout>(contentContainer.get());
+    QHBoxLayout* containerLayout = new QHBoxLayout(contentContainer.get());
     containerLayout->setContentsMargins(30, 30, 30, 30);
     containerLayout->setSpacing(30);
 
@@ -303,14 +296,13 @@ void MainWindow::setupUI()
     setupCenterPanel();                        
 
     auto eventWidget = std::make_unique<QWidget>();
-    eventWidget->setLayout(centerPanelLayout_.get());
+    eventWidget->setLayout(centerPanelLayout_.release());
 
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(modulesScrollArea.get(), 2);
     containerLayout->addWidget(eventWidget.release(), 1);
 
     mainVerticalLayout->addWidget(contentContainer.release());
-    mainVerticalLayout.release();
 }
 
 void MainWindow::setupStyles()
