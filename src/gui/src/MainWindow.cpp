@@ -84,12 +84,11 @@ void MainWindow::setupLeftPanel()
     sideBar->setObjectName("sideBar");
     sideBar->setFixedWidth(220);
 
-    QVBoxLayout* layout = new QVBoxLayout(sideBar.get());
+    auto layout = std::make_unique<QVBoxLayout>(sideBar.get());
     layout->setContentsMargins(20, 30, 20, 30);
     layout->setSpacing(15);
 
-    // Логотип вместо текста
-    QLabel* logoIcon = new QLabel();
+    auto logoIcon = std::make_unique<QLabel>();
     logoIcon->setAlignment(Qt::AlignCenter);
     logoIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     
@@ -107,106 +106,110 @@ void MainWindow::setupLeftPanel()
         qDebug() << "MainWindow: Logo not found, using text fallback";
     }
 
-    QPushButton* learnBtn = new QPushButton("  ОБУЧЕНИЕ");
-    QPushButton* ratingBtn = new QPushButton("  РЕЙТИНГ");
-    QPushButton* profileBtn = new QPushButton("  ПРОФИЛЬ");
+    auto learnBtn = std::make_unique<QPushButton>("  ОБУЧЕНИЕ");
+    auto ratingBtn = std::make_unique<QPushButton>("  РЕЙТИНГ");
+    auto profileBtn = std::make_unique<QPushButton>("  ПРОФИЛЬ");
 
     QFont btnFont("Roboto", 14, QFont::Bold);
-    for (auto btn : {learnBtn, ratingBtn, profileBtn}) {
+    for (auto btn : {learnBtn.get(), ratingBtn.get(), profileBtn.get()}) {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setFixedHeight(50);
         btn->setStyleSheet("text-align: left; padding-left: 15px;");
     }
 
-    layout->addWidget(logoIcon, 0, Qt::AlignCenter);
+    layout->addWidget(logoIcon.release(), 0, Qt::AlignCenter);
     layout->addSpacing(20);
-    layout->addWidget(learnBtn);
-    layout->addWidget(ratingBtn);
-    layout->addWidget(profileBtn);
+    layout->addWidget(learnBtn.release());
+    layout->addWidget(ratingBtn.release());
+    layout->addWidget(profileBtn.release());
     layout->addStretch();
+
+    layout.release();
 }
 
-void MainWindow::setupCenterPanel()  // СПРАВА - события + футер
+void MainWindow::setupCenterPanel()
 {
     centerPanelLayout_ = std::make_unique<QVBoxLayout>();
     centerPanelLayout_->setContentsMargins(0, 0, 0, 0);
     centerPanelLayout_->setSpacing(20);
 
-    // Карточка события
     eventCard = std::make_unique<QFrame>();
     eventCard->setProperty("class", QVariant("card"));
-    QVBoxLayout* eLayout = new QVBoxLayout(eventCard.get());
+    auto eLayout = std::make_unique<QVBoxLayout>(eventCard.get());
     eLayout->setContentsMargins(25, 25, 25, 25);
     eLayout->setSpacing(15);
     
-    QLabel* eventTitle = new QLabel("СОБЫТИЕ");
+    auto eventTitle = std::make_unique<QLabel>("СОБЫТИЕ");
     eventTitle->setProperty("class", "section-title");
     QFont eventFont("Roboto", 20, QFont::Bold);
     eventTitle->setFont(eventFont);
-    eLayout->addWidget(eventTitle);
+    eLayout->addWidget(eventTitle.release());
 
-    // Карточка задания дня
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", QVariant("card"));
-    QVBoxLayout* dLayout = new QVBoxLayout(dailyTaskCard.get());
+    auto dLayout = std::make_unique<QVBoxLayout>(dailyTaskCard.get());
     dLayout->setContentsMargins(25, 25, 25, 25);
     dLayout->setSpacing(15);
 
-    QLabel* dailyTitle = new QLabel("Задание дня");
+    auto dailyTitle = std::make_unique<QLabel>("Задание дня");
     QFont dailyTitleFont("Roboto", 16, QFont::Bold);
     dailyTitle->setFont(dailyTitleFont);
 
-    QLabel* dailyDesc = new QLabel("Выполнить 1 задание");
+    auto dailyDesc = std::make_unique<QLabel>("Выполнить 1 задание");
     QFont dailyFont("Roboto", 14);
     dailyDesc->setFont(dailyFont);
 
-    QLabel* dailyProgressText = new QLabel("0/1");
+    auto dailyProgressText = std::make_unique<QLabel>("0/1");
     dailyProgressText->setFont(dailyFont);
     dailyProgressText->setAlignment(Qt::AlignRight);
 
-    QProgressBar* dailyProgress = new QProgressBar;
+    auto dailyProgress = std::make_unique<QProgressBar>();
     dailyProgress->setValue(0);
     dailyProgress->setFixedHeight(8);
 
-    dLayout->addWidget(dailyTitle);
-    dLayout->addWidget(dailyDesc);
-    dLayout->addWidget(dailyProgressText);
-    dLayout->addWidget(dailyProgress);
+    dLayout->addWidget(dailyTitle.release());
+    dLayout->addWidget(dailyDesc.release());
+    dLayout->addWidget(dailyProgressText.release());
+    dLayout->addWidget(dailyProgress.release());
 
-    
-    QWidget* footerWidget = new QWidget();
-    footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget);
+    auto footerWidget = std::make_unique<QWidget>();
+    footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget.get());
     footerLinksLayout->setContentsMargins(0, 20, 0, 0);
     footerLinksLayout->setSpacing(20);
     
     auto createLink = [](const QString& text) {
-        QPushButton* btn = new QPushButton(text);
+        auto btn = std::make_unique<QPushButton>(text);
         btn->setProperty("class", "footer-link");
         btn->setFlat(true);
         btn->setCursor(Qt::PointingHandCursor);
         return btn;
     };
     
-    aboutBtn = createLink("О CppForge");
-    contactsBtn = createLink("Контакты");
-    privacyBtn = createLink("Конфиденциальность");
+    auto aboutBtnPtr = createLink("О CppForge");
+    auto contactsBtnPtr = createLink("Контакты");
+    auto privacyBtnPtr = createLink("Конфиденциальность");
     
-    footerLinksLayout->addWidget(aboutBtn);
-    footerLinksLayout->addWidget(contactsBtn);
-    footerLinksLayout->addWidget(privacyBtn);
+    aboutBtn = aboutBtnPtr.get();
+    contactsBtn = contactsBtnPtr.get();
+    privacyBtn = privacyBtnPtr.get();
+    
+    footerLinksLayout->addWidget(aboutBtnPtr.release());
+    footerLinksLayout->addWidget(contactsBtnPtr.release());
+    footerLinksLayout->addWidget(privacyBtnPtr.release());
     footerLinksLayout->addStretch();
 
-    // Добавляем всё в центр
     centerPanelLayout_->addWidget(eventCard.get());
     centerPanelLayout_->addWidget(dailyTaskCard.get());
-    centerPanelLayout_->addWidget(footerWidget);
+    centerPanelLayout_->addWidget(footerWidget.release());
     centerPanelLayout_->addStretch();
+
+    eLayout.release();
+    dLayout.release();
 }
 
-void MainWindow::setupRightPanel()  // ЦЕНТР - модули с прокруткой
+void MainWindow::setupRightPanel()
 {
-    // Создаем скролл-область
     modulesScrollArea = std::make_unique<QScrollArea>();
     modulesScrollArea->setObjectName("modulesScrollArea");
     modulesScrollArea->setWidgetResizable(true);
@@ -214,7 +217,6 @@ void MainWindow::setupRightPanel()  // ЦЕНТР - модули с прокру
     modulesScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     modulesScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
-    // Контейнер для модулей
     modulesContainer = std::make_unique<QWidget>();
     modulesLayout = std::make_unique<QVBoxLayout>(modulesContainer.get());
     modulesLayout->setContentsMargins(0, 0, 0, 0);
@@ -224,38 +226,32 @@ void MainWindow::setupRightPanel()  // ЦЕНТР - модули с прокру
     QFont statusFont("Roboto", 12);
     QFont btnFont("Roboto", 12);
 
-    // Очищаем списки перед заполнением
     moduleCards.clear();
     moduleProgressBars.clear();
     moduleProgressLabels.clear();
     moduleButtons.clear();
 
-    // Создаем 14 модулей
     for (int i = 1; i <= 14; ++i) {
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", QVariant("card"));
-        QVBoxLayout* mLayout = new QVBoxLayout(moduleCard.get());
+        auto mLayout = std::make_unique<QVBoxLayout>(moduleCard.get());
         mLayout->setContentsMargins(20, 20, 20, 20);
         mLayout->setSpacing(10);
 
-        // Название модуля
-        QLabel* mTitle = new QLabel(QString("Module %1").arg(i));
+        auto mTitle = std::make_unique<QLabel>(QString("Module %1").arg(i));
         mTitle->setFont(titleFont);
 
-        // Прогресс-бар
-        QProgressBar* progress = new QProgressBar;
+        auto progress = std::make_unique<QProgressBar>();
         progress->setValue(0);
         progress->setFixedHeight(8);
 
-        // Текст прогресса
-        QLabel* progressLabel = new QLabel("0% выполнено");
+        auto progressLabel = std::make_unique<QLabel>("0% выполнено");
         progressLabel->setFont(statusFont);
         progressLabel->setProperty("class", "progress-text");
 
-        // Кнопка модуля
         bool isLocked = (i != 1);
         
-        QPushButton* button = new QPushButton(isLocked ? "Заблокировано" : "Далее →");
+        auto button = std::make_unique<QPushButton>(isLocked ? "Заблокировано" : "Далее →");
         button->setObjectName("moduleBtn");
         button->setCursor(Qt::PointingHandCursor);
         button->setFixedHeight(40);
@@ -265,24 +261,23 @@ void MainWindow::setupRightPanel()  // ЦЕНТР - модули с прокру
             button->setEnabled(false);
         }
 
-        // Добавляем всё в карточку
-        mLayout->addWidget(mTitle);
-        mLayout->addWidget(progress);
-        mLayout->addWidget(progressLabel);
-        mLayout->addWidget(button);
+        mLayout->addWidget(mTitle.release());
+        mLayout->addWidget(progress.release());
+        mLayout->addWidget(progressLabel.release());
+        mLayout->addWidget(button.release());
 
-        // Сохраняем указатели на дочерние элементы
-        moduleProgressBars.append(progress);
-        moduleProgressLabels.append(progressLabel);
-        moduleButtons.append(button);
+        moduleProgressBars.append(progress.get());
+        moduleProgressLabels.append(progressLabel.get());
+        moduleButtons.append(button.get());
         
-        // Сохраняем карточку
         modulesLayout->addWidget(moduleCard.get());
         moduleCards.push_back(std::move(moduleCard));
+
+        mLayout.release();
     }
 
     modulesLayout->addStretch();
-    modulesScrollArea->setWidget(modulesContainer.get());
+    modulesScrollArea->setWidget(modulesContainer.release());
 }
 
 void MainWindow::setupUI()
@@ -291,34 +286,33 @@ void MainWindow::setupUI()
     setupTitleBar();
     setupStyles();
 
-    QVBoxLayout* mainVerticalLayout = new QVBoxLayout(this);
+    auto mainVerticalLayout = std::make_unique<QVBoxLayout>(this);
     mainVerticalLayout->setContentsMargins(0, 0, 0, 0);
     mainVerticalLayout->setSpacing(0);
     
     mainVerticalLayout->addWidget(customTitleBar_.get());
 
-    QWidget* contentContainer = new QWidget();
+    auto contentContainer = std::make_unique<QWidget>();
     contentContainer->setObjectName("contentContainer");
-    QHBoxLayout* containerLayout = new QHBoxLayout(contentContainer);
+    auto containerLayout = std::make_unique<QHBoxLayout>(contentContainer.get());
     containerLayout->setContentsMargins(30, 30, 30, 30);
     containerLayout->setSpacing(30);
 
-    // Создаем панели
-    setupLeftPanel();                          // слева - навигация
-    setupRightPanel();                         // центр - модули
-    setupCenterPanel();                        // справа - события + футер
+    setupLeftPanel();                          
+    setupRightPanel();                         
+    setupCenterPanel();                        
 
-    // Оборачиваем события в виджет
-    QWidget* eventWidget = new QWidget();
+    auto eventWidget = std::make_unique<QWidget>();
     eventWidget->setLayout(centerPanelLayout_.get());
 
-    // Располагаем: навигация | модули | события
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(modulesScrollArea.get(), 2);
-    containerLayout->addWidget(eventWidget, 1);
+    containerLayout->addWidget(eventWidget.release(), 1);
 
-    mainVerticalLayout->addWidget(contentContainer);
+    mainVerticalLayout->addWidget(contentContainer.release());
+    mainVerticalLayout.release();
 }
+
 void MainWindow::setupStyles()
 {
     setStyleSheet(R"(
@@ -327,21 +321,18 @@ void MainWindow::setupStyles()
             font-family: Roboto, Arial, sans-serif;
         }
 
-        /* Основное окно с тенью */
         #MainWindow {
             background-color: white;
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 20px;
         }
 
-        /* Левая панель */
         QFrame#sideBar {
             background-color: white;
             border-radius: 20px;
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        /* Карточки */
         QFrame[class="card"] {
             background-color: white;
             border-radius: 20px;
@@ -349,7 +340,6 @@ void MainWindow::setupStyles()
             padding: 0px;
         }
 
-        /* Скролл-область */
         QScrollArea#modulesScrollArea {
             background-color: transparent;
             border: none;
@@ -359,7 +349,6 @@ void MainWindow::setupStyles()
             background-color: transparent;
         }
 
-        /* Кнопки навигации - больше цвета */
         QPushButton {
             background-color: #f0f0f0;
             border: none;
@@ -381,7 +370,6 @@ void MainWindow::setupStyles()
             color: white;
         }
 
-        /* Кнопки модулей */
         QPushButton#moduleBtn {
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                 stop:0 #62639b, stop:1 #7B7CB5);
@@ -408,23 +396,6 @@ void MainWindow::setupStyles()
             color: #888;
         }
 
-        /* Кнопка "Далее" в центре (если есть) */
-        QPushButton#nextBtn {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #62639b, stop:1 #7B7CB5);
-            color: white;
-            font-weight: bold;
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        QPushButton#nextBtn:hover {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #7B7CB5, stop:1 #62639b);
-        }
-
-        /* Прогресс-бары */
         QProgressBar {
             background: #e9ecef;
             border-radius: 4px;
@@ -438,14 +409,12 @@ void MainWindow::setupStyles()
             border-radius: 4px;
         }
 
-        /* Текст прогресса */
         QLabel[class="progress-text"] {
             color: #666;
             font-size: 12px;
             font-weight: 500;
         }
 
-        /* Заголовки секций */
         QLabel[class="section-title"] {
             color: #62639b;
             font-size: 20px;
@@ -453,7 +422,6 @@ void MainWindow::setupStyles()
             letter-spacing: 0.5px;
         }
 
-        /* Скроллбар */
         QScrollBar:vertical {
             background: transparent;
             width: 8px;
@@ -479,7 +447,6 @@ void MainWindow::setupStyles()
             background: none;
         }
 
-        /* Ссылки в футере */
         QPushButton[class="footer-link"] {
             color: #666;
             font-size: 13px;
