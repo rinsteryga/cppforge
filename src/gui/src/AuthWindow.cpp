@@ -1,5 +1,5 @@
 #include "AuthWindow.hpp"
-#include "MainWindow.hpp"  // <-- ДОБАВИТЬ
+#include "MainWindow.hpp"  
 
 #include <QMessageBox>
 #include <QDebug>
@@ -346,7 +346,6 @@ void AuthWindow::onLoginClicked()
 
     if (authManager_ && authManager_->login(usernameOrEmail, password))
     {
-        // Плавный переход к главному окну
         transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
         transitionAnimation_->setDuration(100);
         transitionAnimation_->setStartValue(1.0);
@@ -354,7 +353,7 @@ void AuthWindow::onLoginClicked()
         
         connect(transitionAnimation_.get(), &QPropertyAnimation::finished, [this]() {
             this->hide();
-            emit switchToMainMenu();  // Сигнал для перехода к главному окну
+            emit switchToMainMenu();  
         });
         
         transitionAnimation_->start();
