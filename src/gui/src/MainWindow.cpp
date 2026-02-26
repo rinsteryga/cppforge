@@ -18,6 +18,7 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QScrollArea>
+#include <vector>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -87,10 +88,24 @@ void MainWindow::setupLeftPanel()
     layout->setContentsMargins(20, 30, 20, 30);
     layout->setSpacing(15);
 
-    QLabel* logo = new QLabel("CppForge");
-    QFont logoFont("Roboto", 28, QFont::Bold);
-    logo->setFont(logoFont);
-    logo->setStyleSheet("color: #62639b; padding: 10px 0;");
+    // Логотип вместо текста
+    QLabel* logoIcon = new QLabel();
+    logoIcon->setAlignment(Qt::AlignCenter);
+    logoIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    
+    QPixmap logoPixmap(":/icons/main_logo.ico");
+    
+    if (!logoPixmap.isNull()) {
+        logoPixmap = logoPixmap.scaled(120, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        logoIcon->setPixmap(logoPixmap);
+        logoIcon->setFixedSize(120, 120);
+        qDebug() << "MainWindow: Logo loaded";
+    } else {
+        logoIcon->setText("CppForge");
+        logoIcon->setStyleSheet("color: #62639b; font-size: 24px; font-weight: bold;");
+        logoIcon->setFixedSize(120, 120);
+        qDebug() << "MainWindow: Logo not found, using text fallback";
+    }
 
     QPushButton* learnBtn = new QPushButton("  ОБУЧЕНИЕ");
     QPushButton* ratingBtn = new QPushButton("  РЕЙТИНГ");
@@ -104,7 +119,7 @@ void MainWindow::setupLeftPanel()
         btn->setStyleSheet("text-align: left; padding-left: 15px;");
     }
 
-    layout->addWidget(logo);
+    layout->addWidget(logoIcon, 0, Qt::AlignCenter);
     layout->addSpacing(20);
     layout->addWidget(learnBtn);
     layout->addWidget(ratingBtn);
@@ -112,7 +127,7 @@ void MainWindow::setupLeftPanel()
     layout->addStretch();
 }
 
-void MainWindow::setupCenterPanel()  // СПРАВА - события
+void MainWindow::setupCenterPanel()  // СПРАВА - события + футер
 {
     centerPanelLayout_ = std::make_unique<QVBoxLayout>();
     centerPanelLayout_->setContentsMargins(0, 0, 0, 0);
@@ -126,9 +141,9 @@ void MainWindow::setupCenterPanel()  // СПРАВА - события
     eLayout->setSpacing(15);
     
     QLabel* eventTitle = new QLabel("СОБЫТИЕ");
+    eventTitle->setProperty("class", "section-title");
     QFont eventFont("Roboto", 20, QFont::Bold);
     eventTitle->setFont(eventFont);
-    eventTitle->setStyleSheet("color: #62639b;");
     eLayout->addWidget(eventTitle);
 
     // Карточка задания дня
@@ -152,15 +167,40 @@ void MainWindow::setupCenterPanel()  // СПРАВА - события
 
     QProgressBar* dailyProgress = new QProgressBar;
     dailyProgress->setValue(0);
-    dailyProgress->setFixedHeight(12);
+    dailyProgress->setFixedHeight(8);
 
     dLayout->addWidget(dailyTitle);
     dLayout->addWidget(dailyDesc);
     dLayout->addWidget(dailyProgressText);
     dLayout->addWidget(dailyProgress);
 
+    
+    QWidget* footerWidget = new QWidget();
+    footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget);
+    footerLinksLayout->setContentsMargins(0, 20, 0, 0);
+    footerLinksLayout->setSpacing(20);
+    
+    auto createLink = [](const QString& text) {
+        QPushButton* btn = new QPushButton(text);
+        btn->setProperty("class", "footer-link");
+        btn->setFlat(true);
+        btn->setCursor(Qt::PointingHandCursor);
+        return btn;
+    };
+    
+    aboutBtn = createLink("О CppForge");
+    contactsBtn = createLink("Контакты");
+    privacyBtn = createLink("Конфиденциальность");
+    
+    footerLinksLayout->addWidget(aboutBtn);
+    footerLinksLayout->addWidget(contactsBtn);
+    footerLinksLayout->addWidget(privacyBtn);
+    footerLinksLayout->addStretch();
+
+    // Добавляем всё в центр
     centerPanelLayout_->addWidget(eventCard.get());
     centerPanelLayout_->addWidget(dailyTaskCard.get());
+    centerPanelLayout_->addWidget(footerWidget);
     centerPanelLayout_->addStretch();
 }
 
@@ -205,12 +245,12 @@ void MainWindow::setupRightPanel()  // ЦЕНТР - модули с прокру
         // Прогресс-бар
         QProgressBar* progress = new QProgressBar;
         progress->setValue(0);
-        progress->setFixedHeight(10);
+        progress->setFixedHeight(8);
 
         // Текст прогресса
         QLabel* progressLabel = new QLabel("0% выполнено");
         progressLabel->setFont(statusFont);
-        progressLabel->setStyleSheet("color: #666;");
+        progressLabel->setProperty("class", "progress-text");
 
         // Кнопка модуля
         bool isLocked = (i != 1);
@@ -223,7 +263,6 @@ void MainWindow::setupRightPanel()  // ЦЕНТР - модули с прокру
         
         if (isLocked) {
             button->setEnabled(false);
-            button->setStyleSheet("background-color: #cccccc; color: #666;");
         }
 
         // Добавляем всё в карточку
@@ -232,12 +271,12 @@ void MainWindow::setupRightPanel()  // ЦЕНТР - модули с прокру
         mLayout->addWidget(progressLabel);
         mLayout->addWidget(button);
 
-        // Сохраняем указатели на дочерние элементы (они будут удалены вместе с moduleCard)
+        // Сохраняем указатели на дочерние элементы
         moduleProgressBars.append(progress);
         moduleProgressLabels.append(progressLabel);
         moduleButtons.append(button);
         
-        // Сохраняем карточку в список умных указателей
+        // Сохраняем карточку
         modulesLayout->addWidget(moduleCard.get());
         moduleCards.push_back(std::move(moduleCard));
     }
@@ -265,9 +304,9 @@ void MainWindow::setupUI()
     containerLayout->setSpacing(30);
 
     // Создаем панели
-    setupLeftPanel();
-    setupRightPanel(); // центр - модули
-    setupCenterPanel(); // справа - события
+    setupLeftPanel();                          // слева - навигация
+    setupRightPanel();                         // центр - модули
+    setupCenterPanel();                        // справа - события + футер
 
     // Оборачиваем события в виджет
     QWidget* eventWidget = new QWidget();
@@ -280,7 +319,6 @@ void MainWindow::setupUI()
 
     mainVerticalLayout->addWidget(contentContainer);
 }
-
 void MainWindow::setupStyles()
 {
     setStyleSheet(R"(
@@ -289,19 +327,29 @@ void MainWindow::setupStyles()
             font-family: Roboto, Arial, sans-serif;
         }
 
+        /* Основное окно с тенью */
+        #MainWindow {
+            background-color: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+        }
+
+        /* Левая панель */
         QFrame#sideBar {
             background-color: white;
             border-radius: 20px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
+        /* Карточки */
         QFrame[class="card"] {
             background-color: white;
             border-radius: 20px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(0, 0, 0, 0.05);
             padding: 0px;
         }
 
+        /* Скролл-область */
         QScrollArea#modulesScrollArea {
             background-color: transparent;
             border: none;
@@ -311,58 +359,110 @@ void MainWindow::setupStyles()
             background-color: transparent;
         }
 
+        /* Кнопки навигации - больше цвета */
         QPushButton {
             background-color: #f0f0f0;
             border: none;
-            border-radius: 10px;
-            font-weight: bold;
+            border-radius: 12px;
+            font-weight: 600;
             color: #333;
+            text-align: left;
+            padding-left: 15px;
+            margin: 2px 0;
         }
 
         QPushButton:hover {
-            background-color: #e5e5e5;
+            background-color: #62639b;
+            color: white;
         }
 
         QPushButton:pressed {
-            background-color: #d5d5d5;
+            background-color: #4B4C76;
+            color: white;
         }
 
+        /* Кнопки модулей */
         QPushButton#moduleBtn {
-            background-color: #62639b;
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #62639b, stop:1 #7B7CB5);
             color: white;
             font-weight: bold;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            border: none;
         }
 
         QPushButton#moduleBtn:hover {
-            background-color: #7677B3;
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #7B7CB5, stop:1 #62639b);
+            font-weight: bold;
+        }
+
+        QPushButton#moduleBtn:pressed {
+            background: #4B4C76;
         }
 
         QPushButton#moduleBtn:disabled {
-            background-color: #cccccc;
-            color: #666;
+            background: #d0d0d0;
+            color: #888;
         }
 
+        /* Кнопка "Далее" в центре (если есть) */
+        QPushButton#nextBtn {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #62639b, stop:1 #7B7CB5);
+            color: white;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        QPushButton#nextBtn:hover {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #7B7CB5, stop:1 #62639b);
+        }
+
+        /* Прогресс-бары */
         QProgressBar {
             background: #e9ecef;
-            border-radius: 5px;
-            height: 10px;
+            border-radius: 4px;
+            height: 8px;
             text-align: center;
         }
 
         QProgressBar::chunk {
-            background-color: #62639b;
-            border-radius: 5px;
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #62639b, stop:1 #7B7CB5);
+            border-radius: 4px;
         }
 
+        /* Текст прогресса */
+        QLabel[class="progress-text"] {
+            color: #666;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Заголовки секций */
+        QLabel[class="section-title"] {
+            color: #62639b;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        /* Скроллбар */
         QScrollBar:vertical {
-            background: #f0f0f0;
-            width: 12px;
-            border-radius: 6px;
+            background: transparent;
+            width: 8px;
+            border-radius: 4px;
         }
 
         QScrollBar::handle:vertical {
             background: #c0c0c0;
-            border-radius: 6px;
+            border-radius: 4px;
             min-height: 30px;
         }
 
@@ -373,6 +473,26 @@ void MainWindow::setupStyles()
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
             border: none;
             background: none;
+        }
+
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            background: none;
+        }
+
+        /* Ссылки в футере */
+        QPushButton[class="footer-link"] {
+            color: #666;
+            font-size: 13px;
+            font-weight: normal;
+            background: transparent;
+            border: none;
+            padding: 5px 8px;
+            text-align: left;
+        }
+
+        QPushButton[class="footer-link"]:hover {
+            color: #62639b;
+            font-weight: bold;
         }
     )");
 }
