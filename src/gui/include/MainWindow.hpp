@@ -3,7 +3,7 @@
 #include <QWidget>
 #include <QPropertyAnimation>
 #include <memory>
-#include <vector>  
+#include <vector>
 
 class QFrame;
 class QLabel;
@@ -54,4 +54,9 @@ private:
     QList<QLabel*> moduleProgressLabels;
     QList<QProgressBar*> moduleProgressBars;
     QList<QPushButton*> moduleButtons;
+
+    std::unique_ptr<QHBoxLayout> footerLinksLayout;
+    QPushButton* aboutBtn;
+    QPushButton* contactsBtn;
+    QPushButton* privacyBtn;
 };
