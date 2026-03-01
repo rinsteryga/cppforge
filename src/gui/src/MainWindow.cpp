@@ -18,7 +18,6 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QScrollArea>
-#include <vector>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -63,7 +62,7 @@ void MainWindow::fadeIn()
 void MainWindow::setupWindowProperties()
 {
     setFixedSize(1280, 900);
-    setWindowTitle("CppForge - Main Menu");
+    setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
@@ -73,7 +72,7 @@ void MainWindow::setupWindowProperties()
 void MainWindow::setupTitleBar()
 {
     customTitleBar_ = std::make_unique<CustomTitleBar>(this);
-    customTitleBar_->setTitle("CppForge - Main Menu");
+    customTitleBar_->setTitle("cppforge - Main Menu");
     customTitleBar_->setIcon(windowIcon());
 }
 
@@ -83,7 +82,7 @@ void MainWindow::setupLeftPanel()
     sideBar->setObjectName("sideBar");
     sideBar->setFixedWidth(220);
 
-    QVBoxLayout* layout = new QVBoxLayout(sideBar.get());
+    auto layout = std::make_unique<QVBoxLayout>();
     layout->setContentsMargins(20, 80, 20, 30);
     layout->setSpacing(15);
 
@@ -104,9 +103,9 @@ void MainWindow::setupLeftPanel()
         qDebug() << "MainWindow: Logo not found, using text fallback";
     }
 
-    auto learnBtn = std::make_unique<QPushButton>("ОБУЧЕНИЕ");
-    auto ratingBtn = std::make_unique<QPushButton>("РЕЙТИНГ");
-    auto profileBtn = std::make_unique<QPushButton>("ПРОФИЛЬ");
+    auto learnBtn = std::make_unique<QPushButton>("Учиться");
+    auto ratingBtn = std::make_unique<QPushButton>("Рейтинг");
+    auto profileBtn = std::make_unique<QPushButton>("Профиль");
 
     QFont btnFont("Roboto", 14, QFont::Bold);
     for (auto btn : {learnBtn.get(), ratingBtn.get(), profileBtn.get()}) {
@@ -121,6 +120,7 @@ void MainWindow::setupLeftPanel()
     layout->addWidget(ratingBtn.release());
     layout->addWidget(profileBtn.release());
     layout->addStretch();
+    sideBar->setLayout(layout.release());
 }
 
 void MainWindow::setupCenterPanel()
@@ -128,23 +128,24 @@ void MainWindow::setupCenterPanel()
     centerPanelLayout_ = std::make_unique<QVBoxLayout>();
     centerPanelLayout_->setContentsMargins(0, 0, 0, 0);
     centerPanelLayout_->setSpacing(20);
-    centerPanelLayout_->setAlignment(Qt::AlignCenter);  // ЦЕНТРИРУЕМ ПО ВЕРТИКАЛИ
+    centerPanelLayout_->setAlignment(Qt::AlignCenter);
 
     eventCard = std::make_unique<QFrame>();
     eventCard->setProperty("class", QVariant("card"));
-    QVBoxLayout* eLayout = new QVBoxLayout(eventCard.get());
+    auto eLayout = std::make_unique<QVBoxLayout>();
     eLayout->setContentsMargins(25, 25, 25, 25);
     eLayout->setSpacing(15);
     
-    auto eventTitle = std::make_unique<QLabel>("СОБЫТИЕ");
+    auto eventTitle = std::make_unique<QLabel>("События");
     eventTitle->setProperty("class", "section-title");
     QFont eventFont("Roboto", 20, QFont::Bold);
     eventTitle->setFont(eventFont);
     eLayout->addWidget(eventTitle.release());
+    eventCard->setLayout(eLayout.release());
 
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", QVariant("card"));
-    QVBoxLayout* dLayout = new QVBoxLayout(dailyTaskCard.get());
+    auto dLayout = std::make_unique<QVBoxLayout>();
     dLayout->setContentsMargins(25, 25, 25, 25);
     dLayout->setSpacing(15);
 
@@ -168,6 +169,7 @@ void MainWindow::setupCenterPanel()
     dLayout->addWidget(dailyDesc.release());
     dLayout->addWidget(dailyProgressText.release());
     dLayout->addWidget(dailyProgress.release());
+    dailyTaskCard->setLayout(dLayout.release());
 
     auto footerWidget = std::make_unique<QWidget>();
     footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget.get());
@@ -195,12 +197,11 @@ void MainWindow::setupCenterPanel()
     footerLinksLayout->addWidget(privacyBtnPtr.release());
     footerLinksLayout->addStretch();
 
-    // Добавляем всё в центр с правильным выравниванием
-    centerPanelLayout_->addStretch();  // Растяжка сверху
+    centerPanelLayout_->addStretch();
     centerPanelLayout_->addWidget(eventCard.get());
     centerPanelLayout_->addWidget(dailyTaskCard.get());
     centerPanelLayout_->addWidget(footerWidget.release());
-    centerPanelLayout_->addStretch();  // Растяжка снизу
+    centerPanelLayout_->addStretch();
 }
 
 void MainWindow::setupRightPanel()
@@ -229,11 +230,11 @@ void MainWindow::setupRightPanel()
     for (int i = 1; i <= 14; ++i) {
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", QVariant("card"));
-        QVBoxLayout* mLayout = new QVBoxLayout(moduleCard.get());
+        auto mLayout = std::make_unique<QVBoxLayout>();
         mLayout->setContentsMargins(20, 20, 20, 20);
         mLayout->setSpacing(10);
 
-        auto mTitle = std::make_unique<QLabel>(QString("Module %1").arg(i));
+        auto mTitle = std::make_unique<QLabel>(QString("Модуль %1").arg(i));
         mTitle->setFont(titleFont);
 
         auto progress = std::make_unique<QProgressBar>();
@@ -260,6 +261,7 @@ void MainWindow::setupRightPanel()
         mLayout->addWidget(progress.release());
         mLayout->addWidget(progressLabel.release());
         mLayout->addWidget(button.release());
+        moduleCard->setLayout(mLayout.release());
 
         moduleProgressBars.append(progress.get());
         moduleProgressLabels.append(progressLabel.get());
@@ -279,7 +281,7 @@ void MainWindow::setupUI()
     setupTitleBar();
     setupStyles();
 
-    QVBoxLayout* mainVerticalLayout = new QVBoxLayout(this);
+    auto mainVerticalLayout = std::make_unique<QVBoxLayout>();
     mainVerticalLayout->setContentsMargins(0, 0, 0, 0);
     mainVerticalLayout->setSpacing(0);
     
@@ -287,7 +289,7 @@ void MainWindow::setupUI()
 
     auto contentContainer = std::make_unique<QWidget>();
     contentContainer->setObjectName("contentContainer");
-    QHBoxLayout* containerLayout = new QHBoxLayout(contentContainer.get());
+    auto containerLayout = std::make_unique<QHBoxLayout>();
     containerLayout->setContentsMargins(30, 30, 30, 30);
     containerLayout->setSpacing(30);
 
@@ -301,8 +303,10 @@ void MainWindow::setupUI()
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(modulesScrollArea.get(), 2);
     containerLayout->addWidget(eventWidget.release(), 1);
+    contentContainer->setLayout(containerLayout.release());
 
     mainVerticalLayout->addWidget(contentContainer.release());
+    setLayout(mainVerticalLayout.release());
 }
 
 void MainWindow::setupStyles()
