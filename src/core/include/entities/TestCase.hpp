@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstdint>
 #include <QString>
+
+#include <cstdint>
 
 namespace cppforge
 {
@@ -13,8 +14,8 @@ namespace cppforge
             TestCase(uint64_t id, const QString &input, const QString &expectedOutput, bool isPublic);
 
             uint64_t getId() const;
-            QString getInput() const;
-            QString getExpectedOutput() const;
+            const QString &getInput() const;
+            const QString &getExpectedOutput() const;
             bool isPublic() const;
 
         private:
