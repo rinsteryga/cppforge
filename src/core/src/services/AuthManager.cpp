@@ -1,4 +1,5 @@
 #include "../../include/services/AuthManager.hpp"
+
 #include "../../include/utils/security/PasswordHashGenerator.hpp"
 
 #include <chrono>
@@ -6,12 +7,15 @@
 namespace cppforge::services
 {
     AuthManager::AuthManager(std::unique_ptr<repositories::IUserRepository> userRepository, QObject *parent)
-        : QObject(parent), userRepository_(std::move(userRepository)) {}
+        : QObject(parent), userRepository_(std::move(userRepository))
+    {
+    }
 
     bool AuthManager::login(const QString &email, const QString &password)
     {
         auto userOpt = userRepository_->findByEmail(email);
-        if (!userOpt.has_value()) {
+        if (!userOpt.has_value())
+        {
             userOpt = userRepository_->findByUsername(email);
         }
 
@@ -31,9 +35,9 @@ namespace cppforge::services
             return false;
 
         const QString hash = cppforge::utils::security::PasswordHashGenerator::generate(password);
-        
+
         cppforge::entities::User newUser(0, username, email, hash, std::chrono::system_clock::now());
-        
+
         return userRepository_->save(newUser);
     }
-}
+} // namespace cppforge::services
