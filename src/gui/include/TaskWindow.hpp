@@ -59,12 +59,10 @@ private:
     std::unique_ptr<TaskManager> taskManager_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
     
-    // Основные элементы
     QTabWidget* tabWidget_;
     QWidget* theoryTab_;
     QWidget* practiceTab_;
     
-    // Вкладка "Теория"
     QComboBox* theorySelector_;
     QTextBrowser* theoryDisplay_;
     QPushButton* prevTheoryButton_;
@@ -73,7 +71,6 @@ private:
     QStringList theoryIds_;
     int currentTheoryIndex_;
     
-    // Вкладка "Практика"
     QSplitter* practiceSplitter_;
     QWidget* taskPanel_;
     QLabel* taskTitle_;
