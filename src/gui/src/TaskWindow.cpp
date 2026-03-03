@@ -119,24 +119,20 @@ void TaskWindow::setupUI() {
     setAttribute(Qt::WA_TranslucentBackground);
     setObjectName("TaskWindow");
     
-    // Основной контейнер
     auto mainContainer = new QWidget(this);
     mainContainer->setObjectName("mainContainer");
     
     auto mainLayout = new QVBoxLayout(mainContainer);
     mainLayout->setContentsMargins(30, 30, 30, 30);
     
-    // Вкладки
     tabWidget_ = new QTabWidget();
     tabWidget_->setObjectName("tabWidget");
     
-    // ========== ВКЛАДКА "ТЕОРИЯ" ==========
     theoryTab_ = new QWidget();
     auto theoryLayout = new QVBoxLayout(theoryTab_);
     theoryLayout->setContentsMargins(20, 20, 20, 20);
     theoryLayout->setSpacing(15);
     
-    // Верхняя панель выбора раздела теории
     auto theoryTopPanel = new QHBoxLayout();
     
     auto theoryLabel = new QLabel("Раздел:");
@@ -150,12 +146,10 @@ void TaskWindow::setupUI() {
     theoryTopPanel->addWidget(theorySelector_);
     theoryTopPanel->addStretch();
     
-    // Область отображения теории
     theoryDisplay_ = new QTextBrowser();
     theoryDisplay_->setObjectName("theoryDisplay");
     theoryDisplay_->setOpenExternalLinks(true);
     
-    // Нижняя панель навигации
     auto theoryBottomPanel = new QHBoxLayout();
     
     prevTheoryButton_ = new QPushButton("← Предыдущая");
@@ -180,12 +174,10 @@ void TaskWindow::setupUI() {
     theoryLayout->addWidget(theoryDisplay_, 1);
     theoryLayout->addLayout(theoryBottomPanel);
     
-    // ========== ВКЛАДКА "ПРАКТИКА" ==========
     practiceTab_ = new QWidget();
     auto practiceLayout = new QVBoxLayout(practiceTab_);
     practiceLayout->setContentsMargins(20, 20, 20, 20);
     
-    // Верхняя панель выбора задания
     auto practiceTopPanel = new QHBoxLayout();
     
     auto taskLabel = new QLabel("Задание:");
@@ -199,10 +191,8 @@ void TaskWindow::setupUI() {
     practiceTopPanel->addWidget(taskSelector_);
     practiceTopPanel->addStretch();
     
-    // Основной сплиттер для практики
     practiceSplitter_ = new QSplitter(Qt::Horizontal);
     
-    // Левая панель - условие задачи
     taskPanel_ = new QWidget();
     taskPanel_->setObjectName("taskPanel");
     auto taskPanelLayout = new QVBoxLayout(taskPanel_);
@@ -222,14 +212,12 @@ void TaskWindow::setupUI() {
     taskPanelLayout->addWidget(taskDescription_);
     taskPanelLayout->addStretch();
     
-    // Правая панель - компилятор
     auto compilerPanel = new QWidget();
     compilerPanel->setObjectName("compilerPanel");
     auto compilerLayout = new QVBoxLayout(compilerPanel);
     compilerLayout->setContentsMargins(20, 20, 20, 20);
     compilerLayout->setSpacing(15);
     
-    // Редактор кода
     auto codeLabel = new QLabel("Ваш код:");
     codeLabel->setObjectName("codeLabel");
     
@@ -237,7 +225,6 @@ void TaskWindow::setupUI() {
     codeEditor_->setObjectName("codeEditor");
     codeEditor_->setFont(QFont("Consolas", 11));
     
-    // Ввод/вывод
     auto ioLayout = new QHBoxLayout();
     
     auto inputWidget = new QWidget();
@@ -268,7 +255,6 @@ void TaskWindow::setupUI() {
     ioLayout->addWidget(inputWidget);
     ioLayout->addWidget(outputWidget);
     
-    // Кнопки управления
     auto buttonLayout = new QHBoxLayout();
     
     runButton_ = new QPushButton("Запустить");
@@ -288,33 +274,27 @@ void TaskWindow::setupUI() {
     buttonLayout->addStretch();
     buttonLayout->addWidget(resultLabel_);
     
-    // Собираем правую панель
     compilerLayout->addWidget(codeLabel);
     compilerLayout->addWidget(codeEditor_, 3);
     compilerLayout->addLayout(ioLayout);
     compilerLayout->addLayout(buttonLayout);
     
-    // Настраиваем сплиттер
     practiceSplitter_->addWidget(taskPanel_);
     practiceSplitter_->addWidget(compilerPanel);
     practiceSplitter_->setSizes({400, 800});
     
-    // Собираем вкладку практики
     practiceLayout->addLayout(practiceTopPanel);
     practiceLayout->addWidget(practiceSplitter_, 1);
     
-    // Добавляем вкладки
     tabWidget_->addTab(theoryTab_, "📚 Теория");
     tabWidget_->addTab(practiceTab_, "💻 Практика");
     
     mainLayout->addWidget(tabWidget_);
     
-    // Контейнер с отступами
     auto containerLayout = new QVBoxLayout(this);
     containerLayout->setContentsMargins(20, 20, 20, 20);
     containerLayout->addWidget(mainContainer);
     
-    // Стили
     setStyleSheet(R"(
         #TaskWindow {
             background-color: transparent;
@@ -501,7 +481,6 @@ void TaskWindow::setupUI() {
 void TaskWindow::setupConnections() {
     connect(tabWidget_, &QTabWidget::currentChanged, this, &TaskWindow::onTabChanged);
     
-    // Теория
     connect(theorySelector_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &TaskWindow::onTheorySelected);
     connect(prevTheoryButton_, &QPushButton::clicked, this, [this]() {
@@ -517,13 +496,11 @@ void TaskWindow::setupConnections() {
         }
     });
     
-    // Практика
     connect(taskSelector_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &TaskWindow::onTaskSelected);
     connect(runButton_, &QPushButton::clicked, this, &TaskWindow::onRunCode);
     connect(checkButton_, &QPushButton::clicked, this, &TaskWindow::onCheckSolution);
     
-    // Компилятор
     connect(compiler_, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, &TaskWindow::onCompilationFinished);
     connect(compiler_, &QProcess::readyReadStandardOutput,
@@ -542,7 +519,6 @@ void TaskWindow::loadModule(int moduleId) {
         return;
     }
     
-    // Заполняем теорию
     theoryIds_.clear();
     if (!module.authorText.isEmpty()) {
         theoryIds_.append("author_intro");
@@ -562,7 +538,6 @@ void TaskWindow::loadModule(int moduleId) {
     currentTheoryIndex_ = 0;
     updateTheoryContent();
     
-    // Заполняем задания
     taskSelector_->clear();
     for (const auto& task : module.tasks) {
         QString difficultyIcon = task.difficulty == "easy" ? "🟢" : 
@@ -610,16 +585,13 @@ void TaskWindow::updateTheoryContent() {
     Module module = taskManager_->getModule(currentModuleId_);
     QString theoryId = theoryIds_[currentTheoryIndex_];
     
-    // Обновляем селектор
     theorySelector_->setCurrentIndex(currentTheoryIndex_);
     
-    // Обновляем кнопки навигации
     prevTheoryButton_->setEnabled(currentTheoryIndex_ > 0);
     nextTheoryButton_->setEnabled(currentTheoryIndex_ < theoryIds_.size() - 1);
     theoryPageLabel_->setText(QString("Страница %1/%2")
         .arg(currentTheoryIndex_ + 1).arg(theoryIds_.size()));
     
-    // Отображаем контент
     if (theoryId == "author_intro" && !module.authorText.isEmpty()) {
         theoryDisplay_->setPlainText(module.authorText);
     } else {
@@ -635,7 +607,6 @@ void TaskWindow::updateTheoryContent() {
         }
     }
     
-    // Скроллим вверх
     theoryDisplay_->verticalScrollBar()->setValue(0);
 }
 
@@ -786,7 +757,6 @@ void TaskWindow::onCompilationFinished(int exitCode, QProcess::ExitStatus exitSt
 }
 
 void TaskWindow::onProcessOutput() {
-    // Дополнительная обработка вывода
 }
 
 void TaskWindow::saveCurrentCode() {
@@ -797,7 +767,6 @@ void TaskWindow::saveCurrentCode() {
 }
 
 void TaskWindow::loadSavedCode() {
-    // Загружается в updateTaskContent
 }
 
 int TaskWindow::calculateModuleProgress(int moduleId) {
