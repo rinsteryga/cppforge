@@ -13,18 +13,15 @@ TaskManager& TaskManager::instance() {
 }
 
 bool TaskManager::loadTasks(const QString& filePath) {
-    // Устанавливаем кодировку UTF-8 для корректного отображения русских символов
     QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
     
     qDebug() << "=== TaskManager: Loading tasks from ===";
     qDebug() << "Path:" << filePath;
     
-    // Проверяем существование файла
     bool fileExists = QFile::exists(filePath);
     qDebug() << "File exists:" << fileExists;
     
     if (!fileExists) {
-        // Пробуем найти файл в разных местах
         QStringList alternativePaths;
         alternativePaths << ":/tasks/tasks.json"
                         << ":/resources/tasks.json"
@@ -54,7 +51,6 @@ bool TaskManager::loadTasks(const QString& filePath) {
     
     qDebug() << "File size:" << data.size() << "bytes";
     
-    // Пробуем определить кодировку и конвертировать если нужно
     QTextCodec *codec = QTextCodec::codecForName("UTF-8");
     QString textData = codec->toUnicode(data);
     QByteArray utf8Data = textData.toUtf8();
@@ -79,7 +75,6 @@ bool TaskManager::loadTasks(const QString& filePath) {
     QJsonObject root = doc.object();
     qDebug() << "JSON root keys:" << root.keys();
     
-    // Парсим модули
     if (!root.contains("modules")) {
         qDebug() << "JSON missing 'modules' key";
         return false;
@@ -126,13 +121,11 @@ Module TaskManager::parseModule(const QJsonObject& obj) {
     
     qDebug() << "  Parsing module ID:" << module.id << "Title:" << module.title;
     
-    // Парсим авторский текст если есть
     if (obj.contains("author_text")) {
         module.authorText = obj["author_text"].toString();
         qDebug() << "    Found author text, length:" << module.authorText.length();
     }
     
-    // Загружаем теорию
     if (obj.contains("theory") && obj["theory"].isArray()) {
         QJsonArray theoryArray = obj["theory"].toArray();
         qDebug() << "    Theory array size:" << theoryArray.size();
@@ -150,7 +143,6 @@ Module TaskManager::parseModule(const QJsonObject& obj) {
         qDebug() << "    No theory array found";
     }
     
-    // Загружаем задания
     if (obj.contains("tasks") && obj["tasks"].isArray()) {
         QJsonArray tasksArray = obj["tasks"].toArray();
         qDebug() << "    Tasks array size:" << tasksArray.size();
