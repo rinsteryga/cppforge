@@ -76,6 +76,8 @@ CREATE TABLE coding_tasks (
     title TEXT NOT NULL,
     description TEXT,
     initial_code TEXT,
+    whitelist TEXT,
+    blacklist TEXT,
     time_limit INT DEFAULT 2000,
     memory_limit INT DEFAULT 256
 );
