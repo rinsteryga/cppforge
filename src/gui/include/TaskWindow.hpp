@@ -1,0 +1,95 @@
+#pragma once
+
+#include <QWidget>
+#include <QTextEdit>
+#include <QPushButton>
+#include <QLabel>
+#include <QComboBox>
+#include <QSplitter>
+#include <QTextBrowser>
+#include <QProcess>
+#include <QMap>
+#include <QTabWidget>
+#include <QPropertyAnimation>
+#include <memory>
+
+class TaskManager;
+
+class TaskWindow : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit TaskWindow(QWidget *parent = nullptr);
+    ~TaskWindow();
+
+    void loadModule(int moduleId);
+    void fadeIn();
+    void fadeOut();
+
+signals:
+    void moduleProgressUpdated(int moduleId, int progress);
+    void windowClosed();
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
+    void showEvent(QShowEvent* event) override;
+
+private slots:
+    void onTabChanged(int index);
+    void onTaskSelected(int index);
+    void onTheorySelected(int index);
+    void onRunCode();
+    void onCheckSolution();
+    void onCompilationFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void onProcessOutput();
+
+private:
+    void setupUI();
+    void setupConnections();
+    void loadTask(int taskId);
+    void updateTaskContent();
+    void updateTheoryContent();
+    void runCode(const QString& code, const QString& input);
+    void saveCurrentCode();
+    void loadSavedCode();
+    int calculateModuleProgress(int moduleId);
+    void unlockNextModule(int moduleId);
+
+    std::unique_ptr<TaskManager> taskManager_;
+    std::unique_ptr<QPropertyAnimation> transitionAnimation_;
+    
+    // Основные элементы
+    QTabWidget* tabWidget_;
+    QWidget* theoryTab_;
+    QWidget* practiceTab_;
+    
+    // Вкладка "Теория"
+    QComboBox* theorySelector_;
+    QTextBrowser* theoryDisplay_;
+    QPushButton* prevTheoryButton_;
+    QPushButton* nextTheoryButton_;
+    QLabel* theoryPageLabel_;
+    QStringList theoryIds_;
+    int currentTheoryIndex_;
+    
+    // Вкладка "Практика"
+    QSplitter* practiceSplitter_;
+    QWidget* taskPanel_;
+    QLabel* taskTitle_;
+    QLabel* taskDescription_;
+    QComboBox* taskSelector_;
+    QTextEdit* codeEditor_;
+    QTextEdit* inputField_;
+    QTextEdit* outputField_;
+    QPushButton* runButton_;
+    QPushButton* checkButton_;
+    QLabel* resultLabel_;
+    
+    QProcess* compiler_;
+    QString currentCode_;
+    int currentModuleId_;
+    int currentTaskId_;
+    
+    QMap<QString, QString> savedSolutions_;
+};
