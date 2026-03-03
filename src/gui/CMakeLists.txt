@@ -4,17 +4,17 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 
+file(GLOB_RECURSE GUI_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+)
+
+file(GLOB_RECURSE GUI_HEADERS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+)
+
 add_library(cppforge_gui STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/AuthWindow.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/SignUpWindow.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/CustomTitleBar.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow.hpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AuthWindow.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SignUpWindow.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/CustomTitleBar.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow.cpp
-
+    ${GUI_SOURCES}
+    ${GUI_HEADERS}
     resources/resources.qrc
 )
 
