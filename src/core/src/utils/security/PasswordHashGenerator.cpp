@@ -14,4 +14,4 @@ namespace cppforge::utils::security
     {
         return generate(password) == hash;
     }
-}
+} // namespace cppforge::utils::security

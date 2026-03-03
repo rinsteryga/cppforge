@@ -2,9 +2,10 @@
 
 #include "../../core/include/repositories/IUserRepository.hpp"
 
-#include <optional>
 #include <QString>
 #include <QtSql/QSqlDatabase>
+
+#include <optional>
 
 namespace cppforge
 {
@@ -15,12 +16,12 @@ namespace cppforge
         public:
             explicit PgUserRepository(QSqlDatabase &database);
 
-            std::optional<entities::User> findByEmail(const QString& email) const override;
-            std::optional<entities::User> findByUsername(const QString& username) const override;
-            bool save(entities::User user) override;
+            std::optional<entities::User> findByEmail(const QString &email) const override;
+            std::optional<entities::User> findByUsername(const QString &username) const override;
+            bool save(const entities::User &user) override;
 
         private:
-            QSqlDatabase& database_;
+            QSqlDatabase &database_;
         };
     } // namespace repositories
 } // namespace cppforge

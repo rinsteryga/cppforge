@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstdint>
 #include <QString>
+
+#include <cstdint>
 
 namespace cppforge
 {
@@ -12,8 +13,7 @@ namespace cppforge
         class UserProgress
         {
         public:
-            UserProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId,
-                         bool isCompleted);
+            UserProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted);
 
             uint64_t getUserId() const;
             uint64_t getModuleId() const;
@@ -21,7 +21,7 @@ namespace cppforge
             bool isCompleted() const;
 
             void setCompleted(bool completed);
-            
+
         private:
             uint64_t userId_;
             uint64_t moduleId_;

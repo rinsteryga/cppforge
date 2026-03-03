@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstdint>
 #include <QString>
+
+#include <cstdint>
 
 namespace cppforge
 {
@@ -13,8 +14,8 @@ namespace cppforge
             Module(uint64_t id, const QString &name, const QString &description);
 
             uint64_t getId() const;
-            QString getName() const;
-            QString getDescription() const;
+            const QString &getName() const;
+            const QString &getDescription() const;
 
         private:
             uint64_t id_;

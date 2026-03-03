@@ -1,15 +1,18 @@
 #include "../../include/entities/CodingTask.hpp"
+
 #include "../../include/entities/TestCase.hpp"
 
 namespace cppforge::entities
 {
-    CodingTask::CodingTask(uint64_t id, uint64_t lessonId, const QString &title,
-                           const QString &description, const QString &initialCode,
-                           const std::set<TestCase> &testCases, int32_t timeLimit,
-                           int32_t memoryLimit)
-        : id_(id), lessonId_(lessonId), title_(title), description_(description),
-          initialCode_(initialCode), testCases_(testCases), timeLimit_(timeLimit),
-          memoryLimit_(memoryLimit) {}
+    CodingTask::CodingTask(uint64_t id, uint64_t lessonId, const QString &title, const QString &description,
+                           const QString &initialCode, const std::set<TestCase> &testCases, int32_t timeLimit,
+                           int32_t memoryLimit, const std::optional<std::set<QString>> &whitelist,
+                           const std::optional<std::set<QString>> &blacklist)
+        : id_(id), lessonId_(lessonId), title_(title), description_(description), initialCode_(initialCode),
+          testCases_(testCases), timeLimit_(timeLimit), memoryLimit_(memoryLimit), whitelist_(whitelist),
+          blacklist_(blacklist)
+    {
+    }
 
     uint64_t CodingTask::getId() const
     {
@@ -21,22 +24,22 @@ namespace cppforge::entities
         return lessonId_;
     }
 
-    QString CodingTask::getTitle() const
+    const QString &CodingTask::getTitle() const
     {
         return title_;
     }
 
-    QString CodingTask::getDescription() const
+    const QString &CodingTask::getDescription() const
     {
         return description_;
     }
 
-    QString CodingTask::getInitialCode() const
+    const QString &CodingTask::getInitialCode() const
     {
         return initialCode_;
     }
 
-    std::set<TestCase> CodingTask::getTestCases() const
+    const std::set<TestCase> &CodingTask::getTestCases() const
     {
         return testCases_;
     }
@@ -50,4 +53,14 @@ namespace cppforge::entities
     {
         return memoryLimit_;
     }
-}
+
+    const std::optional<std::set<QString>> &CodingTask::getWhitelist() const
+    {
+        return whitelist_;
+    }
+
+    const std::optional<std::set<QString>> &CodingTask::getBlacklist() const
+    {
+        return blacklist_;
+    }
+} // namespace cppforge::entities

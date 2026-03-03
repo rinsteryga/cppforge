@@ -1,13 +1,12 @@
 #pragma once
 
-#include "../repositories/IUserRepository.hpp"
 #include "../entities/User.hpp"
+#include "../repositories/IUserRepository.hpp"
 
 #include <QObject>
 #include <QString>
-#include <QString>
-#include <memory>
 
+#include <memory>
 
 namespace cppforge
 {
@@ -18,7 +17,8 @@ namespace cppforge
             Q_OBJECT
 
         public:
-            explicit AuthManager(std::unique_ptr<repositories::IUserRepository> userRepository, QObject *parent = nullptr);
+            explicit AuthManager(std::unique_ptr<repositories::IUserRepository> userRepository,
+                                 QObject *parent = nullptr);
 
             bool login(const QString &email, const QString &password);
             void logout() { currentUser_.reset(); }

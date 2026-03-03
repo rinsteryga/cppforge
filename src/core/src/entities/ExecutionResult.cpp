@@ -2,10 +2,12 @@
 
 namespace cppforge::entities
 {
-    ExecutionResult::ExecutionResult(uint64_t submissionId, bool isSuccess, const QString &output, const QString &errors,
-                                     int32_t timeMs, uint32_t passedTestsCount)
-        : submissionId_(submissionId), isSuccess_(isSuccess), output_(output), errors_(errors),
-          timeMs_(timeMs), passedTestsCount_(passedTestsCount) {}
+    ExecutionResult::ExecutionResult(uint64_t submissionId, bool isSuccess, const QString &output,
+                                     const QString &errors, int32_t timeMs, uint32_t passedTestsCount)
+        : submissionId_(submissionId), isSuccess_(isSuccess), output_(output), errors_(errors), timeMs_(timeMs),
+          passedTestsCount_(passedTestsCount)
+    {
+    }
 
     uint64_t ExecutionResult::getSubmissionId() const
     {
@@ -17,12 +19,12 @@ namespace cppforge::entities
         return isSuccess_;
     }
 
-    QString ExecutionResult::getOutput() const
+    const QString &ExecutionResult::getOutput() const
     {
         return output_;
     }
 
-    QString ExecutionResult::getErrors() const
+    const QString &ExecutionResult::getErrors() const
     {
         return errors_;
     }
@@ -36,4 +38,4 @@ namespace cppforge::entities
     {
         return passedTestsCount_;
     }
-}
+} // namespace cppforge::entities

@@ -1,37 +1,18 @@
-add_library(cppforge_core STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/User.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/Achievement.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/Module.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/Lesson.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/CodingTask.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/TestCase.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/ExecutionResult.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/UserProgress.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/entities/Submission.hpp
+find_package(Qt5 REQUIRED COMPONENTS Core Sql Concurrent)
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/repositories/IUserRepository.hpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/services/AuthManager.hpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/security/PasswordHashGenerator.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/utils/EnvLoader.hpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/User.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Achievement.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Module.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Lesson.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/CodingTask.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/TestCase.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/ExecutionResult.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/UserProgress.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/entities/Submission.cpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/AuthManager.cpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/security/PasswordHashGenerator.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/EnvLoader.cpp
-
+file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
+
+file(GLOB_RECURSE CORE_HEADERS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+)
+
+add_library(cppforge_core STATIC
+    ${CORE_SOURCES}
+    ${CORE_HEADERS}
+)
+
 
 target_include_directories(cppforge_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -42,4 +23,5 @@ target_link_libraries(cppforge_core
     PRIVATE 
     Qt5::Core
     Qt5::Sql
+    Qt5::Concurrent
 )
