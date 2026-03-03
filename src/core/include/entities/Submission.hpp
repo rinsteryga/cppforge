@@ -1,8 +1,9 @@
 #pragma once
 
-#include <cstdint>
-#include <QString>
 #include <QDateTime>
+#include <QString>
+
+#include <cstdint>
 
 namespace cppforge
 {
@@ -11,16 +12,15 @@ namespace cppforge
         class Submission
         {
         public:
-            Submission(uint64_t id, uint64_t userId, uint64_t moduleId,
-                       uint64_t codingTaskId, const QString &sourceCode, 
-                       const QDateTime &submittedAt, bool isSuccess);
+            Submission(uint64_t id, uint64_t userId, uint64_t moduleId, uint64_t codingTaskId,
+                       const QString &sourceCode, const QDateTime &submittedAt, bool isSuccess);
 
             uint64_t getId() const;
             uint64_t getUserId() const;
             uint64_t getModuleId() const;
             uint64_t getCodingTaskId() const;
-            QString getSourceCode() const;
-            QDateTime getSubmittedAt() const;
+            const QString &getSourceCode() const;
+            const QDateTime &getSubmittedAt() const;
             bool isSuccess() const;
 
         private:
