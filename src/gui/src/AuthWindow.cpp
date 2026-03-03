@@ -331,7 +331,6 @@ void AuthWindow::setupLayout()
     mainLayout_->addWidget(centerContainer.release());
 }
 
-// ИСПРАВЛЕННЫЙ МЕТОД onLoginClicked
 void AuthWindow::onLoginClicked()
 {
     QString usernameOrEmail = usernameInput_->text();

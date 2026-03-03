@@ -25,7 +25,7 @@ public:
 
 signals:
     void loginSuccessful();
-    void switchToMainMenu(); // <-- ДОБАВЛЕНО
+    void switchToMainMenu();
 
 private:
     void setupUI();
