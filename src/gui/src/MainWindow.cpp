@@ -1,26 +1,26 @@
 #include "MainWindow.hpp"
+
 #include "CustomTitleBar.hpp"
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QFrame>
-#include <QLabel>
-#include <QVariant>
-#include <QPushButton>
-#include <QProgressBar>
-#include <QSpacerItem>
-#include <QScreen>
-#include <QTimer>
-#include <QPainter>
-#include <QStyleOption>
-#include <QFont>
 #include <QDebug>
+#include <QFont>
+#include <QFrame>
 #include <QGuiApplication>
+#include <QHBoxLayout>
 #include <QIcon>
+#include <QLabel>
+#include <QPainter>
+#include <QProgressBar>
+#include <QPushButton>
+#include <QScreen>
 #include <QScrollArea>
+#include <QSpacerItem>
+#include <QStyleOption>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QVariant>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent)
+MainWindow::MainWindow(QWidget *parent) : QWidget(parent)
 {
     setupUI();
     setWindowOpacity(0.0);
@@ -41,7 +41,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
 void MainWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen) {
+    if (screen)
+    {
         QRect availableGeometry = screen->availableGeometry();
         int x = availableGeometry.x() + (availableGeometry.width() - width()) / 2;
         int y = availableGeometry.y() + (availableGeometry.height() - height()) / 2;
@@ -88,15 +89,18 @@ void MainWindow::setupLeftPanel()
 
     auto logoIcon = std::make_unique<QLabel>();
     logoIcon->setAlignment(Qt::AlignCenter);
-    
+
     QPixmap logoPixmap(":/icons/main_logo.ico");
-    
-    if (!logoPixmap.isNull()) {
+
+    if (!logoPixmap.isNull())
+    {
         logoPixmap = logoPixmap.scaled(80, 80, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         logoIcon->setPixmap(logoPixmap);
         logoIcon->setFixedSize(80, 80);
         qDebug() << "MainWindow: Logo loaded";
-    } else {
+    }
+    else
+    {
         logoIcon->setText("CppForge");
         logoIcon->setStyleSheet("color: #62639b; font-size: 20px; font-weight: bold;");
         logoIcon->setFixedSize(80, 80);
@@ -108,7 +112,8 @@ void MainWindow::setupLeftPanel()
     auto profileBtn = std::make_unique<QPushButton>("Профиль");
 
     QFont btnFont("Roboto", 14, QFont::Bold);
-    for (auto btn : {learnBtn.get(), ratingBtn.get(), profileBtn.get()}) {
+    for (auto btn : {learnBtn.get(), ratingBtn.get(), profileBtn.get()})
+    {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setFixedHeight(50);
@@ -135,7 +140,7 @@ void MainWindow::setupCenterPanel()
     auto eLayout = std::make_unique<QVBoxLayout>();
     eLayout->setContentsMargins(25, 25, 25, 25);
     eLayout->setSpacing(15);
-    
+
     auto eventTitle = std::make_unique<QLabel>("События");
     eventTitle->setProperty("class", "section-title");
     QFont eventFont("Roboto", 20, QFont::Bold);
@@ -175,23 +180,24 @@ void MainWindow::setupCenterPanel()
     footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget.get());
     footerLinksLayout->setContentsMargins(0, 20, 0, 0);
     footerLinksLayout->setSpacing(20);
-    
-    auto createLink = [](const QString& text) {
+
+    auto createLink = [](const QString &text)
+    {
         auto btn = std::make_unique<QPushButton>(text);
         btn->setProperty("class", "footer-link");
         btn->setFlat(true);
         btn->setCursor(Qt::PointingHandCursor);
         return btn;
     };
-    
+
     auto aboutBtnPtr = createLink("О CppForge");
     auto contactsBtnPtr = createLink("Контакты");
     auto privacyBtnPtr = createLink("Конфиденциальность");
-    
+
     aboutBtn = aboutBtnPtr.get();
     contactsBtn = contactsBtnPtr.get();
     privacyBtn = privacyBtnPtr.get();
-    
+
     footerLinksLayout->addWidget(aboutBtnPtr.release());
     footerLinksLayout->addWidget(contactsBtnPtr.release());
     footerLinksLayout->addWidget(privacyBtnPtr.release());
@@ -227,7 +233,8 @@ void MainWindow::setupRightPanel()
     moduleProgressLabels.clear();
     moduleButtons.clear();
 
-    for (int i = 1; i <= 14; ++i) {
+    for (int i = 1; i <= 14; ++i)
+    {
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", QVariant("card"));
         auto mLayout = std::make_unique<QVBoxLayout>();
@@ -246,14 +253,15 @@ void MainWindow::setupRightPanel()
         progressLabel->setProperty("class", "progress-text");
 
         bool isLocked = (i != 1);
-        
+
         auto button = std::make_unique<QPushButton>(isLocked ? "Заблокировано" : "Далее →");
         button->setObjectName("moduleBtn");
         button->setCursor(Qt::PointingHandCursor);
         button->setFixedHeight(40);
         button->setFont(btnFont);
-        
-        if (isLocked) {
+
+        if (isLocked)
+        {
             button->setEnabled(false);
         }
 
@@ -266,7 +274,7 @@ void MainWindow::setupRightPanel()
         moduleProgressBars.append(progress.get());
         moduleProgressLabels.append(progressLabel.get());
         moduleButtons.append(button.get());
-        
+
         modulesLayout->addWidget(moduleCard.get());
         moduleCards.push_back(std::move(moduleCard));
     }
@@ -284,7 +292,7 @@ void MainWindow::setupUI()
     auto mainVerticalLayout = std::make_unique<QVBoxLayout>();
     mainVerticalLayout->setContentsMargins(0, 0, 0, 0);
     mainVerticalLayout->setSpacing(0);
-    
+
     mainVerticalLayout->addWidget(customTitleBar_.get());
 
     auto contentContainer = std::make_unique<QWidget>();
@@ -293,9 +301,9 @@ void MainWindow::setupUI()
     containerLayout->setContentsMargins(30, 30, 30, 30);
     containerLayout->setSpacing(30);
 
-    setupLeftPanel();                          
-    setupRightPanel();                         
-    setupCenterPanel();                        
+    setupLeftPanel();
+    setupRightPanel();
+    setupCenterPanel();
 
     auto eventWidget = std::make_unique<QWidget>();
     eventWidget->setLayout(centerPanelLayout_.release());
