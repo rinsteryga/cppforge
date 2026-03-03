@@ -2,11 +2,11 @@
 
 #include "Achievement.hpp"
 
-#include <cstdint>
-#include <set>
-#include <chrono>
 #include <QString>
 
+#include <chrono>
+#include <cstdint>
+#include <set>
 
 namespace cppforge
 {
@@ -15,23 +15,24 @@ namespace cppforge
         class User
         {
         public:
-            User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash, const std::chrono::system_clock::time_point &createdAt);
+            User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash,
+                 const std::chrono::system_clock::time_point &createdAt);
             User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash);
 
             uint64_t getId() const;
-            QString getUsername() const;
-            QString getEmail() const;
-            QString getPasswordHash() const;
+            const QString &getUsername() const;
+            const QString &getEmail() const;
+            const QString &getPasswordHash() const;
 
-            QString getAvatarPath() const;
-            QString getBio() const;
-            std::chrono::system_clock::time_point getCreatedAt() const;
+            const QString &getAvatarPath() const;
+            const QString &getBio() const;
+            const std::chrono::system_clock::time_point &getCreatedAt() const;
 
-            std::set<uint64_t> getAvailableLevelsIds() const;
-            std::set<uint64_t> getCompletedLevelsIds() const;
-            std::set<uint64_t> getLockedLevelsIds() const;
+            const std::set<uint64_t> &getAvailableLevelsIds() const;
+            const std::set<uint64_t> &getCompletedLevelsIds() const;
+            const std::set<uint64_t> &getLockedLevelsIds() const;
 
-            std::set<cppforge::entities::Achievement> getAchievements() const;
+            const std::set<cppforge::entities::Achievement> &getAchievements() const;
 
             void addAchievement(const cppforge::entities::Achievement &achievement);
             void removeAchievement(const cppforge::entities::Achievement &achievement);
