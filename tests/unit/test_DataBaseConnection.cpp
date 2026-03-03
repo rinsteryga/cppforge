@@ -1,17 +1,19 @@
-#include "../../src/core/include/utils/EnvLoader.hpp"
 #include "../../src/core/include/entities/User.hpp"
+#include "../../src/core/include/utils/EnvLoader.hpp"
 #include "../../src/data/repositories/PgUserRepository.hpp"
 
-#include <QtTest>
 #include <QtSql/QSqlDatabase>
-#include <QtSql/QSqlQuery>
 #include <QtSql/QSqlError>
+#include <QtSql/QSqlQuery>
+#include <QtTest>
 
-namespace cppforge {
-    namespace data {
+namespace cppforge
+{
+    namespace data
+    {
         QSqlDatabase connectDatabase();
     }
-}
+} // namespace cppforge
 
 class TestDataBaseConnection : public QObject
 {
@@ -21,7 +23,7 @@ private:
     void test_DataBaseConnection()
     {
         db_ = cppforge::data::connectDatabase();
-        
+
         QVERIFY(db_.isValid());
         QVERIFY(db_.isOpen());
         QCOMPARE(db_.databaseName(), QString("cppforge"));
@@ -32,9 +34,10 @@ private:
         QVERIFY(db_.isOpen());
 
         cppforge::repositories::PgUserRepository repo(db_);
-        
-        cppforge::entities::User newUser(0, "testuser_repo", "testuser_repo@example.com", "fakehash123", std::chrono::system_clock::now());
-        
+
+        cppforge::entities::User newUser(0, "testuser_repo", "testuser_repo@example.com", "fakehash123",
+                                         std::chrono::system_clock::now());
+
         repo.save(newUser);
 
         auto fetchedUser = repo.findByEmail("testuser_repo@example.com");
@@ -47,7 +50,8 @@ private:
 
     void cleanupTestCase()
     {
-        if (db_.isOpen()) {
+        if (db_.isOpen())
+        {
             db_.close();
         }
     }
