@@ -1,9 +1,9 @@
 #include "../core/include/utils/EnvLoader.hpp"
 
+#include <QDebug>
+#include <QProcessEnvironment>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
-#include <QProcessEnvironment>
-#include <QDebug>
 
 namespace cppforge
 {
@@ -11,8 +11,10 @@ namespace cppforge
     {
         QSqlDatabase connectDatabase()
         {
-            if (!cppforge::utils::loadEnvFile(".env")) {
-                if (!cppforge::utils::loadEnvFile("../.env")) {
+            if (!cppforge::utils::loadEnvFile(".env"))
+            {
+                if (!cppforge::utils::loadEnvFile("../.env"))
+                {
                     cppforge::utils::loadEnvFile("../../.env");
                 }
             }
