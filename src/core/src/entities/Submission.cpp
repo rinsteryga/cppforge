@@ -4,8 +4,10 @@ namespace cppforge::entities
 {
     Submission::Submission(uint64_t id, uint64_t userId, uint64_t moduleId, uint64_t codingTaskId,
                            const QString &sourceCode, const QDateTime &submittedAt, bool isSuccess)
-        : id_(id), userId_(userId), moduleId_(moduleId), codingTaskId_(codingTaskId),
-          sourceCode_(sourceCode), submittedAt_(submittedAt), isSuccess_(isSuccess) {}
+        : id_(id), userId_(userId), moduleId_(moduleId), codingTaskId_(codingTaskId), sourceCode_(sourceCode),
+          submittedAt_(submittedAt), isSuccess_(isSuccess)
+    {
+    }
 
     uint64_t Submission::getId() const
     {
@@ -27,12 +29,12 @@ namespace cppforge::entities
         return codingTaskId_;
     }
 
-    QString Submission::getSourceCode() const
+    const QString &Submission::getSourceCode() const
     {
         return sourceCode_;
     }
 
-    QDateTime Submission::getSubmittedAt() const
+    const QDateTime &Submission::getSubmittedAt() const
     {
         return submittedAt_;
     }
@@ -41,4 +43,4 @@ namespace cppforge::entities
     {
         return isSuccess_;
     }
-}
+} // namespace cppforge::entities

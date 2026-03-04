@@ -1,7 +1,8 @@
 #pragma once
 
-#include <QWidget>
 #include <QPropertyAnimation>
+#include <QWidget>
+
 #include <memory>
 #include <vector>
 
@@ -25,7 +26,7 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
-    void showEvent(QShowEvent* event) override;
+    void showEvent(QShowEvent *event) override;
 
 public slots:
     void fadeIn();
@@ -42,9 +43,9 @@ private:
     void setupUI();
     void setupWindowProperties();
     void setupTitleBar();
-    void setupLeftPanel();          
-    void setupCenterPanel();        
-    void setupRightPanel();     
+    void setupLeftPanel();
+    void setupCenterPanel();
+    void setupRightPanel();
     void setupStyles();
     void setupConnections();
     void centerWindow();
@@ -54,26 +55,26 @@ private:
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
     std::unique_ptr<QVBoxLayout> centerPanelLayout_;
     std::unique_ptr<TaskWindow> taskWindow_;
-    
+
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;
     std::unique_ptr<QFrame> dailyTaskCard;
     std::unique_ptr<QScrollArea> modulesScrollArea;
     std::unique_ptr<QWidget> modulesContainer;
     std::unique_ptr<QVBoxLayout> modulesLayout;
-    
+
     std::vector<std::unique_ptr<QFrame>> moduleCards;
-    
-    QList<QLabel*> moduleProgressLabels;
-    QList<QProgressBar*> moduleProgressBars;
-    QList<QPushButton*> moduleButtons;
+
+    QList<QLabel *> moduleProgressLabels;
+    QList<QProgressBar *> moduleProgressBars;
+    QList<QPushButton *> moduleButtons;
 
     std::unique_ptr<QHBoxLayout> footerLinksLayout;
-    QPushButton* aboutBtn;
-    QPushButton* contactsBtn;
-    QPushButton* privacyBtn;
-    QPushButton* learnBtn;
-    
+    QPushButton *aboutBtn;
+    QPushButton *contactsBtn;
+    QPushButton *privacyBtn;
+    QPushButton *learnBtn;
+
     bool isTransitioning_;
     int pendingModuleId_;
 };

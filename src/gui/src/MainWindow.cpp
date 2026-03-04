@@ -1,33 +1,31 @@
 #include "MainWindow.hpp"
+
 #include "CustomTitleBar.hpp"
 #include "TaskWindow.hpp"
 
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QFrame>
-#include <QLabel>
-#include <QVariant>
-#include <QPushButton>
-#include <QProgressBar>
-#include <QSpacerItem>
-#include <QScreen>
-#include <QTimer>
-#include <QPainter>
-#include <QStyleOption>
-#include <QFont>
 #include <QDebug>
-#include <QGuiApplication>
-#include <QIcon>
-#include <QScrollArea>
+#include <QFont>
+#include <QFrame>
 #include <QGraphicsDropShadowEffect>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
 #include <QGraphicsOpacityEffect>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QLabel>
+#include <QPainter>
+#include <QParallelAnimationGroup>
+#include <QProgressBar>
+#include <QPropertyAnimation>
+#include <QPushButton>
+#include <QScreen>
+#include <QScrollArea>
+#include <QSpacerItem>
+#include <QStyleOption>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QVariant>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent)
-    , isTransitioning_(false)
-    , pendingModuleId_(-1)
+MainWindow::MainWindow(QWidget *parent) : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1)
 {
     setupUI();
     setWindowOpacity(0.0);
@@ -45,10 +43,11 @@ void MainWindow::paintEvent(QPaintEvent *event)
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
 
-void MainWindow::showEvent(QShowEvent* event)
+void MainWindow::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
-    if (!isTransitioning_) {
+    if (!isTransitioning_)
+    {
         setWindowOpacity(0.0);
         fadeIn();
     }
@@ -57,7 +56,8 @@ void MainWindow::showEvent(QShowEvent* event)
 void MainWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen) {
+    if (screen)
+    {
         QRect availableGeometry = screen->availableGeometry();
         int x = availableGeometry.x() + (availableGeometry.width() - width()) / 2;
         int y = availableGeometry.y() + (availableGeometry.height() - height()) / 2;
@@ -67,10 +67,11 @@ void MainWindow::centerWindow()
 
 void MainWindow::fadeIn()
 {
-    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running) {
+    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
+    {
         transitionAnimation_->stop();
     }
-    
+
     setWindowOpacity(0.0);
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
@@ -82,35 +83,39 @@ void MainWindow::fadeIn()
 
 void MainWindow::fadeOut()
 {
-    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running) {
+    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
+    {
         transitionAnimation_->stop();
     }
-    
+
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(200);
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
     transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
-    
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() {
-        if (pendingModuleId_ != -1) {
-            if (!taskWindow_) {
-                taskWindow_ = std::make_unique<TaskWindow>();
-                connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated,
-                        this, &MainWindow::updateModuleProgress);
-                connect(taskWindow_.get(), &TaskWindow::windowClosed,
-                        this, &MainWindow::onTaskWindowClosed);
-            }
-            
-            taskWindow_->loadModule(pendingModuleId_);
-            taskWindow_->show();
-            taskWindow_->fadeIn();
-            
-            pendingModuleId_ = -1;
-            isTransitioning_ = false;
-        }
-    });
-    
+
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
+            [this]()
+            {
+                if (pendingModuleId_ != -1)
+                {
+                    if (!taskWindow_)
+                    {
+                        taskWindow_ = std::make_unique<TaskWindow>();
+                        connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this,
+                                &MainWindow::updateModuleProgress);
+                        connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
+                    }
+
+                    taskWindow_->loadModule(pendingModuleId_);
+                    taskWindow_->show();
+                    taskWindow_->fadeIn();
+
+                    pendingModuleId_ = -1;
+                    isTransitioning_ = false;
+                }
+            });
+
     transitionAnimation_->start();
 }
 
@@ -151,33 +156,37 @@ void MainWindow::setupLeftPanel()
     logoContainer->setObjectName("logoContainer");
     auto logoLayout = std::make_unique<QVBoxLayout>();
     logoLayout->setContentsMargins(0, 0, 0, 0);
-    
+
     auto logoIcon = std::make_unique<QLabel>();
     logoIcon->setAlignment(Qt::AlignCenter);
-    
+
     QPixmap logoPixmap(":/icons/main_logo.ico");
-    
-    if (!logoPixmap.isNull()) {
+
+    if (!logoPixmap.isNull())
+    {
         logoPixmap = logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         logoIcon->setPixmap(logoPixmap);
         logoIcon->setFixedSize(100, 100);
         qDebug() << "MainWindow: Logo loaded";
-    } else {
+    }
+    else
+    {
         logoIcon->setText("CppForge");
         logoIcon->setStyleSheet("color: #62639b; font-size: 24px; font-weight: bold;");
         logoIcon->setFixedSize(100, 100);
         qDebug() << "MainWindow: Logo not found, using text fallback";
     }
-    
+
     logoLayout->addWidget(logoIcon.release());
     logoContainer->setLayout(logoLayout.release());
-    
+
     learnBtn = new QPushButton("Учиться");
     auto ratingBtn = std::make_unique<QPushButton>("Рейтинг");
     auto profileBtn = std::make_unique<QPushButton>("Профиль");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
-    for (auto btn : {learnBtn, ratingBtn.get(), profileBtn.get()}) {
+    for (auto btn : {learnBtn, ratingBtn.get(), profileBtn.get()})
+    {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setFixedHeight(48);
@@ -192,7 +201,7 @@ void MainWindow::setupLeftPanel()
     layout->addWidget(ratingBtn.release());
     layout->addWidget(profileBtn.release());
     layout->addStretch();
-    
+
     sideBar->setLayout(layout.release());
 }
 
@@ -207,28 +216,28 @@ void MainWindow::setupCenterPanel()
     eventCard = std::make_unique<QFrame>();
     eventCard->setProperty("class", QVariant("card"));
     eventCard->setObjectName("eventCard");
-    
+
     auto shadowEffect = new QGraphicsDropShadowEffect();
     shadowEffect->setBlurRadius(20);
     shadowEffect->setColor(QColor(0, 0, 0, 15));
     shadowEffect->setOffset(0, 4);
     eventCard->setGraphicsEffect(shadowEffect);
-    
+
     auto eLayout = std::make_unique<QVBoxLayout>();
     eLayout->setContentsMargins(25, 25, 25, 25);
     eLayout->setSpacing(15);
-    
+
     auto eventTitle = std::make_unique<QLabel>("События");
     eventTitle->setProperty("class", "section-title");
     QFont eventFont("Roboto", 18, QFont::Bold);
     eventTitle->setFont(eventFont);
     eventTitle->setStyleSheet("color: #333;");
-    
+
     auto eventPlaceholder = std::make_unique<QLabel>("Нет предстоящих событий");
     eventPlaceholder->setObjectName("eventPlaceholder");
     eventPlaceholder->setAlignment(Qt::AlignCenter);
     eventPlaceholder->setFixedHeight(80);
-    
+
     eLayout->addWidget(eventTitle.release());
     eLayout->addWidget(eventPlaceholder.release());
     eLayout->addStretch();
@@ -238,19 +247,19 @@ void MainWindow::setupCenterPanel()
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", QVariant("card"));
     dailyTaskCard->setObjectName("dailyTaskCard");
-    
+
     auto shadowEffect2 = new QGraphicsDropShadowEffect();
     shadowEffect2->setBlurRadius(20);
     shadowEffect2->setColor(QColor(0, 0, 0, 15));
     shadowEffect2->setOffset(0, 4);
     dailyTaskCard->setGraphicsEffect(shadowEffect2);
-    
+
     auto dLayout = std::make_unique<QVBoxLayout>();
     dLayout->setContentsMargins(25, 25, 25, 25);
     dLayout->setSpacing(15);
 
     auto dailyHeader = std::make_unique<QHBoxLayout>();
-    
+
     auto dailyTitle = std::make_unique<QLabel>("Задание дня");
     QFont dailyTitleFont("Roboto", 18, QFont::Bold);
     dailyTitle->setFont(dailyTitleFont);
@@ -287,23 +296,24 @@ void MainWindow::setupCenterPanel()
     footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget.get());
     footerLinksLayout->setContentsMargins(5, 20, 5, 0);
     footerLinksLayout->setSpacing(15);
-    
-    auto createLink = [](const QString& text) {
+
+    auto createLink = [](const QString &text)
+    {
         auto btn = std::make_unique<QPushButton>(text);
         btn->setProperty("class", "footer-link");
         btn->setFlat(true);
         btn->setCursor(Qt::PointingHandCursor);
         return btn;
     };
-    
+
     auto aboutBtnPtr = createLink("О CppForge");
     auto contactsBtnPtr = createLink("Контакты");
     auto privacyBtnPtr = createLink("Конфиденциальность");
-    
+
     aboutBtn = aboutBtnPtr.get();
     contactsBtn = contactsBtnPtr.get();
     privacyBtn = privacyBtnPtr.get();
-    
+
     footerLinksLayout->addWidget(aboutBtnPtr.release());
     footerLinksLayout->addWidget(contactsBtnPtr.release());
     footerLinksLayout->addWidget(privacyBtnPtr.release());
@@ -339,17 +349,18 @@ void MainWindow::setupRightPanel()
     moduleProgressLabels.clear();
     moduleButtons.clear();
 
-    for (int i = 1; i <= 14; ++i) {
+    for (int i = 1; i <= 14; ++i)
+    {
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", QVariant("card"));
         moduleCard->setObjectName(QString("moduleCard_%1").arg(i));
-        
+
         auto shadowEffect = new QGraphicsDropShadowEffect();
         shadowEffect->setBlurRadius(15);
         shadowEffect->setColor(QColor(0, 0, 0, 10));
         shadowEffect->setOffset(0, 2);
         moduleCard->setGraphicsEffect(shadowEffect);
-        
+
         auto mLayout = std::make_unique<QVBoxLayout>();
         mLayout->setContentsMargins(20, 20, 20, 20);
         mLayout->setSpacing(12);
@@ -368,18 +379,21 @@ void MainWindow::setupRightPanel()
         progressLabel->setProperty("class", "progress-text");
 
         bool isLocked = (i != 1);
-        
+
         auto button = std::make_unique<QPushButton>(isLocked ? "Заблокировано" : "Начать обучение");
         button->setObjectName("moduleBtn");
         button->setProperty("moduleId", i);
         button->setCursor(Qt::PointingHandCursor);
         button->setFixedHeight(42);
         button->setFont(btnFont);
-        
-        if (isLocked) {
+
+        if (isLocked)
+        {
             button->setEnabled(false);
             button->setStyleSheet("background: #f0f0f0; color: #999;");
-        } else {
+        }
+        else
+        {
             connect(button.get(), &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
         }
 
@@ -387,13 +401,13 @@ void MainWindow::setupRightPanel()
         mLayout->addWidget(progress.release());
         mLayout->addWidget(progressLabel.release());
         mLayout->addWidget(button.release(), 0, Qt::AlignRight);
-        
+
         moduleCard->setLayout(mLayout.release());
 
         moduleProgressBars.append(progress.get());
         moduleProgressLabels.append(progressLabel.get());
         moduleButtons.append(button.get());
-        
+
         modulesLayout->addWidget(moduleCard.get());
         moduleCards.push_back(std::move(moduleCard));
     }
@@ -411,7 +425,7 @@ void MainWindow::setupUI()
     auto mainVerticalLayout = std::make_unique<QVBoxLayout>();
     mainVerticalLayout->setContentsMargins(0, 0, 0, 0);
     mainVerticalLayout->setSpacing(0);
-    
+
     mainVerticalLayout->addWidget(customTitleBar_.get());
 
     auto contentContainer = std::make_unique<QWidget>();
@@ -420,9 +434,9 @@ void MainWindow::setupUI()
     containerLayout->setContentsMargins(30, 30, 30, 30);
     containerLayout->setSpacing(30);
 
-    setupLeftPanel();                          
-    setupRightPanel();                         
-    setupCenterPanel();                        
+    setupLeftPanel();
+    setupRightPanel();
+    setupCenterPanel();
 
     auto eventWidget = std::make_unique<QWidget>();
     eventWidget->setLayout(centerPanelLayout_.release());
@@ -434,7 +448,7 @@ void MainWindow::setupUI()
 
     mainVerticalLayout->addWidget(contentContainer.release());
     setLayout(mainVerticalLayout.release());
-    
+
     setupConnections();
 }
 
@@ -665,15 +679,19 @@ void MainWindow::setupStyles()
 
 void MainWindow::onModuleButtonClicked()
 {
-    QPushButton* button = qobject_cast<QPushButton*>(sender());
-    if (button) {
+    QPushButton *button = qobject_cast<QPushButton *>(sender());
+    if (button)
+    {
         int moduleId = button->property("moduleId").toInt();
         qDebug() << "Module button clicked:" << moduleId;
-        
+
         // Убедимся, что модуль существует в JSON
-        if (moduleId == 1) {
+        if (moduleId == 1)
+        {
             animateToTaskWindow(moduleId);
-        } else {
+        }
+        else
+        {
             qDebug() << "Module" << moduleId << "not available yet";
             // Можно показать сообщение, что модуль заблокирован
         }
@@ -688,11 +706,12 @@ void MainWindow::onLearnButtonClicked()
 
 void MainWindow::animateToTaskWindow(int moduleId)
 {
-    if (isTransitioning_) {
+    if (isTransitioning_)
+    {
         pendingModuleId_ = moduleId;
         return;
     }
-    
+
     isTransitioning_ = true;
     pendingModuleId_ = moduleId;
     fadeOut();
@@ -700,14 +719,13 @@ void MainWindow::animateToTaskWindow(int moduleId)
 
 void MainWindow::openTaskWindow(int moduleId)
 {
-    if (!taskWindow_) {
+    if (!taskWindow_)
+    {
         taskWindow_ = std::make_unique<TaskWindow>();
-        connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated,
-                this, &MainWindow::updateModuleProgress);
-        connect(taskWindow_.get(), &TaskWindow::windowClosed,
-                this, &MainWindow::onTaskWindowClosed);
+        connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this, &MainWindow::updateModuleProgress);
+        connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
     }
-    
+
     taskWindow_->loadModule(moduleId);
     taskWindow_->show();
     taskWindow_->fadeIn();
@@ -722,14 +740,17 @@ void MainWindow::onTaskWindowClosed()
 
 void MainWindow::updateModuleProgress(int moduleId, int progress)
 {
-    if (moduleId >= 1 && moduleId <= moduleProgressBars.size()) {
+    if (moduleId >= 1 && moduleId <= moduleProgressBars.size())
+    {
         moduleProgressBars[moduleId - 1]->setValue(progress);
         moduleProgressLabels[moduleId - 1]->setText(QString("%1% выполнено").arg(progress));
     }
-    
-    if (progress == 100 && moduleId < moduleButtons.size()) {
-        QPushButton* nextButton = moduleButtons[moduleId];
-        if (nextButton && !nextButton->isEnabled()) {
+
+    if (progress == 100 && moduleId < moduleButtons.size())
+    {
+        QPushButton *nextButton = moduleButtons[moduleId];
+        if (nextButton && !nextButton->isEnabled())
+        {
             nextButton->setEnabled(true);
             nextButton->setText("Начать обучение");
             nextButton->setStyleSheet("");

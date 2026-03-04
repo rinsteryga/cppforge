@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstdint>
 #include <QString>
+
+#include <cstdint>
 
 namespace cppforge
 {
@@ -10,13 +11,14 @@ namespace cppforge
         class ExecutionResult
         {
         public:
+            ExecutionResult() = default;
             ExecutionResult(uint64_t submissionId, bool isSuccess, const QString &output, const QString &errors,
                             int32_t timeMs, uint32_t passedTestsCount);
 
             uint64_t getSubmissionId() const;
             bool isSuccess() const;
-            QString getOutput() const;
-            QString getErrors() const;
+            const QString &getOutput() const;
+            const QString &getErrors() const;
             int32_t getTimeMs() const;
             uint32_t getPassedTestsCount() const;
 

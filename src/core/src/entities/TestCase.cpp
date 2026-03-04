@@ -3,19 +3,21 @@
 namespace cppforge::entities
 {
     TestCase::TestCase(uint64_t id, const QString &input, const QString &expectedOutput, bool isPublic)
-        : id_(id), input_(input), expectedOutput_(expectedOutput), isPublic_(isPublic) {}
+        : id_(id), input_(input), expectedOutput_(expectedOutput), isPublic_(isPublic)
+    {
+    }
 
     uint64_t TestCase::getId() const
     {
         return id_;
     }
 
-    QString TestCase::getInput() const
+    const QString &TestCase::getInput() const
     {
         return input_;
     }
 
-    QString TestCase::getExpectedOutput() const
+    const QString &TestCase::getExpectedOutput() const
     {
         return expectedOutput_;
     }
@@ -24,4 +26,4 @@ namespace cppforge::entities
     {
         return isPublic_;
     }
-}
+} // namespace cppforge::entities

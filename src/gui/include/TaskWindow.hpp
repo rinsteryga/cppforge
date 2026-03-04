@@ -1,16 +1,17 @@
 #pragma once
 
-#include <QWidget>
-#include <QTextEdit>
-#include <QPushButton>
-#include <QLabel>
 #include <QComboBox>
-#include <QSplitter>
-#include <QTextBrowser>
-#include <QProcess>
+#include <QLabel>
 #include <QMap>
-#include <QTabWidget>
+#include <QProcess>
 #include <QPropertyAnimation>
+#include <QPushButton>
+#include <QSplitter>
+#include <QTabWidget>
+#include <QTextBrowser>
+#include <QTextEdit>
+#include <QWidget>
+
 #include <memory>
 
 class TaskManager;
@@ -32,8 +33,8 @@ signals:
     void windowClosed();
 
 protected:
-    void closeEvent(QCloseEvent* event) override;
-    void showEvent(QShowEvent* event) override;
+    void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 private slots:
     void onTabChanged(int index);
@@ -50,7 +51,7 @@ private:
     void loadTask(int taskId);
     void updateTaskContent();
     void updateTheoryContent();
-    void runCode(const QString& code, const QString& input);
+    void runCode(const QString &code, const QString &input);
     void saveCurrentCode();
     void loadSavedCode();
     int calculateModuleProgress(int moduleId);
@@ -58,35 +59,35 @@ private:
 
     std::unique_ptr<TaskManager> taskManager_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
-    
-    QTabWidget* tabWidget_;
-    QWidget* theoryTab_;
-    QWidget* practiceTab_;
-    
-    QComboBox* theorySelector_;
-    QTextBrowser* theoryDisplay_;
-    QPushButton* prevTheoryButton_;
-    QPushButton* nextTheoryButton_;
-    QLabel* theoryPageLabel_;
+
+    QTabWidget *tabWidget_;
+    QWidget *theoryTab_;
+    QWidget *practiceTab_;
+
+    QComboBox *theorySelector_;
+    QTextBrowser *theoryDisplay_;
+    QPushButton *prevTheoryButton_;
+    QPushButton *nextTheoryButton_;
+    QLabel *theoryPageLabel_;
     QStringList theoryIds_;
     int currentTheoryIndex_;
-    
-    QSplitter* practiceSplitter_;
-    QWidget* taskPanel_;
-    QLabel* taskTitle_;
-    QLabel* taskDescription_;
-    QComboBox* taskSelector_;
-    QTextEdit* codeEditor_;
-    QTextEdit* inputField_;
-    QTextEdit* outputField_;
-    QPushButton* runButton_;
-    QPushButton* checkButton_;
-    QLabel* resultLabel_;
-    
-    QProcess* compiler_;
+
+    QSplitter *practiceSplitter_;
+    QWidget *taskPanel_;
+    QLabel *taskTitle_;
+    QLabel *taskDescription_;
+    QComboBox *taskSelector_;
+    QTextEdit *codeEditor_;
+    QTextEdit *inputField_;
+    QTextEdit *outputField_;
+    QPushButton *runButton_;
+    QPushButton *checkButton_;
+    QLabel *resultLabel_;
+
+    QProcess *compiler_;
     QString currentCode_;
     int currentModuleId_;
     int currentTaskId_;
-    
+
     QMap<QString, QString> savedSolutions_;
 };

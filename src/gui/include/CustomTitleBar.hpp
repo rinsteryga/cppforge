@@ -1,13 +1,14 @@
 #pragma once
 
-#include <QWidget>
-#include <QLabel>
-#include <QPushButton>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QMouseEvent>
 #include <QPoint>
+#include <QPushButton>
+#include <QWidget>
 
-class CustomTitleBar : public QWidget {
+class CustomTitleBar : public QWidget
+{
     Q_OBJECT
 
 public:

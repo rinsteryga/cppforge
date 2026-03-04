@@ -1,7 +1,7 @@
 #include "../../src/core/include/utils/EnvLoader.hpp"
 
-#include <QtTest>
 #include <QFile>
+#include <QtTest>
 
 using namespace cppforge::utils;
 
@@ -23,10 +23,7 @@ private:
         QCOMPARE(qgetenv("PG_PASSWORD"), "your_password");
     }
 
-    void test_LoadNonExistentFile()
-    {
-        QVERIFY(!loadEnvFile("non_existent_file.env"));
-    }
+    void test_LoadNonExistentFile() { QVERIFY(!loadEnvFile("non_existent_file.env")); }
 
     void test_VerifyVariablesAreSet()
     {

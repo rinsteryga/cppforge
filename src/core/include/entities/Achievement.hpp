@@ -1,8 +1,9 @@
 #pragma once
 
-#include <cstdint>
-#include <chrono>
 #include <QString>
+
+#include <chrono>
+#include <cstdint>
 
 namespace cppforge
 {
@@ -15,9 +16,9 @@ namespace cppforge
                         const std::chrono::system_clock::time_point &dateEarned);
 
             uint64_t getId() const;
-            QString getName() const;
-            QString getDescription() const;
-            QString getIconPath() const;
+            const QString &getName() const;
+            const QString &getDescription() const;
+            const QString &getIconPath() const;
             std::chrono::system_clock::time_point getDateEarned() const;
 
             bool operator<(const Achievement &other) const;

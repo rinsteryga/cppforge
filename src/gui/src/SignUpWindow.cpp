@@ -1,5 +1,6 @@
-#include "CustomTitleBar.hpp"
 #include "SignUpWindow.hpp"
+
+#include "CustomTitleBar.hpp"
 
 #include <QApplication>
 #include <QDebug>
@@ -14,14 +15,12 @@
 #include <QPixmap>
 #include <QScreen>
 #include <QSizePolicy>
-#include <QTimer>
 #include <QStyleOption>
+#include <QTimer>
 
-SignUpWindow::SignUpWindow(std::shared_ptr<cppforge::services::AuthManager> authManager, QWidget *parent) 
-    : QWidget(parent, Qt::Window),
-      passwordVisible_(false),
-      authManager_(authManager)
-{    
+SignUpWindow::SignUpWindow(std::shared_ptr<cppforge::services::AuthManager> authManager, QWidget *parent)
+    : QWidget(parent, Qt::Window), passwordVisible_(false), authManager_(authManager)
+{
     setupUI();
     QTimer::singleShot(50, this, &SignUpWindow::centerWindow);
 }
@@ -39,7 +38,8 @@ void SignUpWindow::paintEvent(QPaintEvent *event)
 void SignUpWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen) {
+    if (screen)
+    {
         QRect availableGeometry = screen->availableGeometry();
         int x = availableGeometry.x() + (availableGeometry.width() - width()) / 2;
         int y = availableGeometry.y() + (availableGeometry.height() - height()) / 2;
@@ -97,26 +97,29 @@ void SignUpWindow::setupLogo()
 
     QPixmap logoPixmap(":/icons/main_logo.ico");
 
-    if (!logoPixmap.isNull()) {
+    if (!logoPixmap.isNull())
+    {
         logoPixmap = logoPixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         iconLabel_->setPixmap(logoPixmap);
         iconLabel_->setFixedSize(200, 200);
-    } else {
+    }
+    else
+    {
         showFallbackLogo();
     }
 }
 
-void SignUpWindow::showFallbackLogo() 
+void SignUpWindow::showFallbackLogo()
 {
     iconLabel_->setFixedSize(200, 200);
     iconLabel_->setStyleSheet("QLabel {"
-                            "   background-color: #4285f4;"
-                            "   border-radius: 20px;"
-                            "   border: 4px solid #356ac3;"
-                            "   color: white;"
-                            "   font-size: 48px;"
-                            "   font-weight: bold;"
-                            "}");
+                              "   background-color: #4285f4;"
+                              "   border-radius: 20px;"
+                              "   border: 4px solid #356ac3;"
+                              "   color: white;"
+                              "   font-size: 48px;"
+                              "   font-weight: bold;"
+                              "}");
     iconLabel_->setText("C++");
     iconLabel_->setAlignment(Qt::AlignCenter);
 }
@@ -137,120 +140,115 @@ void SignUpWindow::setupInputFields()
     usernameInput_->setPlaceholderText("Username");
     usernameInput_->setFixedHeight(65);
     usernameInput_->setFixedWidth(500);
-    
+
     QFont inputFont("Roboto", 16);
     usernameInput_->setFont(inputFont);
-    usernameInput_->setStyleSheet(
-        "QLineEdit {"
-        "   padding: 18px 20px;"
-        "   border: 2px solid #cccccc;"
-        "   border-radius: 10px;"
-        "   font-size: 18px;"
-        "}"
-        "QLineEdit:focus {"
-        "   border: 3px solid #4285f4;"
-        "   outline: none;"
-        "}"
-        "QLineEdit::placeholder {"
-        "   font-size: 18px;"
-        "   color: #888888;"
-        "}"
-    );
-    
+    usernameInput_->setStyleSheet("QLineEdit {"
+                                  "   padding: 18px 20px;"
+                                  "   border: 2px solid #cccccc;"
+                                  "   border-radius: 10px;"
+                                  "   font-size: 18px;"
+                                  "}"
+                                  "QLineEdit:focus {"
+                                  "   border: 3px solid #4285f4;"
+                                  "   outline: none;"
+                                  "}"
+                                  "QLineEdit::placeholder {"
+                                  "   font-size: 18px;"
+                                  "   color: #888888;"
+                                  "}");
+
     emailInput_ = std::make_unique<QLineEdit>();
     emailInput_->setPlaceholderText("Email address");
     emailInput_->setFixedHeight(65);
     emailInput_->setFixedWidth(500);
-    
+
     emailInput_->setFont(inputFont);
-    emailInput_->setStyleSheet(
-        "QLineEdit {"
-        "   padding: 18px 20px;"
-        "   border: 2px solid #cccccc;"
-        "   border-radius: 10px;"
-        "   font-size: 18px;"
-        "}"
-        "QLineEdit:focus {"
-        "   border: 3px solid #4285f4;"
-        "   outline: none;"
-        "}"
-        "QLineEdit::placeholder {"
-        "   font-size: 18px;"
-        "   color: #888888;"
-        "}"
-    );
-    
+    emailInput_->setStyleSheet("QLineEdit {"
+                               "   padding: 18px 20px;"
+                               "   border: 2px solid #cccccc;"
+                               "   border-radius: 10px;"
+                               "   font-size: 18px;"
+                               "}"
+                               "QLineEdit:focus {"
+                               "   border: 3px solid #4285f4;"
+                               "   outline: none;"
+                               "}"
+                               "QLineEdit::placeholder {"
+                               "   font-size: 18px;"
+                               "   color: #888888;"
+                               "}");
+
     passwordInput_ = std::make_unique<QLineEdit>();
     passwordInput_->setPlaceholderText("Password");
     passwordInput_->setEchoMode(QLineEdit::Password);
     passwordInput_->setFixedHeight(65);
     passwordInput_->setFixedWidth(500);
-    
+
     passwordInput_->setFont(inputFont);
-    passwordInput_->setStyleSheet(
-        "QLineEdit {"
-        "   padding: 18px 50px 18px 20px;" 
-        "   border: 2px solid #cccccc;"
-        "   border-radius: 10px;"
-        "   font-size: 18px;"
-        "}"
-        "QLineEdit:focus {"
-        "   border: 3px solid #4285f4;"
-        "   outline: none;"
-        "}"
-        "QLineEdit::placeholder {"
-        "   font-size: 18px;"
-        "   color: #888888;"
-        "}"
-    );
-    
+    passwordInput_->setStyleSheet("QLineEdit {"
+                                  "   padding: 18px 50px 18px 20px;"
+                                  "   border: 2px solid #cccccc;"
+                                  "   border-radius: 10px;"
+                                  "   font-size: 18px;"
+                                  "}"
+                                  "QLineEdit:focus {"
+                                  "   border: 3px solid #4285f4;"
+                                  "   outline: none;"
+                                  "}"
+                                  "QLineEdit::placeholder {"
+                                  "   font-size: 18px;"
+                                  "   color: #888888;"
+                                  "}");
+
     passwordToggleButton_ = std::make_unique<QPushButton>();
     passwordToggleButton_->setFixedSize(32, 32);
     passwordToggleButton_->setCursor(Qt::PointingHandCursor);
-    passwordToggleButton_->setStyleSheet(
-        "QPushButton {"
-        "   background-color: transparent;"
-        "   border: none;"
-        "   padding: 4px;"
-        "}"
-        "QPushButton:hover {"
-        "   background-color: rgba(0, 0, 0, 0.05);"
-        "   border-radius: 4px;"
-        "}"
-    );
-    
+    passwordToggleButton_->setStyleSheet("QPushButton {"
+                                         "   background-color: transparent;"
+                                         "   border: none;"
+                                         "   padding: 4px;"
+                                         "}"
+                                         "QPushButton:hover {"
+                                         "   background-color: rgba(0, 0, 0, 0.05);"
+                                         "   border-radius: 4px;"
+                                         "}");
+
     QPixmap openEyePixmap(":/images/eye_open.png");
-    if (!openEyePixmap.isNull()) {
+    if (!openEyePixmap.isNull())
+    {
         openEyePixmap = openEyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         passwordToggleButton_->setIcon(QIcon(openEyePixmap));
         passwordToggleButton_->setIconSize(QSize(20, 20));
         qDebug() << "SignUpWindow: Open eye icon loaded";
-    } else {
+    }
+    else
+    {
         qDebug() << "SignUpWindow: Open eye icon not found";
     }
 }
 
-void SignUpWindow::togglePasswordVisibility() {
-  passwordVisible_ = !passwordVisible_;
+void SignUpWindow::togglePasswordVisibility()
+{
+    passwordVisible_ = !passwordVisible_;
 
-  passwordInput_->setEchoMode(passwordVisible_ ? QLineEdit::Normal
-                                               : QLineEdit::Password);
+    passwordInput_->setEchoMode(passwordVisible_ ? QLineEdit::Normal : QLineEdit::Password);
 
-  QString resourcePath =
-      passwordVisible_ ? ":/images/eye_slash.png" : ":/images/eye_open.png";
+    QString resourcePath = passwordVisible_ ? ":/images/eye_slash.png" : ":/images/eye_open.png";
 
-  QPixmap eyePixmap(resourcePath);
+    QPixmap eyePixmap(resourcePath);
 
-  if (!eyePixmap.isNull()) {
-    eyePixmap =
-        eyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    passwordToggleButton_->setIcon(QIcon(eyePixmap));
-    passwordToggleButton_->setIconSize(QSize(20, 20));
-    qDebug() << "SignUpWindow:" << (passwordVisible_ ? "Slash" : "Open")
-             << "eye icon loaded";
-  } else {
-    qDebug() << "SignUpWindow: Eye icon not found:" << resourcePath;
-  }
+    if (!eyePixmap.isNull())
+    {
+        eyePixmap = eyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        passwordToggleButton_->setIcon(QIcon(eyePixmap));
+        passwordToggleButton_->setIconSize(QSize(20, 20));
+        qDebug() << "SignUpWindow:" << (passwordVisible_ ? "Slash" : "Open") << "eye icon loaded";
+    }
+    else
+    {
+        qDebug() << "SignUpWindow: Eye icon not found:" << resourcePath;
+    }
 }
 
 void SignUpWindow::setupSignUpButton()
@@ -258,54 +256,50 @@ void SignUpWindow::setupSignUpButton()
     signUpButton_ = std::make_unique<QPushButton>("Create Account");
     signUpButton_->setFixedHeight(85);
     signUpButton_->setFixedWidth(500);
-    
+
     QFont buttonFont("Roboto", 22, QFont::Bold);
     signUpButton_->setFont(buttonFont);
     signUpButton_->setCursor(Qt::PointingHandCursor);
-    signUpButton_->setStyleSheet(
-        "QPushButton {"
-        "   background-color: #62639b;"
-        "   color: white;"
-        "   border: none;"
-        "   border-radius: 12px;"
-        "   padding: 25px 30px;"
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   margin: 0px;"
-        "}"
-        "QPushButton:hover {"
-        "   background-color: #7677B3;"
-        "}"
-        "QPushButton:pressed {"
-        "   background-color: #4B4C76;"
-        "}"
-    );
+    signUpButton_->setStyleSheet("QPushButton {"
+                                 "   background-color: #62639b;"
+                                 "   color: white;"
+                                 "   border: none;"
+                                 "   border-radius: 12px;"
+                                 "   padding: 25px 30px;"
+                                 "   font-size: 24px;"
+                                 "   font-weight: bold;"
+                                 "   margin: 0px;"
+                                 "}"
+                                 "QPushButton:hover {"
+                                 "   background-color: #7677B3;"
+                                 "}"
+                                 "QPushButton:pressed {"
+                                 "   background-color: #4B4C76;"
+                                 "}");
 }
 
 void SignUpWindow::setupBackToLoginLink()
 {
     backToLoginButton_ = std::make_unique<QPushButton>("Already have an account? Sign in");
     backToLoginButton_->setFlat(true);
-    
+
     QFont linkFont("Roboto", 16);
     backToLoginButton_->setFont(linkFont);
     backToLoginButton_->setCursor(Qt::PointingHandCursor);
-    backToLoginButton_->setStyleSheet(
-        "QPushButton {"
-        "   color: #4285f4;"
-        "   background-color: transparent;"
-        "   border: none;"
-        "   font-size: 18px;"
-        "   padding: 15px;"
-        "}"
-        "QPushButton:hover {"
-        "   color: #3367d6;"
-        "   text-decoration: underline;"
-        "}"
-        "QPushButton:pressed {"
-        "   color: #2a56c6;"
-        "}"
-    );
+    backToLoginButton_->setStyleSheet("QPushButton {"
+                                      "   color: #4285f4;"
+                                      "   background-color: transparent;"
+                                      "   border: none;"
+                                      "   font-size: 18px;"
+                                      "   padding: 15px;"
+                                      "}"
+                                      "QPushButton:hover {"
+                                      "   color: #3367d6;"
+                                      "   text-decoration: underline;"
+                                      "}"
+                                      "QPushButton:pressed {"
+                                      "   color: #2a56c6;"
+                                      "}");
 }
 
 void SignUpWindow::setupLayout()
@@ -315,56 +309,54 @@ void SignUpWindow::setupLayout()
     mainLayout_->setContentsMargins(0, 0, 0, 0);
 
     mainLayout_->addWidget(customTitleBar_.get());
-    
+
     auto centerContainer = std::make_unique<QWidget>();
     centerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     auto centerLayout = std::make_unique<QVBoxLayout>();
     centerLayout->setAlignment(Qt::AlignCenter);
-    centerLayout->setSpacing(25);  
-    
+    centerLayout->setSpacing(25);
+
     centerLayout->addWidget(iconLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
-    
+
     centerLayout->addWidget(titleLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
-    
+
     centerLayout->addWidget(usernameInput_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
-    
+
     centerLayout->addWidget(emailInput_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
-    
+
     auto passwordContainer = std::make_unique<QWidget>();
     passwordContainer->setFixedWidth(500);
     passwordContainer->setFixedHeight(65);
-    
+
     passwordContainer->setLayout(nullptr);
-    
+
     passwordInput_->setParent(passwordContainer.get());
     passwordInput_->setGeometry(0, 0, 500, 65);
-    
+
     passwordToggleButton_->setParent(passwordContainer.get());
     passwordToggleButton_->setGeometry(500 - 42, 16, 32, 32);
-    
+
     centerLayout->addWidget(passwordContainer.release(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
-    
+
     centerLayout->addWidget(signUpButton_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(30);
-    
+
     centerLayout->addWidget(backToLoginButton_.get(), 0, Qt::AlignCenter);
-    
+
     centerContainer->setLayout(centerLayout.release());
     mainLayout_->addWidget(centerContainer.release());
 }
 
-void SignUpWindow::setupConnections() {
-  connect(signUpButton_.get(), &QPushButton::clicked, this,
-          &SignUpWindow::onSignUpButtonClicked);
-  connect(backToLoginButton_.get(), &QPushButton::clicked, this,
-          &SignUpWindow::onBackToLoginClicked);
-  connect(passwordToggleButton_.get(), &QPushButton::clicked, this,
-          &SignUpWindow::togglePasswordVisibility);
+void SignUpWindow::setupConnections()
+{
+    connect(signUpButton_.get(), &QPushButton::clicked, this, &SignUpWindow::onSignUpButtonClicked);
+    connect(backToLoginButton_.get(), &QPushButton::clicked, this, &SignUpWindow::onBackToLoginClicked);
+    connect(passwordToggleButton_.get(), &QPushButton::clicked, this, &SignUpWindow::togglePasswordVisibility);
 }
 
 void SignUpWindow::onSignUpButtonClicked()
@@ -372,34 +364,39 @@ void SignUpWindow::onSignUpButtonClicked()
     QString username = usernameInput_->text();
     QString email = emailInput_->text();
     QString password = passwordInput_->text();
-    
-    if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+
+    if (username.isEmpty() || email.isEmpty() || password.isEmpty())
+    {
         QMessageBox::warning(this, "Error", "Please fill all fields");
         return;
     }
-    
-    if (password.length() < 6) {
+
+    if (password.length() < 6)
+    {
         QMessageBox::warning(this, "Error", "Password must be at least 6 characters");
         return;
     }
-    
-    if (!email.contains("@") || !email.contains(".")) {
+
+    if (!email.contains("@") || !email.contains("."))
+    {
         QMessageBox::warning(this, "Error", "Please enter a valid email address");
         return;
     }
-    
+
     if (authManager_ && authManager_->registerUser(username, email, password))
     {
         QMessageBox::information(this, "Success", "Account created successfully!");
-        
+
         transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
         transitionAnimation_->setDuration(150);
         transitionAnimation_->setStartValue(1.0);
         transitionAnimation_->setEndValue(0.0);
-        connect(transitionAnimation_.get(), &QPropertyAnimation::finished, [this]() {
-            emit switchToLogin();
-            close();
-        });
+        connect(transitionAnimation_.get(), &QPropertyAnimation::finished,
+                [this]()
+                {
+                    emit switchToLogin();
+                    close();
+                });
         transitionAnimation_->start();
     }
     else
@@ -408,16 +405,19 @@ void SignUpWindow::onSignUpButtonClicked()
     }
 }
 
-void SignUpWindow::onBackToLoginClicked() {
-  qDebug() << "Back to login clicked";
-  
-  transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
-  transitionAnimation_->setDuration(150);
-  transitionAnimation_->setStartValue(1.0);
-  transitionAnimation_->setEndValue(0.0);
-  connect(transitionAnimation_.get(), &QPropertyAnimation::finished, [this]() {
-      emit switchToLogin();
-      close();
-  });
-  transitionAnimation_->start();
+void SignUpWindow::onBackToLoginClicked()
+{
+    qDebug() << "Back to login clicked";
+
+    transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
+    transitionAnimation_->setDuration(150);
+    transitionAnimation_->setStartValue(1.0);
+    transitionAnimation_->setEndValue(0.0);
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished,
+            [this]()
+            {
+                emit switchToLogin();
+                close();
+            });
+    transitionAnimation_->start();
 }

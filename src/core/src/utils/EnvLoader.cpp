@@ -1,7 +1,7 @@
 #include "../../include/utils/EnvLoader.hpp"
 
-#include <QFile>
 #include <QDebug>
+#include <QFile>
 #include <QTextStream>
 
 namespace cppforge::utils
@@ -38,4 +38,4 @@ namespace cppforge::utils
         qDebug() << "Loaded" << loadedCount << "environment variables from:" << filePath;
         return loadedCount > 0;
     }
-}
+} // namespace cppforge::utils
