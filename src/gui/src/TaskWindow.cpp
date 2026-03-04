@@ -24,26 +24,26 @@
 #include <QVBoxLayout>
 
 TaskWindow::TaskWindow(QWidget *parent)
-    : QWidget(parent), taskManager_(nullptr), compiler_(new QProcess(this)), currentModuleId_(-1), currentTaskId_(-1),
-      currentTheoryIndex_(-1), tabWidget_(nullptr), theoryTab_(nullptr), practiceTab_(nullptr),
-      theorySelector_(nullptr), theoryDisplay_(nullptr), prevTheoryButton_(nullptr), nextTheoryButton_(nullptr),
-      theoryPageLabel_(nullptr), practiceSplitter_(nullptr), taskPanel_(nullptr), taskTitle_(nullptr),
-      taskDescription_(nullptr), taskSelector_(nullptr), codeEditor_(nullptr), inputField_(nullptr),
-      outputField_(nullptr), runButton_(nullptr), checkButton_(nullptr), resultLabel_(nullptr)
+    : QWidget(parent), taskManager_(nullptr), currentModuleId_(-1), currentTaskId_(-1), currentTheoryIndex_(-1),
+      tabWidget_(nullptr), theoryTab_(nullptr), practiceTab_(nullptr), theorySelector_(nullptr),
+      theoryDisplay_(nullptr), prevTheoryButton_(nullptr), nextTheoryButton_(nullptr), theoryPageLabel_(nullptr),
+      practiceSplitter_(nullptr), taskPanel_(nullptr), taskTitle_(nullptr), taskDescription_(nullptr),
+      taskSelector_(nullptr), codeEditor_(nullptr), inputField_(nullptr), outputField_(nullptr), runButton_(nullptr),
+      checkButton_(nullptr), resultLabel_(nullptr)
 {
     setupUI();
     setupConnections();
     setWindowOpacity(0.0);
 
-    taskManager_ = std::unique_ptr<TaskManager>(&TaskManager::instance());
+    taskManager_ = &TaskManager::instance();
+    codeRunner_ = std::make_unique<cppforge::services::CodeRunner>(this);
+    analyzer_ = std::make_unique<cppforge::services::StaticAnalyzer>();
     taskManager_->loadTasks(":/tasks/tasks.json");
 }
 
 TaskWindow::~TaskWindow()
 {
     saveCurrentCode();
-    if (compiler_)
-        compiler_->deleteLater();
 }
 
 void TaskWindow::showEvent(QShowEvent *event)
@@ -104,11 +104,14 @@ void TaskWindow::fadeOut()
 
 void TaskWindow::setupUI()
 {
-    setWindowTitle("CppForge - Обучение");
+    setWindowTitle("cppforge - Обучение");
     setMinimumSize(1200, 800);
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
     setObjectName("TaskWindow");
+
+    customTitleBar_ = std::make_unique<CustomTitleBar>(this);
+    customTitleBar_->setTitle("cppforge - Обучение");
 
     auto mainContainer = new QWidget(this);
     mainContainer->setObjectName("mainContainer");
@@ -283,8 +286,14 @@ void TaskWindow::setupUI()
     mainLayout->addWidget(tabWidget_);
 
     auto containerLayout = new QVBoxLayout(this);
-    containerLayout->setContentsMargins(20, 20, 20, 20);
-    containerLayout->addWidget(mainContainer);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->addWidget(customTitleBar_.get());
+
+    auto marginWidget = new QWidget();
+    auto marginLayout = new QVBoxLayout(marginWidget);
+    marginLayout->setContentsMargins(20, 10, 20, 20);
+    marginLayout->addWidget(mainContainer);
+    containerLayout->addWidget(marginWidget);
 
     setStyleSheet(R"(
         #TaskWindow {
@@ -496,11 +505,6 @@ void TaskWindow::setupConnections()
     connect(taskSelector_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TaskWindow::onTaskSelected);
     connect(runButton_, &QPushButton::clicked, this, &TaskWindow::onRunCode);
     connect(checkButton_, &QPushButton::clicked, this, &TaskWindow::onCheckSolution);
-
-    connect(compiler_, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
-            &TaskWindow::onCompilationFinished);
-    connect(compiler_, &QProcess::readyReadStandardOutput, this, &TaskWindow::onProcessOutput);
-    connect(compiler_, &QProcess::readyReadStandardError, this, &TaskWindow::onProcessOutput);
 }
 
 void TaskWindow::loadModule(int moduleId)
@@ -674,58 +678,38 @@ void TaskWindow::onCheckSolution()
         return;
     }
 
-    bool allPassed = true;
-    QString results;
-
-    for (int i = 0; i < task.testCases.size(); ++i)
+    cppforge::entities::CodingTask codingTask(task.id, currentModuleId_, task.title, task.description, task.initialCode,
+                                              {}, 1000, 256);
+    if (analyzer_)
     {
-        QString tempFile = QDir::tempPath() + "/temp_code.cpp";
-        QString executable = QDir::tempPath() + "/temp_code";
-
-        QFile file(tempFile);
-        if (file.open(QIODevice::WriteOnly))
+        auto analysisResult = analyzer_->analyze(codingTask, code);
+        if (analysisResult.has_value())
         {
-            file.write(code.toUtf8());
-            file.close();
+            resultLabel_->setText("❌ Код не прошёл проверку");
+            resultLabel_->setStyleSheet("color: #dc3545; font-weight: bold;");
+            outputField_->setText("Ошибка статического анализа:\n" + analysisResult.value());
+            return;
         }
-
-        QProcess compileProcess;
-        compileProcess.start("g++", QStringList() << tempFile << "-o" << executable);
-        compileProcess.waitForFinished(5000);
-
-        if (compileProcess.exitCode() != 0)
-        {
-            allPassed = false;
-            results += QString("❌ Тест %1: Ошибка компиляции\n").arg(i + 1);
-            continue;
-        }
-
-        QProcess runProcess;
-        runProcess.start(executable, QStringList());
-        runProcess.write(task.testCases[i].input.toUtf8());
-        runProcess.closeWriteChannel();
-        runProcess.waitForFinished(5000);
-
-        QString output = QString::fromUtf8(runProcess.readAllStandardOutput()).trimmed();
-
-        if (output == task.testCases[i].expectedOutput)
-        {
-            results += QString("✅ Тест %1: Пройден\n").arg(i + 1);
-        }
-        else
-        {
-            allPassed = false;
-            results += QString("❌ Тест %1: Ожидалось '%2', получено '%3'\n")
-                           .arg(i + 1)
-                           .arg(task.testCases[i].expectedOutput)
-                           .arg(output);
-        }
-
-        QFile::remove(tempFile);
-        QFile::remove(executable);
     }
 
-    if (allPassed)
+    std::vector<cppforge::entities::TestCase> coreTests;
+    for (int i = 0; i < task.testCases.size(); ++i)
+    {
+        coreTests.push_back(
+            cppforge::entities::TestCase(i + 1, task.testCases[i].input, task.testCases[i].expectedOutput, true));
+    }
+
+    auto result = codeRunner_->runBlocking(code, coreTests);
+
+    if (!result.isSuccess() && result.getErrors() == "Compilation failed")
+    {
+        outputField_->setText("❌ Ошибка компиляции");
+        resultLabel_->setText("❌ Ошибка компиляции");
+        resultLabel_->setStyleSheet("color: #dc3545; font-weight: bold;");
+        return;
+    }
+
+    if (result.isSuccess())
     {
         resultLabel_->setText("✅ Все тесты пройдены!");
         resultLabel_->setStyleSheet("color: #28a745; font-weight: bold;");
@@ -744,63 +728,39 @@ void TaskWindow::onCheckSolution()
         resultLabel_->setStyleSheet("color: #dc3545; font-weight: bold;");
     }
 
-    outputField_->setText(results);
+    QString info = "Успешно пройдено тестов: " + QString::number(result.getPassedTestsCount()) + " из " +
+                   QString::number(coreTests.size()) + "\n\n";
+    if (!result.getOutput().isEmpty())
+        info += "Вывод:\n" + result.getOutput() + "\n";
+    if (!result.getErrors().isEmpty())
+        info += "Ошибки:\n" + result.getErrors();
+
+    outputField_->setText(info);
 }
 
 void TaskWindow::runCode(const QString &code, const QString &input)
 {
-    QString tempFile = QDir::tempPath() + "/temp_code.cpp";
-    QString executable = QDir::tempPath() + "/temp_code";
+    outputField_->setText("Компиляция и выполнение...");
 
-    QFile file(tempFile);
-    if (file.open(QIODevice::WriteOnly))
+    std::vector<cppforge::entities::TestCase> testCases;
+    testCases.push_back(cppforge::entities::TestCase(1, input, "", true));
+
+    auto result = codeRunner_->runBlocking(code, testCases);
+
+    if (!result.isSuccess() && result.getErrors() == "Compilation failed")
     {
-        file.write(code.toUtf8());
-        file.close();
+        outputField_->setText("Ошибка компиляции.");
     }
-
-    currentCode_ = input;
-    compiler_->start("g++", QStringList() << tempFile << "-o" << executable);
-}
-
-void TaskWindow::onCompilationFinished(int exitCode, QProcess::ExitStatus exitStatus)
-{
-    qDebug() << "Compilation finished with exit code:" << exitCode;
-
-    if (exitCode != 0 || exitStatus == QProcess::CrashExit)
+    else
     {
-        QString error = compiler_->readAllStandardError();
-        outputField_->setText("Ошибка компиляции:\n" + error);
-        return;
+        QString finalStr;
+        if (!result.getOutput().isEmpty())
+            finalStr += "Вывод:\n" + result.getOutput();
+        if (!result.getErrors().isEmpty())
+            finalStr += "\nОшибки:\n" + result.getErrors();
+        outputField_->setText(finalStr.trimmed());
     }
-
-    QString executable = QDir::tempPath() + "/temp_code";
-    QProcess *runProcess = new QProcess(this);
-
-    connect(runProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [this, runProcess](int, QProcess::ExitStatus)
-            {
-                QString output = runProcess->readAllStandardOutput();
-                QString error = runProcess->readAllStandardError();
-
-                if (!error.isEmpty())
-                {
-                    outputField_->setText("Ошибка выполнения:\n" + error);
-                }
-                else
-                {
-                    outputField_->setText(output);
-                }
-
-                runProcess->deleteLater();
-            });
-
-    runProcess->start(executable, QStringList());
-    runProcess->write(currentCode_.toUtf8());
-    runProcess->closeWriteChannel();
 }
-
-void TaskWindow::onProcessOutput() {}
 
 void TaskWindow::saveCurrentCode()
 {

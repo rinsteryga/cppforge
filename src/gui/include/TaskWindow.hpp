@@ -1,5 +1,9 @@
 #pragma once
 
+#include "CustomTitleBar.hpp"
+#include <services/CodeRunner.hpp>
+#include <services/StaticAnalyzer.hpp>
+
 #include <QComboBox>
 #include <QLabel>
 #include <QMap>
@@ -42,8 +46,6 @@ private slots:
     void onTheorySelected(int index);
     void onRunCode();
     void onCheckSolution();
-    void onCompilationFinished(int exitCode, QProcess::ExitStatus exitStatus);
-    void onProcessOutput();
 
 private:
     void setupUI();
@@ -57,7 +59,7 @@ private:
     int calculateModuleProgress(int moduleId);
     void unlockNextModule(int moduleId);
 
-    std::unique_ptr<TaskManager> taskManager_;
+    TaskManager *taskManager_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
 
     QTabWidget *tabWidget_;
@@ -84,7 +86,9 @@ private:
     QPushButton *checkButton_;
     QLabel *resultLabel_;
 
-    QProcess *compiler_;
+    std::unique_ptr<CustomTitleBar> customTitleBar_;
+    std::unique_ptr<cppforge::services::CodeRunner> codeRunner_;
+    std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
     QString currentCode_;
     int currentModuleId_;
     int currentTaskId_;
