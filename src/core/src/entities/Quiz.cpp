@@ -1,4 +1,5 @@
 #include "../../include/entities/Quiz.hpp"
+
 #include "../../include/entities/QuizOption.hpp"
 
 namespace cppforge::entities

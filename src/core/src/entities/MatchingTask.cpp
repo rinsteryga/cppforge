@@ -1,4 +1,5 @@
 #include "../../include/entities/MatchingTask.hpp"
+
 #include "../../include/entities/MatchingPair.hpp"
 
 namespace cppforge::entities
