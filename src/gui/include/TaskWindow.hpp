@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 #pragma once
 
 #include "CustomTitleBar.hpp"
@@ -94,4 +95,42 @@ private:
     int currentTaskId_;
 
     QMap<QString, QString> savedSolutions_;
+=======
+#pragma once
+
+#include <QWidget>
+#include <memory>
+
+class CustomTitleBar;
+class QPaintEvent;
+class QResizeEvent;
+
+class TaskWindow : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit TaskWindow(QWidget *parent = nullptr);
+    ~TaskWindow();
+
+    void loadModule(int id);
+    void fadeIn();
+
+signals:
+    void moduleProgressUpdated(int moduleId, int progress);
+    void windowClosed();
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+
+private:
+    void setupUI();
+    int currentModuleId_;
+    
+    // Используем обычный указатель для контента, чтобы не ебаться с владением в конструкторе
+    CustomTitleBar* customTitleBar_ = nullptr;
+    QWidget* contentArea = nullptr;
+>>>>>>> Stashed changes
 };
