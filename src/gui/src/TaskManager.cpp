@@ -27,9 +27,8 @@ bool TaskManager::loadTasks(const QString &filePath)
     if (!fileExists)
     {
         QStringList alternativePaths;
-        alternativePaths << ":/tasks/tasks.json"
-                         << ":/resources/tasks.json"
-                         << ":/tasks.json" << QCoreApplication::applicationDirPath() + "/tasks/tasks.json"
+        alternativePaths << ":/tasks/tasks.json" << ":/resources/tasks.json" << ":/tasks.json"
+                         << QCoreApplication::applicationDirPath() + "/tasks/tasks.json"
                          << QCoreApplication::applicationDirPath() + "/tasks.json"
                          << QDir::currentPath() + "/tasks/tasks.json" << QDir::currentPath() + "/tasks.json";
 
