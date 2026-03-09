@@ -17,6 +17,7 @@ namespace cppforge
             const QString &getInput() const;
             const QString &getExpectedOutput() const;
             bool isPublic() const;
+            bool operator<(const TestCase &other) const;
 
         private:
             uint64_t id_;
