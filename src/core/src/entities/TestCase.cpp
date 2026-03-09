@@ -26,4 +26,9 @@ namespace cppforge::entities
     {
         return isPublic_;
     }
+
+    bool TestCase::operator<(const TestCase &other) const
+    {
+        return id_ < other.id_;
+    }
 } // namespace cppforge::entities

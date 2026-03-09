@@ -8,6 +8,10 @@
 DROP TABLE IF EXISTS execution_results CASCADE;
 DROP TABLE IF EXISTS submissions CASCADE;
 DROP TABLE IF EXISTS test_cases CASCADE;
+DROP TABLE IF EXISTS matching_pairs CASCADE;
+DROP TABLE IF EXISTS matching_tasks CASCADE;
+DROP TABLE IF EXISTS quiz_options CASCADE;
+DROP TABLE IF EXISTS quizzes CASCADE;
 DROP TABLE IF EXISTS coding_tasks CASCADE;
 DROP TABLE IF EXISTS lessons CASCADE;
 DROP TABLE IF EXISTS user_progress CASCADE;
@@ -82,6 +86,44 @@ CREATE TABLE coding_tasks (
     memory_limit INT DEFAULT 256
 );
 CREATE INDEX idx_tasks_lesson_id ON coding_tasks(lesson_id);
+
+-- ===========================================================
+-- QUIZZES (Multiple Choice)
+-- ===========================================================
+CREATE TABLE quizzes (
+    id BIGSERIAL PRIMARY KEY,
+    lesson_id BIGINT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    question TEXT NOT NULL
+);
+CREATE INDEX idx_quizzes_lesson_id ON quizzes(lesson_id);
+
+CREATE TABLE quiz_options (
+    id BIGSERIAL PRIMARY KEY,
+    quiz_id BIGINT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+    option_text TEXT NOT NULL,
+    is_correct BOOLEAN DEFAULT FALSE
+);
+CREATE INDEX idx_quiz_options_quiz_id ON quiz_options(quiz_id);
+
+-- ===========================================================
+-- MATCHING TASKS
+-- ===========================================================
+CREATE TABLE matching_tasks (
+    id BIGSERIAL PRIMARY KEY,
+    lesson_id BIGINT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT
+);
+CREATE INDEX idx_matching_tasks_lesson_id ON matching_tasks(lesson_id);
+
+CREATE TABLE matching_pairs (
+    id BIGSERIAL PRIMARY KEY,
+    matching_task_id BIGINT NOT NULL REFERENCES matching_tasks(id) ON DELETE CASCADE,
+    left_item TEXT NOT NULL,
+    right_item TEXT NOT NULL
+);
+CREATE INDEX idx_matching_pairs_task_id ON matching_pairs(matching_task_id);
 
 -- ===========================================================
 -- TEST CASES
