@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 #include "TaskWindow.hpp"
 
 #include "TaskManager.hpp"
@@ -806,4 +807,102 @@ void TaskWindow::unlockNextModule(int moduleId)
         qDebug() << "Unlocking next module:" << nextModuleId;
         emit moduleProgressUpdated(nextModuleId, 0);
     }
+=======
+#include "TaskWindow.hpp"
+#include "CustomTitleBar.hpp"
+#include <QVBoxLayout>
+#include <QPropertyAnimation>
+#include <QCloseEvent>
+#include <QLabel>
+#include <QStyleOption>
+#include <QPainter>
+#include <QResizeEvent>
+#include <QIcon>
+#include <QHBoxLayout>
+
+TaskWindow::TaskWindow(QWidget *parent) 
+    : QWidget(parent), currentModuleId_(-1)
+{
+    // Настройки окна
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
+    setFixedSize(1200, 800);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setObjectName("TaskWindow");
+
+    setupUI();
+}
+
+TaskWindow::~TaskWindow() = default;
+
+void TaskWindow::setupUI()
+{
+    contentArea = new QWidget(this);
+    contentArea->setObjectName("contentArea");
+    contentArea->setStyleSheet(R"(
+        #contentArea { 
+            background-color: white; 
+            border-radius: 0px; 
+        }
+    )");
+
+    auto contentLayout = new QVBoxLayout(contentArea);
+    contentLayout->setContentsMargins(20, 45, 20, 20); 
+
+    auto placeholderLabel = new QLabel("Здесь будет контент модуля", contentArea);
+    placeholderLabel->setAlignment(Qt::AlignCenter);
+    placeholderLabel->setStyleSheet("font-size: 18px; color: #333; background: transparent;");
+    contentLayout->addWidget(placeholderLabel);
+
+    customTitleBar_ = new CustomTitleBar(this);
+    customTitleBar_->setTitle("cppforge - Обучение");
+    
+    customTitleBar_->setIcon(QIcon(":/icons/main_logo.ico"));
+    
+    customTitleBar_->raise(); 
+}
+
+void TaskWindow::resizeEvent(QResizeEvent *event)
+{
+    if (customTitleBar_ && contentArea) {
+        contentArea->setGeometry(0, 0, width(), height());
+
+        int titleHeight = 40; 
+        customTitleBar_->setGeometry(0, 0, width(), titleHeight);
+    }
+    QWidget::resizeEvent(event);
+}
+
+void TaskWindow::loadModule(int id)
+{
+    currentModuleId_ = id;
+    if (customTitleBar_) {
+        customTitleBar_->setTitle(QString("cppforge - Модуль %1").arg(id));
+    }
+}
+
+void TaskWindow::fadeIn()
+{
+    this->setWindowOpacity(0.0);
+    auto anim = new QPropertyAnimation(this, "windowOpacity");
+    anim->setDuration(250);
+    anim->setStartValue(0.0);
+    anim->setEndValue(1.0);
+    anim->setEasingCurve(QEasingCurve::InOutCubic);
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void TaskWindow::closeEvent(QCloseEvent *event)
+{
+    emit windowClosed();
+    this->hide(); 
+    event->ignore(); 
+}
+
+void TaskWindow::paintEvent(QPaintEvent *event)
+{
+    QStyleOption opt;
+    opt.init(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+>>>>>>> Stashed changes
 }
