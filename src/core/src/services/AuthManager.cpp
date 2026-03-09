@@ -1,6 +1,6 @@
 #include "../../include/services/AuthManager.hpp"
-#include "../../include/services/SessionManager.hpp"
 
+#include "../../include/services/SessionManager.hpp"
 #include "../../include/utils/security/PasswordHashGenerator.hpp"
 
 #include <chrono>
