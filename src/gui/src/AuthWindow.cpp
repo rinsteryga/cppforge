@@ -69,6 +69,8 @@ void AuthWindow::setupUI()
     connect(loginButton_.get(), &QPushButton::clicked, this, &AuthWindow::onLoginClicked);
     connect(createAccountButton_.get(), &QPushButton::clicked, this, &AuthWindow::onCreateAccountClicked);
     connect(passwordToggleButton_.get(), &QPushButton::clicked, this, &AuthWindow::togglePasswordVisibility);
+    connect(usernameInput_.get(), &QLineEdit::returnPressed, this, &AuthWindow::onLoginClicked);
+    connect(passwordInput_.get(), &QLineEdit::returnPressed, this, &AuthWindow::onLoginClicked);
 }
 
 void AuthWindow::centerWindow()

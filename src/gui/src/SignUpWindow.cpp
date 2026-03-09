@@ -357,6 +357,9 @@ void SignUpWindow::setupConnections()
     connect(signUpButton_.get(), &QPushButton::clicked, this, &SignUpWindow::onSignUpButtonClicked);
     connect(backToLoginButton_.get(), &QPushButton::clicked, this, &SignUpWindow::onBackToLoginClicked);
     connect(passwordToggleButton_.get(), &QPushButton::clicked, this, &SignUpWindow::togglePasswordVisibility);
+    connect(usernameInput_.get(), &QLineEdit::returnPressed, this, &SignUpWindow::onSignUpButtonClicked);
+    connect(emailInput_.get(), &QLineEdit::returnPressed, this, &SignUpWindow::onSignUpButtonClicked);
+    connect(passwordInput_.get(), &QLineEdit::returnPressed, this, &SignUpWindow::onSignUpButtonClicked);
 }
 
 void SignUpWindow::onSignUpButtonClicked()
