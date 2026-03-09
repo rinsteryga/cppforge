@@ -1,6 +1,7 @@
 #include "PgMatchingTaskRepository.hpp"
-#include "../../core/include/entities/MatchingTask.hpp"
+
 #include "../../core/include/entities/MatchingPair.hpp"
+#include "../../core/include/entities/MatchingTask.hpp"
 
 #include <QDebug>
 #include <QVariant>
@@ -13,7 +14,8 @@ namespace cppforge
     {
         PgMatchingTaskRepository::PgMatchingTaskRepository(QSqlDatabase &database) : database_(database) {}
 
-        std::vector<entities::MatchingTask> PgMatchingTaskRepository::getMatchingTasksByLessonId(uint64_t lessonId) const
+        std::vector<entities::MatchingTask>
+        PgMatchingTaskRepository::getMatchingTasksByLessonId(uint64_t lessonId) const
         {
             std::vector<entities::MatchingTask> tasks;
 
@@ -21,7 +23,8 @@ namespace cppforge
                 return tasks;
 
             QSqlQuery query(database_);
-            query.prepare("SELECT id, title, description FROM matching_tasks WHERE lesson_id = :lesson_id ORDER BY id ASC");
+            query.prepare(
+                "SELECT id, title, description FROM matching_tasks WHERE lesson_id = :lesson_id ORDER BY id ASC");
             query.bindValue(":lesson_id", QVariant::fromValue(lessonId));
 
             if (query.exec())
@@ -34,7 +37,8 @@ namespace cppforge
 
                     std::set<entities::MatchingPair> pairs;
                     QSqlQuery pairQuery(database_);
-                    pairQuery.prepare("SELECT id, left_item, right_item FROM matching_pairs WHERE matching_task_id = :task_id ORDER BY id ASC");
+                    pairQuery.prepare("SELECT id, left_item, right_item FROM matching_pairs WHERE matching_task_id = "
+                                      ":task_id ORDER BY id ASC");
                     pairQuery.bindValue(":task_id", QVariant::fromValue(taskId));
 
                     if (pairQuery.exec())
@@ -76,7 +80,8 @@ namespace cppforge
 
                 std::set<entities::MatchingPair> pairs;
                 QSqlQuery pairQuery(database_);
-                pairQuery.prepare("SELECT id, left_item, right_item FROM matching_pairs WHERE matching_task_id = :task_id ORDER BY id ASC");
+                pairQuery.prepare("SELECT id, left_item, right_item FROM matching_pairs WHERE matching_task_id = "
+                                  ":task_id ORDER BY id ASC");
                 pairQuery.bindValue(":task_id", QVariant::fromValue(id));
 
                 if (pairQuery.exec())

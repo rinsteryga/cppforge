@@ -24,9 +24,9 @@ namespace cppforge
                 return tasks;
 
             QSqlQuery query(database_);
-            query.prepare(
-                "SELECT id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit FROM coding_tasks WHERE "
-                "lesson_id = :lesson_id ORDER BY id ASC");
+            query.prepare("SELECT id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit "
+                          "FROM coding_tasks WHERE "
+                          "lesson_id = :lesson_id ORDER BY id ASC");
             query.bindValue(":lesson_id", QVariant::fromValue(lessonId));
 
             if (query.exec())
@@ -70,7 +70,8 @@ namespace cppforge
                         std::set<QString> white;
                         for (const auto &kw : whiteStr.split(",", Qt::SkipEmptyParts))
                             white.insert(kw.trimmed());
-                        if (!white.empty()) whitelist = std::move(white);
+                        if (!white.empty())
+                            whitelist = std::move(white);
                     }
 
                     if (!blackStr.isEmpty())
@@ -78,7 +79,8 @@ namespace cppforge
                         std::set<QString> black;
                         for (const auto &kw : blackStr.split(",", Qt::SkipEmptyParts))
                             black.insert(kw.trimmed());
-                        if (!black.empty()) blacklist = std::move(black);
+                        if (!black.empty())
+                            blacklist = std::move(black);
                     }
 
                     tasks.emplace_back(taskId, lessonId, title, description, initialCode, testCases, timeLimit,
@@ -99,9 +101,9 @@ namespace cppforge
                 return std::nullopt;
 
             QSqlQuery query(database_);
-            query.prepare(
-                "SELECT lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit FROM coding_tasks "
-                "WHERE id = :id");
+            query.prepare("SELECT lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, "
+                          "memory_limit FROM coding_tasks "
+                          "WHERE id = :id");
             query.bindValue(":id", QVariant::fromValue(id));
 
             if (query.exec() && query.next())
@@ -142,7 +144,8 @@ namespace cppforge
                     std::set<QString> white;
                     for (const auto &kw : whiteStr.split(",", Qt::SkipEmptyParts))
                         white.insert(kw.trimmed());
-                    if (!white.empty()) whitelist = std::move(white);
+                    if (!white.empty())
+                        whitelist = std::move(white);
                 }
 
                 if (!blackStr.isEmpty())
@@ -150,7 +153,8 @@ namespace cppforge
                     std::set<QString> black;
                     for (const auto &kw : blackStr.split(",", Qt::SkipEmptyParts))
                         black.insert(kw.trimmed());
-                    if (!black.empty()) blacklist = std::move(black);
+                    if (!black.empty())
+                        blacklist = std::move(black);
                 }
 
                 return entities::CodingTask(id, lessonId, title, description, initialCode, testCases, timeLimit,

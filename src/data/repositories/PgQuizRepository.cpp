@@ -1,4 +1,5 @@
 #include "PgQuizRepository.hpp"
+
 #include "../../core/include/entities/Quiz.hpp"
 #include "../../core/include/entities/QuizOption.hpp"
 
@@ -34,7 +35,8 @@ namespace cppforge
 
                     std::set<entities::QuizOption> options;
                     QSqlQuery optionQuery(database_);
-                    optionQuery.prepare("SELECT id, option_text, is_correct FROM quiz_options WHERE quiz_id = :quiz_id ORDER BY id ASC");
+                    optionQuery.prepare("SELECT id, option_text, is_correct FROM quiz_options WHERE quiz_id = :quiz_id "
+                                        "ORDER BY id ASC");
                     optionQuery.bindValue(":quiz_id", QVariant::fromValue(quizId));
 
                     if (optionQuery.exec())
@@ -76,7 +78,8 @@ namespace cppforge
 
                 std::set<entities::QuizOption> options;
                 QSqlQuery optionQuery(database_);
-                optionQuery.prepare("SELECT id, option_text, is_correct FROM quiz_options WHERE quiz_id = :quiz_id ORDER BY id ASC");
+                optionQuery.prepare(
+                    "SELECT id, option_text, is_correct FROM quiz_options WHERE quiz_id = :quiz_id ORDER BY id ASC");
                 optionQuery.bindValue(":quiz_id", QVariant::fromValue(id));
 
                 if (optionQuery.exec())
