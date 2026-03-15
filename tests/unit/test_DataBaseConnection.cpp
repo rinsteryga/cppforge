@@ -6,19 +6,16 @@
 #include <QtSql/QSqlQuery>
 #include <QtTest>
 
-namespace cppforge
+namespace cppforge::data
 {
-    namespace data
-    {
-        QSqlDatabase connectDatabase();
-    }
-} // namespace cppforge
+    QSqlDatabase connectDatabase();
+}
 
 class TestDataBaseConnection : public QObject
 {
     Q_OBJECT
 
-private slots:
+private:
     void test_DataBaseConnection()
     {
         db_ = cppforge::data::connectDatabase();
@@ -55,7 +52,6 @@ private slots:
         }
     }
 
-private:
     QSqlDatabase db_;
 };
 
