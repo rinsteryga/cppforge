@@ -1,11 +1,13 @@
 #pragma once
 
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QMouseEvent>
 #include <QPoint>
-#include <QPushButton>
 #include <QWidget>
+
+class QHBoxLayout;
+class QLabel;
+class QPushButton;
+class QMouseEvent;
+class QIcon;
 
 class CustomTitleBar : public QWidget
 {
@@ -13,6 +15,7 @@ class CustomTitleBar : public QWidget
 
 public:
     explicit CustomTitleBar(QWidget *parent = nullptr);
+    ~CustomTitleBar() override = default;
 
     void setTitle(const QString &title);
     void setIcon(const QIcon &icon);
@@ -32,12 +35,12 @@ private:
     void setupUI();
     void updateMaximizeRestoreIcon();
 
-    QLabel *iconLabel_;
-    QLabel *titleLabel_;
-    QPushButton *minimizeButton_;
-    QPushButton *maximizeRestoreButton_;
-    QPushButton *closeButton_;
-    QHBoxLayout *layout_;
+    QLabel *iconLabel_ = nullptr;
+    QLabel *titleLabel_ = nullptr;
+    QPushButton *minimizeButton_ = nullptr;
+    QPushButton *maximizeRestoreButton_ = nullptr;
+    QPushButton *closeButton_ = nullptr;
+    QHBoxLayout *layout_ = nullptr;
 
     QPoint dragPosition_;
     bool isMaximized_ = false;
