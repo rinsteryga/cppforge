@@ -1,6 +1,5 @@
 #include "../../src/core/include/entities/User.hpp"
-#include "../../src/core/include/utils/EnvLoader.hpp"
-#include "../../src/data/repositories/PgUserRepository.hpp"
+#include "../../src/data/include/repositories/PgUserRepository.hpp"
 
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
@@ -19,7 +18,7 @@ class TestDataBaseConnection : public QObject
 {
     Q_OBJECT
 
-private:
+private slots:
     void test_DataBaseConnection()
     {
         db_ = cppforge::data::connectDatabase();
