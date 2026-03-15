@@ -1,9 +1,11 @@
 #include "../../include/entities/Lesson.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    Lesson::Lesson(uint64_t id, uint64_t moduleId, const QString &title, const QString &content)
-        : id_(id), moduleId_(moduleId), title_(title), content_(content)
+    Lesson::Lesson(uint64_t lessonId, uint64_t moduleId, QString title, QString content)
+        : id_(lessonId), moduleId_(moduleId), title_(std::move(title)), content_(std::move(content))
     {
     }
 

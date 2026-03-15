@@ -2,16 +2,19 @@
 
 #include "../../include/entities/Achievement.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    User::User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash,
+    User::User(uint64_t userId, QString username, QString email, QString passwordHash,
                const std::chrono::system_clock::time_point &createdAt)
-        : id_(id), username_(username), email_(email), passwordHash_(passwordHash), createdAt_(createdAt)
+        : id_(userId), username_(std::move(username)), email_(std::move(email)), passwordHash_(std::move(passwordHash)),
+          createdAt_(createdAt)
     {
     }
 
-    User::User(uint64_t id, const QString &username, const QString &email, const QString &passwordHash)
-        : id_(id), username_(username), email_(email), passwordHash_(passwordHash),
+    User::User(uint64_t userId, QString username, QString email, QString passwordHash)
+        : id_(userId), username_(std::move(username)), email_(std::move(email)), passwordHash_(std::move(passwordHash)),
           createdAt_(std::chrono::system_clock::now())
     {
     }
