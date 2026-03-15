@@ -1,9 +1,16 @@
 #include "CustomTitleBar.hpp"
-#include <QApplication>
-#include <QFont>
-#include <QIcon>
 
-CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QMouseEvent>
+#include <QEvent>
+#include <QIcon>
+#include <QFont>
+#include <QApplication>
+
+CustomTitleBar::CustomTitleBar(QWidget* parent) 
+    : QWidget(parent)
 {
     setupUI();
     if (parent) {
@@ -33,17 +40,17 @@ void CustomTitleBar::setupUI()
     maximizeRestoreButton_ = new QPushButton("□", this);
     closeButton_ = new QPushButton("✕", this);
 
-    QString buttonStyle = "QPushButton { "
-                          "background-color: transparent; border: none; font-size: 18px; "
-                          "color: #5f6368; border-radius: 0px; "
-                          "} "
-                          "QPushButton:hover { background-color: #e8eaed; }";
+    const QString buttonStyle = "QPushButton { "
+                                "background-color: transparent; border: none; font-size: 18px; "
+                                "color: #5f6368; border-radius: 0px; "
+                                "} "
+                                "QPushButton:hover { background-color: #e8eaed; }";
 
-    QString closeStyle = "QPushButton { "
-                         "background-color: transparent; border: none; font-size: 18px; "
-                         "color: #5f6368; border-radius: 0px; "
-                         "} "
-                         "QPushButton:hover { background-color: #e81123; color: white; }";
+    const QString closeStyle = "QPushButton { "
+                               "background-color: transparent; border: none; font-size: 18px; "
+                               "color: #5f6368; border-radius: 0px; "
+                               "} "
+                               "QPushButton:hover { background-color: #e81123; color: white; }";
 
     minimizeButton_->setFixedSize(60, 40);
     minimizeButton_->setStyleSheet(buttonStyle);
@@ -64,40 +71,59 @@ void CustomTitleBar::setupUI()
     connect(closeButton_, &QPushButton::clicked, this, &CustomTitleBar::onCloseClicked);
 }
 
-void CustomTitleBar::setTitle(const QString &title) { if (titleLabel_) titleLabel_->setText(title); }
-void CustomTitleBar::setIcon(const QIcon &icon) { if (iconLabel_) iconLabel_->setPixmap(icon.pixmap(24, 24)); }
+void CustomTitleBar::setTitle(const QString& title) 
+{ 
+    if (titleLabel_) titleLabel_->setText(title); 
+}
+
+void CustomTitleBar::setIcon(const QIcon& icon) 
+{ 
+    if (iconLabel_) iconLabel_->setPixmap(icon.pixmap(24, 24)); 
+}
 
 void CustomTitleBar::onMinimizeClicked() { window()->showMinimized(); }
-void CustomTitleBar::onMaximizeRestoreClicked() {
-    if (window()->isMaximized()) window()->showNormal();
-    else window()->showMaximized();
+
+void CustomTitleBar::onMaximizeRestoreClicked() 
+{
+    if (window()->isMaximized()) {
+        window()->showNormal();
+    } else {
+        window()->showMaximized();
+    }
 }
+
 void CustomTitleBar::onCloseClicked() { window()->close(); }
 
-void CustomTitleBar::mousePressEvent(QMouseEvent *event) {
+void CustomTitleBar::mousePressEvent(QMouseEvent* event) 
+{
     if (event->button() == Qt::LeftButton) {
         dragPosition_ = event->globalPos() - window()->frameGeometry().topLeft();
         event->accept();
     }
 }
 
-void CustomTitleBar::mouseMoveEvent(QMouseEvent *event) {
+void CustomTitleBar::mouseMoveEvent(QMouseEvent* event) 
+{
     if (event->buttons() & Qt::LeftButton) {
         window()->move(event->globalPos() - dragPosition_);
         event->accept();
     }
 }
 
-void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event) {
+void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event) 
+{
     if (event->button() == Qt::LeftButton) {
         onMaximizeRestoreClicked();
         event->accept();
     }
 }
 
-bool CustomTitleBar::eventFilter(QObject *obj, QEvent *event) {
+bool CustomTitleBar::eventFilter(QObject* obj, QEvent* event) 
+{
     if (obj == window() && event->type() == QEvent::WindowStateChange) {
-        maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
+        if (maximizeRestoreButton_) {
+            maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
+        }
     }
     return QWidget::eventFilter(obj, event);
 }
