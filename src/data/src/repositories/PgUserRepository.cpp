@@ -1,6 +1,6 @@
-#include "PgUserRepository.hpp"
+#include "../../include/repositories/PgUserRepository.hpp"
 
-#include "../../core/include/entities/User.hpp"
+#include "../../../core/include/entities/User.hpp"
 
 #include <QDateTime>
 #include <QDebug>

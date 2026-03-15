@@ -1,7 +1,7 @@
 #include "AuthWindow.hpp"
 #include "MainWindow.hpp"
 #include "src/core/include/services/AuthManager.hpp"
-#include "src/data/repositories/PgUserRepository.hpp"
+#include "src/data/include/repositories/PgUserRepository.hpp"
 
 #include <QApplication>
 #include <QDebug>

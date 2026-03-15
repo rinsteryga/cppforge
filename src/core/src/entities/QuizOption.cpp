@@ -1,9 +1,11 @@
 #include "../../include/entities/QuizOption.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    QuizOption::QuizOption(uint64_t id, const QString &optionText, bool isCorrect)
-        : id_(id), optionText_(optionText), isCorrect_(isCorrect)
+    QuizOption::QuizOption(uint64_t optionId, QString optionText, bool isCorrect)
+        : id_(optionId), optionText_(std::move(optionText)), isCorrect_(isCorrect)
     {
     }
 

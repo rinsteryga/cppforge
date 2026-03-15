@@ -2,15 +2,17 @@
 
 #include "../../include/entities/TestCase.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    CodingTask::CodingTask(uint64_t id, uint64_t lessonId, const QString &title, const QString &description,
-                           const QString &initialCode, const std::set<TestCase> &testCases, int32_t timeLimit,
-                           int32_t memoryLimit, const std::optional<std::set<QString>> &whitelist,
+    CodingTask::CodingTask(uint64_t taskId, uint64_t lessonId, QString title, QString description, QString initialCode,
+                           const std::set<TestCase> &testCases, int32_t timeLimit, int32_t memoryLimit,
+                           const std::optional<std::set<QString>> &whitelist,
                            const std::optional<std::set<QString>> &blacklist)
-        : id_(id), lessonId_(lessonId), title_(title), description_(description), initialCode_(initialCode),
-          testCases_(testCases), timeLimit_(timeLimit), memoryLimit_(memoryLimit), whitelist_(whitelist),
-          blacklist_(blacklist)
+        : id_(taskId), lessonId_(lessonId), title_(std::move(title)), description_(std::move(description)),
+          initialCode_(std::move(initialCode)), testCases_(testCases), timeLimit_(timeLimit), memoryLimit_(memoryLimit),
+          whitelist_(whitelist), blacklist_(blacklist)
     {
     }
 

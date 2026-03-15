@@ -3,6 +3,8 @@
 #include "../../include/services/SessionManager.hpp"
 #include "../../include/utils/security/PasswordHashGenerator.hpp"
 
+#include <QDebug>
+
 #include <chrono>
 
 namespace cppforge::services
@@ -21,10 +23,14 @@ namespace cppforge::services
         }
 
         if (!userOpt.has_value())
+        {
             return false;
+        }
 
         if (!cppforge::utils::security::PasswordHashGenerator::verify(password, userOpt->getPasswordHash()))
+        {
             return false;
+        }
 
         SessionManager::instance().loginUser(std::make_shared<cppforge::entities::User>(std::move(userOpt.value())));
         return true;
@@ -33,7 +39,9 @@ namespace cppforge::services
     bool AuthManager::registerUser(const QString &username, const QString &email, const QString &password)
     {
         if (userRepository_->findByEmail(email).has_value())
+        {
             return false;
+        }
 
         const QString hash = cppforge::utils::security::PasswordHashGenerator::generate(password);
 

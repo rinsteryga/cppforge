@@ -4,23 +4,47 @@
 
 #include <cstdint>
 
-namespace cppforge
+namespace cppforge::entities
 {
-    namespace entities
+    /**
+     * @brief Represents a top-level organizational unit in the learning curriculum.
+     *
+     * A Module acts as a generic container that aggregates related Lessons
+     * under a single thematic topic or phase of learning.
+     */
+    class Module
     {
-        class Module
-        {
-        public:
-            Module(uint64_t id, const QString &name, const QString &description);
+    public:
+        /**
+         * @brief Constructs a new Module instance.
+         *
+         * @param moduleId The unique identifier of the module.
+         * @param name The overarching thematic name of the module.
+         * @param description A brief overview of what this module covers.
+         */
+        Module(uint64_t moduleId, QString name, QString description);
 
-            uint64_t getId() const;
-            const QString &getName() const;
-            const QString &getDescription() const;
+        /**
+         * @brief Retrieves the module's unique identifier.
+         * @return The 64-bit unsigned integer representing the module ID.
+         */
+        uint64_t getId() const;
 
-        private:
-            uint64_t id_;
-            QString name_;
-            QString description_;
-        };
-    } // namespace entities
-} // namespace cppforge
+        /**
+         * @brief Retrieves the display name of the module.
+         * @return A constant reference to the QString containing the name.
+         */
+        const QString &getName() const;
+
+        /**
+         * @brief Retrieves the syllabus description of the module.
+         * @return A constant reference to the QString containing the description.
+         */
+        const QString &getDescription() const;
+
+    private:
+        uint64_t id_;
+        QString name_;
+        QString description_;
+    };
+} // namespace cppforge::entities

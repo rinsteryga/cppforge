@@ -1,7 +1,7 @@
-#include "PgQuizRepository.hpp"
+#include "../../include/repositories/PgQuizRepository.hpp"
 
-#include "../../core/include/entities/Quiz.hpp"
-#include "../../core/include/entities/QuizOption.hpp"
+#include "../../../core/include/entities/Quiz.hpp"
+#include "../../../core/include/entities/QuizOption.hpp"
 
 #include <QDebug>
 #include <QVariant>

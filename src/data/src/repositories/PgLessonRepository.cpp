@@ -1,6 +1,6 @@
-#include "PgLessonRepository.hpp"
+#include "../../include/repositories/PgLessonRepository.hpp"
 
-#include "../../core/include/entities/Lesson.hpp"
+#include "../../../core/include/entities/Lesson.hpp"
 
 #include <QDebug>
 #include <QVariant>

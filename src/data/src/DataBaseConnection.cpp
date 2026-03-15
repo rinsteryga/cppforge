@@ -1,4 +1,4 @@
-#include "../core/include/utils/EnvLoader.hpp"
+#include "../../core/include/utils/EnvLoader.hpp"
 
 #include <QDebug>
 #include <QProcessEnvironment>

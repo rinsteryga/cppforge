@@ -1,9 +1,11 @@
 #include "../../include/entities/Module.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    Module::Module(uint64_t id, const QString &name, const QString &description)
-        : id_(id), name_(name), description_(description)
+    Module::Module(uint64_t moduleId, QString name, QString description)
+        : id_(moduleId), name_(std::move(name)), description_(std::move(description))
     {
     }
 

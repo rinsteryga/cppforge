@@ -1,9 +1,11 @@
 #include "../../include/entities/TestCase.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    TestCase::TestCase(uint64_t id, const QString &input, const QString &expectedOutput, bool isPublic)
-        : id_(id), input_(input), expectedOutput_(expectedOutput), isPublic_(isPublic)
+    TestCase::TestCase(uint64_t testCaseId, QString input, QString expectedOutput, bool isPublic)
+        : id_(testCaseId), input_(std::move(input)), expectedOutput_(std::move(expectedOutput)), isPublic_(isPublic)
     {
     }
 

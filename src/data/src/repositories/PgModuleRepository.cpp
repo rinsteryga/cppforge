@@ -1,6 +1,6 @@
-#include "PgModuleRepository.hpp"
+#include "../../include/repositories/PgModuleRepository.hpp"
 
-#include "../../core/include/entities/Module.hpp"
+#include "../../../core/include/entities/Module.hpp"
 
 #include <QDebug>
 #include <QVariant>

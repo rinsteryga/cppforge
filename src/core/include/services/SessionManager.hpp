@@ -6,34 +6,70 @@
 
 #include <memory>
 
-namespace cppforge
+namespace cppforge::services
 {
-    namespace services
+    /**
+     * @brief Singleton service managing the active user session and state.
+     *
+     * SessionManager keeps track of the currently authenticated User entity,
+     * emits signals for session state changes (login/logout), and provides
+     * a global access point to the active profile.
+     */
+    class SessionManager : public QObject
     {
-        class SessionManager : public QObject
-        {
-            Q_OBJECT
+        Q_OBJECT
 
-        public:
-            static SessionManager &instance();
+    public:
+        /**
+         * @brief Returns the global singleton instance of the SessionManager.
+         * @return A reference to the SessionManager instance.
+         */
+        static SessionManager &instance();
 
-            void loginUser(std::shared_ptr<cppforge::entities::User> user);
-            void logoutUser();
+        /**
+         * @brief Sets the given user as the active session holder.
+         * @param user A shared pointer to the User entity being logged in.
+         */
+        void loginUser(std::shared_ptr<cppforge::entities::User> user);
 
-            bool isAuthenticated() const;
-            std::shared_ptr<cppforge::entities::User> getCurrentUser() const;
+        /**
+         * @brief Clears the active session and logs out the current user.
+         */
+        void logoutUser();
 
-        signals:
-            void userLoggedIn();
-            void userLoggedOut();
-            void userProfileUpdated();
+        /**
+         * @brief Checks if there is an active authenticated session.
+         * @return True if a user is currently logged in; otherwise false.
+         */
+        bool isAuthenticated() const;
 
-        private:
-            explicit SessionManager(QObject *parent = nullptr);
-            ~SessionManager() override;
-            Q_DISABLE_COPY(SessionManager)
+        /**
+         * @brief Retrieves the user entity currently tied to the session.
+         * @return A shared pointer to the current User; null if not authenticated.
+         */
+        std::shared_ptr<cppforge::entities::User> getCurrentUser() const;
 
-            std::shared_ptr<cppforge::entities::User> currentUser_;
-        };
-    } // namespace services
-} // namespace cppforge
+    signals:
+        /**
+         * @brief Emitted when a new session is successfully established.
+         */
+        void userLoggedIn();
+
+        /**
+         * @brief Emitted when the current session is terminated.
+         */
+        void userLoggedOut();
+
+        /**
+         * @brief Emitted when the current user's profile metadata changes.
+         */
+        void userProfileUpdated();
+
+    private:
+        explicit SessionManager(QObject *parent = nullptr);
+        ~SessionManager() override;
+        Q_DISABLE_COPY(SessionManager)
+
+        std::shared_ptr<cppforge::entities::User> currentUser_;
+    };
+} // namespace cppforge::services

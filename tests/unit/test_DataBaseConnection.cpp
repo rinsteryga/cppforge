@@ -1,19 +1,15 @@
 #include "../../src/core/include/entities/User.hpp"
-#include "../../src/core/include/utils/EnvLoader.hpp"
-#include "../../src/data/repositories/PgUserRepository.hpp"
+#include "../../src/data/include/repositories/PgUserRepository.hpp"
 
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
 #include <QtTest>
 
-namespace cppforge
+namespace cppforge::data
 {
-    namespace data
-    {
-        QSqlDatabase connectDatabase();
-    }
-} // namespace cppforge
+    QSqlDatabase connectDatabase();
+}
 
 class TestDataBaseConnection : public QObject
 {
@@ -56,7 +52,6 @@ private:
         }
     }
 
-private:
     QSqlDatabase db_;
 };
 

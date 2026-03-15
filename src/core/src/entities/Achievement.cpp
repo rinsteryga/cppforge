@@ -1,10 +1,13 @@
 #include "../../include/entities/Achievement.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    Achievement::Achievement(int64_t id, const QString &name, const QString &description, const QString &iconPath,
+    Achievement::Achievement(int64_t achievementId, QString name, QString description, QString iconPath,
                              const std::chrono::system_clock::time_point &dateEarned)
-        : id_(id), name_(name), description_(description), iconPath_(iconPath), dateEarned_(dateEarned)
+        : id_(achievementId), name_(std::move(name)), description_(std::move(description)),
+          iconPath_(std::move(iconPath)), dateEarned_(dateEarned)
     {
     }
 
