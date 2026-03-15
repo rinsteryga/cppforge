@@ -38,7 +38,7 @@ MainWindow::~MainWindow() = default;
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QStyleOption opt;
-    opt.init(this);
+    opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
@@ -125,7 +125,7 @@ void MainWindow::setupWindowProperties()
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setAttribute(Qt::WA_TranslucentBackground);
+    setAttribute(Qt::WA_TranslucentBackground, false);
     setObjectName("MainWindow");
 }
 
@@ -141,12 +141,6 @@ void MainWindow::setupLeftPanel()
     sideBar = std::make_unique<QFrame>(this);
     sideBar->setObjectName("sideBar");
     sideBar->setFixedWidth(220);
-
-    auto shadowEffect = new QGraphicsDropShadowEffect();
-    shadowEffect->setBlurRadius(20);
-    shadowEffect->setColor(QColor(0, 0, 0, 30));
-    shadowEffect->setOffset(0, 4);
-    sideBar->setGraphicsEffect(shadowEffect);
 
     auto layout = std::make_unique<QVBoxLayout>();
     layout->setContentsMargins(20, 40, 20, 30);
@@ -212,16 +206,9 @@ void MainWindow::setupCenterPanel()
     centerPanelLayout_->setSpacing(20);
     centerPanelLayout_->setAlignment(Qt::AlignTop);
 
-    // Карточка событий
     eventCard = std::make_unique<QFrame>();
     eventCard->setProperty("class", QVariant("card"));
     eventCard->setObjectName("eventCard");
-
-    auto shadowEffect = new QGraphicsDropShadowEffect();
-    shadowEffect->setBlurRadius(20);
-    shadowEffect->setColor(QColor(0, 0, 0, 15));
-    shadowEffect->setOffset(0, 4);
-    eventCard->setGraphicsEffect(shadowEffect);
 
     auto eLayout = std::make_unique<QVBoxLayout>();
     eLayout->setContentsMargins(25, 25, 25, 25);
@@ -243,16 +230,9 @@ void MainWindow::setupCenterPanel()
     eLayout->addStretch();
     eventCard->setLayout(eLayout.release());
 
-    // Карточка задания дня
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", QVariant("card"));
     dailyTaskCard->setObjectName("dailyTaskCard");
-
-    auto shadowEffect2 = new QGraphicsDropShadowEffect();
-    shadowEffect2->setBlurRadius(20);
-    shadowEffect2->setColor(QColor(0, 0, 0, 15));
-    shadowEffect2->setOffset(0, 4);
-    dailyTaskCard->setGraphicsEffect(shadowEffect2);
 
     auto dLayout = std::make_unique<QVBoxLayout>();
     dLayout->setContentsMargins(25, 25, 25, 25);
@@ -290,7 +270,6 @@ void MainWindow::setupCenterPanel()
     dLayout->addWidget(dailyProgress.release());
     dailyTaskCard->setLayout(dLayout.release());
 
-    // Футер с ссылками
     auto footerWidget = std::make_unique<QWidget>();
     footerWidget->setObjectName("footerWidget");
     footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget.get());
@@ -354,12 +333,6 @@ void MainWindow::setupRightPanel()
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", QVariant("card"));
         moduleCard->setObjectName(QString("moduleCard_%1").arg(i));
-
-        auto shadowEffect = new QGraphicsDropShadowEffect();
-        shadowEffect->setBlurRadius(15);
-        shadowEffect->setColor(QColor(0, 0, 0, 10));
-        shadowEffect->setOffset(0, 2);
-        moduleCard->setGraphicsEffect(shadowEffect);
 
         auto mLayout = std::make_unique<QVBoxLayout>();
         mLayout->setContentsMargins(20, 20, 20, 20);
@@ -452,10 +425,7 @@ void MainWindow::setupUI()
     setupConnections();
 }
 
-void MainWindow::setupConnections()
-{
-    // Дополнительные подключения при необходимости
-}
+void MainWindow::setupConnections() {}
 
 void MainWindow::setupStyles()
 {
@@ -467,26 +437,27 @@ void MainWindow::setupStyles()
 
         #MainWindow {
             background-color: white;
-            border: none;
-            border-radius: 24px;
+            border: 1px solid #d0d0d0;
+            border-radius: 0px; 
         }
 
         QFrame#sideBar {
             background-color: white;
-            border-radius: 24px;
-            border: none;
+            border-radius: 0px;
+            border: 1px solid #e0e0e0;
         }
 
         QFrame#logoContainer {
             background-color: #f8f9ff;
-            border-radius: 20px;
+            border-radius: 0px;
+            border: 1px solid #eef0f5;
             padding: 15px;
         }
 
         QPushButton#navButton {
             background-color: transparent;
             border: none;
-            border-radius: 12px;
+            border-radius: 0px;
             font-weight: 500;
             color: #555;
             text-align: left;
@@ -506,8 +477,8 @@ void MainWindow::setupStyles()
 
         QFrame[class="card"] {
             background-color: white;
-            border-radius: 24px;
-            border: none;
+            border-radius: 0px;
+            border: 1px solid #e0e0e0;
         }
 
         QFrame#eventCard {
@@ -518,7 +489,7 @@ void MainWindow::setupStyles()
             color: #aaa;
             font-size: 14px;
             background-color: #f8f9fc;
-            border-radius: 16px;
+            border-radius: 0px;
             padding: 10px;
         }
 
@@ -542,7 +513,8 @@ void MainWindow::setupStyles()
 
         QProgressBar#dailyProgress {
             background: #eef0f5;
-            border-radius: 8px;
+            border-radius: 0px;
+            border: 1px solid #ddd;
             height: 16px;
             margin-top: 5px;
             text-align: center;
@@ -552,9 +524,8 @@ void MainWindow::setupStyles()
         }
 
         QProgressBar#dailyProgress::chunk {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #62639b, stop:1 #7B7CB5);
-            border-radius: 8px;
+            background: #62639b;
+            border-radius: 0px;
         }
 
         QScrollArea#modulesScrollArea {
@@ -567,11 +538,10 @@ void MainWindow::setupStyles()
         }
 
         QPushButton#moduleBtn {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #62639b, stop:1 #7B7CB5);
+            background: #62639b;
             color: white;
             font-weight: 600;
-            border-radius: 10px;
+            border-radius: 0px;
             padding: 8px 20px;
             text-align: center;
             border: none;
@@ -579,8 +549,7 @@ void MainWindow::setupStyles()
         }
 
         QPushButton#moduleBtn:hover {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #7B7CB5, stop:1 #62639b);
+            background: #7B7CB5;
         }
 
         QPushButton#moduleBtn:pressed {
@@ -595,7 +564,8 @@ void MainWindow::setupStyles()
 
         QProgressBar#moduleProgress {
             background: #eef0f5;
-            border-radius: 8px;
+            border-radius: 0px;
+            border: 1px solid #ddd;
             height: 16px;
             text-align: center;
             font-size: 11px;
@@ -604,9 +574,8 @@ void MainWindow::setupStyles()
         }
 
         QProgressBar#moduleProgress::chunk {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 #62639b, stop:1 #7B7CB5);
-            border-radius: 8px;
+            background: #62639b;
+            border-radius: 0px;
         }
 
         QLabel[class="progress-text"] {
@@ -625,13 +594,12 @@ void MainWindow::setupStyles()
 
         QScrollBar:vertical {
             background: transparent;
-            width: 6px;
-            border-radius: 3px;
+            width: 8px;
         }
 
         QScrollBar::handle:vertical {
             background: #d0d0d0;
-            border-radius: 3px;
+            border-radius: 0px;
             min-height: 40px;
         }
 
@@ -660,7 +628,7 @@ void MainWindow::setupStyles()
             border: none;
             padding: 6px 12px;
             text-align: left;
-            border-radius: 6px;
+            border-radius: 0px;
         }
 
         QPushButton[class="footer-link"]:hover {
@@ -685,7 +653,6 @@ void MainWindow::onModuleButtonClicked()
         int moduleId = button->property("moduleId").toInt();
         qDebug() << "Module button clicked:" << moduleId;
 
-        // Убедимся, что модуль существует в JSON
         if (moduleId == 1)
         {
             animateToTaskWindow(moduleId);
@@ -693,7 +660,6 @@ void MainWindow::onModuleButtonClicked()
         else
         {
             qDebug() << "Module" << moduleId << "not available yet";
-            // Можно показать сообщение, что модуль заблокирован
         }
     }
 }
@@ -733,7 +699,6 @@ void MainWindow::openTaskWindow(int moduleId)
 
 void MainWindow::onTaskWindowClosed()
 {
-    // Плавно показываем главное окно при закрытии окна заданий
     show();
     fadeIn();
 }
