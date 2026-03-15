@@ -1,7 +1,7 @@
-#include "PgMatchingTaskRepository.hpp"
+#include "../../include/repositories/PgMatchingTaskRepository.hpp"
 
-#include "../../core/include/entities/MatchingPair.hpp"
-#include "../../core/include/entities/MatchingTask.hpp"
+#include "../../../core/include/entities/MatchingPair.hpp"
+#include "../../../core/include/entities/MatchingTask.hpp"
 
 #include <QDebug>
 #include <QVariant>
