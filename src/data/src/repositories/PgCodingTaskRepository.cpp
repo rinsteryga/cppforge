@@ -1,7 +1,7 @@
-#include "PgCodingTaskRepository.hpp"
+#include "../../include/repositories/PgCodingTaskRepository.hpp"
 
-#include "../../core/include/entities/CodingTask.hpp"
-#include "../../core/include/entities/TestCase.hpp"
+#include "../../../core/include/entities/CodingTask.hpp"
+#include "../../../core/include/entities/TestCase.hpp"
 
 #include <QDebug>
 #include <QVariant>
