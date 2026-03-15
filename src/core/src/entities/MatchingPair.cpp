@@ -1,9 +1,11 @@
 #include "../../include/entities/MatchingPair.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    MatchingPair::MatchingPair(uint64_t id, const QString &leftItem, const QString &rightItem)
-        : id_(id), leftItem_(leftItem), rightItem_(rightItem)
+    MatchingPair::MatchingPair(uint64_t pairId, QString leftItem, QString rightItem)
+        : id_(pairId), leftItem_(std::move(leftItem)), rightItem_(std::move(rightItem))
     {
     }
 

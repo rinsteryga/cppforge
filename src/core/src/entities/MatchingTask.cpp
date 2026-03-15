@@ -2,11 +2,13 @@
 
 #include "../../include/entities/MatchingPair.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    MatchingTask::MatchingTask(uint64_t id, uint64_t lessonId, const QString &title, const QString &description,
+    MatchingTask::MatchingTask(uint64_t taskId, uint64_t lessonId, QString title, QString description,
                                const std::set<MatchingPair> &pairs)
-        : id_(id), lessonId_(lessonId), title_(title), description_(description), pairs_(pairs)
+        : id_(taskId), lessonId_(lessonId), title_(std::move(title)), description_(std::move(description)), pairs_(pairs)
     {
     }
 

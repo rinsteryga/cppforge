@@ -2,11 +2,12 @@
 
 #include "../../include/entities/QuizOption.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    Quiz::Quiz(uint64_t id, uint64_t lessonId, const QString &title, const QString &question,
-               const std::set<QuizOption> &options)
-        : id_(id), lessonId_(lessonId), title_(title), question_(question), options_(options)
+    Quiz::Quiz(uint64_t quizId, uint64_t lessonId, QString title, QString question, const std::set<QuizOption> &options)
+        : id_(quizId), lessonId_(lessonId), title_(std::move(title)), question_(std::move(question)), options_(options)
     {
     }
 
