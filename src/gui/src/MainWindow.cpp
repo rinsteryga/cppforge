@@ -38,7 +38,7 @@ MainWindow::~MainWindow() = default;
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QStyleOption opt;
-    opt.initFrom(this); // Исправлено: initFrom вместо init
+    opt.initFrom(this); 
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
@@ -125,7 +125,6 @@ void MainWindow::setupWindowProperties()
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    // УБРАНО: setAttribute(Qt::WA_TranslucentBackground) - это убирает размытие краев
     setAttribute(Qt::WA_TranslucentBackground, false); 
     setObjectName("MainWindow");
 }
@@ -143,7 +142,6 @@ void MainWindow::setupLeftPanel()
     sideBar->setObjectName("sideBar");
     sideBar->setFixedWidth(220);
 
-    // УДАЛЕНО: shadowEffect (тени создают мыло)
 
     auto layout = std::make_unique<QVBoxLayout>();
     layout->setContentsMargins(20, 40, 20, 30);
@@ -209,12 +207,9 @@ void MainWindow::setupCenterPanel()
     centerPanelLayout_->setSpacing(20);
     centerPanelLayout_->setAlignment(Qt::AlignTop);
 
-    // Карточка событий
     eventCard = std::make_unique<QFrame>();
     eventCard->setProperty("class", QVariant("card"));
     eventCard->setObjectName("eventCard");
-
-    // УДАЛЕНО: shadowEffect (тени создают мыло)
 
     auto eLayout = std::make_unique<QVBoxLayout>();
     eLayout->setContentsMargins(25, 25, 25, 25);
@@ -236,12 +231,10 @@ void MainWindow::setupCenterPanel()
     eLayout->addStretch();
     eventCard->setLayout(eLayout.release());
 
-    // Карточка задания дня
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", QVariant("card"));
     dailyTaskCard->setObjectName("dailyTaskCard");
 
-    // УДАЛЕНО: shadowEffect2 (тени создают мыло)
 
     auto dLayout = std::make_unique<QVBoxLayout>();
     dLayout->setContentsMargins(25, 25, 25, 25);
@@ -279,7 +272,6 @@ void MainWindow::setupCenterPanel()
     dLayout->addWidget(dailyProgress.release());
     dailyTaskCard->setLayout(dLayout.release());
 
-    // Футер с ссылками
     auto footerWidget = std::make_unique<QWidget>();
     footerWidget->setObjectName("footerWidget");
     footerLinksLayout = std::make_unique<QHBoxLayout>(footerWidget.get());
@@ -343,8 +335,6 @@ void MainWindow::setupRightPanel()
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", QVariant("card"));
         moduleCard->setObjectName(QString("moduleCard_%1").arg(i));
-
-        // УДАЛЕНО: shadowEffect (тени создают мыло)
 
         auto mLayout = std::make_unique<QVBoxLayout>();
         mLayout->setContentsMargins(20, 20, 20, 20);

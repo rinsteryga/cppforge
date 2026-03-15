@@ -14,7 +14,6 @@ CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
 void CustomTitleBar::setupUI()
 {
     setFixedHeight(40);
-    // ПРЯМЫЕ УГЛЫ: border-radius: 0px обязателен
     setStyleSheet("background-color: white; border-bottom: 1px solid #e0e0e0; border-radius: 0px;");
 
     layout_ = new QHBoxLayout(this);
@@ -34,7 +33,6 @@ void CustomTitleBar::setupUI()
     maximizeRestoreButton_ = new QPushButton("□", this);
     closeButton_ = new QPushButton("✕", this);
 
-    // Убираем закругления у кнопок при наведении
     QString buttonStyle = "QPushButton { "
                           "background-color: transparent; border: none; font-size: 18px; "
                           "color: #5f6368; border-radius: 0px; "
