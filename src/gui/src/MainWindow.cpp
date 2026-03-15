@@ -38,7 +38,7 @@ MainWindow::~MainWindow() = default;
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QStyleOption opt;
-    opt.initFrom(this); 
+    opt.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
@@ -125,7 +125,7 @@ void MainWindow::setupWindowProperties()
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setAttribute(Qt::WA_TranslucentBackground, false); 
+    setAttribute(Qt::WA_TranslucentBackground, false);
     setObjectName("MainWindow");
 }
 
@@ -141,7 +141,6 @@ void MainWindow::setupLeftPanel()
     sideBar = std::make_unique<QFrame>(this);
     sideBar->setObjectName("sideBar");
     sideBar->setFixedWidth(220);
-
 
     auto layout = std::make_unique<QVBoxLayout>();
     layout->setContentsMargins(20, 40, 20, 30);
@@ -234,7 +233,6 @@ void MainWindow::setupCenterPanel()
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", QVariant("card"));
     dailyTaskCard->setObjectName("dailyTaskCard");
-
 
     auto dLayout = std::make_unique<QVBoxLayout>();
     dLayout->setContentsMargins(25, 25, 25, 25);
@@ -427,9 +425,7 @@ void MainWindow::setupUI()
     setupConnections();
 }
 
-void MainWindow::setupConnections()
-{
-}
+void MainWindow::setupConnections() {}
 
 void MainWindow::setupStyles()
 {

@@ -1,21 +1,22 @@
 #include "TaskWindow.hpp"
+
 #include "CustomTitleBar.hpp"
 
-#include <QVBoxLayout>
+#include <QFrame>
+#include <QGuiApplication>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
+#include <QPainter>
 #include <QPushButton>
+#include <QScreen>
+#include <QScrollArea>
 #include <QSplitter>
 #include <QStackedWidget>
-#include <QTextEdit>
-#include <QScrollArea>
-#include <QFrame>
-#include <QScreen>
-#include <QGuiApplication>
-#include <QTimer>
-#include <QPainter>
 #include <QStyleOption>
-#include <QIcon>
+#include <QTextEdit>
+#include <QTimer>
+#include <QVBoxLayout>
 
 TaskWindow::TaskWindow(QWidget *parent) : QWidget(parent)
 {
@@ -37,7 +38,8 @@ void TaskWindow::paintEvent(QPaintEvent *event)
 void TaskWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen) {
+    if (screen)
+    {
         QRect adj = screen->availableGeometry();
         move(adj.x() + (adj.width() - width()) / 2, adj.y() + (adj.height() - height()) / 2);
     }
@@ -60,7 +62,7 @@ void TaskWindow::setupUI()
     customTitleBar_->setIcon(windowIcon());
     rootLayout->addWidget(customTitleBar_.get());
 
-    QFrame* line = new QFrame();
+    QFrame *line = new QFrame();
     line->setFixedHeight(1);
     line->setStyleSheet("background-color: #999;");
     rootLayout->addWidget(line);
@@ -90,7 +92,7 @@ void TaskWindow::setupUI()
     tabLayout->addWidget(btnPractice);
     tabLayout->addWidget(btnTheory);
     tabLayout->addStretch();
-    
+
     auto btnCollapse = new QPushButton("<");
     btnCollapse->setFixedSize(30, 30);
     btnCollapse->setFlat(true);
@@ -98,7 +100,7 @@ void TaskWindow::setupUI()
     leftLayout->addWidget(tabHeader);
 
     auto contentStack = new QStackedWidget();
-    
+
     auto practiceScroll = new QScrollArea();
     auto practiceContent = new QLabel("ТЕКСТ ПРАКТИКИ\n\nТЕКСТ ЗАДАНИЯ\nТЕКСТ ТЕКСТ");
     practiceContent->setAlignment(Qt::AlignTop);
@@ -175,8 +177,20 @@ void TaskWindow::setupUI()
     mainSplitter->addWidget(rightContainer);
     rootLayout->addWidget(mainSplitter);
 
-    connect(btnPractice, &QPushButton::clicked, [=](){ contentStack->setCurrentIndex(0); btnPractice->setChecked(true); btnTheory->setChecked(false); });
-    connect(btnTheory, &QPushButton::clicked, [=](){ contentStack->setCurrentIndex(1); btnTheory->setChecked(true); btnPractice->setChecked(false); });
+    connect(btnPractice, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(0);
+                btnPractice->setChecked(true);
+                btnTheory->setChecked(false);
+            });
+    connect(btnTheory, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(1);
+                btnTheory->setChecked(true);
+                btnPractice->setChecked(false);
+            });
     connect(btnBack, &QPushButton::clicked, this, &TaskWindow::fadeOut);
 
     setupStyles();
@@ -200,7 +214,8 @@ void TaskWindow::setupStyles()
     )");
 }
 
-void TaskWindow::fadeIn() {
+void TaskWindow::fadeIn()
+{
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
     transitionAnimation_->setStartValue(0.0);
@@ -208,16 +223,23 @@ void TaskWindow::fadeIn() {
     transitionAnimation_->start();
 }
 
-void TaskWindow::fadeOut() {
+void TaskWindow::fadeOut()
+{
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(200);
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() { hide(); emit windowClosed(); });
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
+            [this]()
+            {
+                hide();
+                emit windowClosed();
+            });
     transitionAnimation_->start();
 }
 
-void TaskWindow::showEvent(QShowEvent *event) {
+void TaskWindow::showEvent(QShowEvent *event)
+{
     QWidget::showEvent(event);
     fadeIn();
 }

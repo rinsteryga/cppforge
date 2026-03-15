@@ -1,9 +1,11 @@
 #pragma once
 
+#include "CustomTitleBar.hpp"
+
 #include <QPropertyAnimation>
 #include <QWidget>
+
 #include <memory>
-#include "CustomTitleBar.hpp"
 
 class TaskWindow : public QWidget
 {

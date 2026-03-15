@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QWidget>
 #include <QPoint>
+#include <QWidget>
 
 class QHBoxLayout;
 class QLabel;
@@ -14,17 +14,17 @@ class CustomTitleBar : public QWidget
     Q_OBJECT
 
 public:
-    explicit CustomTitleBar(QWidget* parent = nullptr);
-    ~CustomTitleBar() override = default; 
+    explicit CustomTitleBar(QWidget *parent = nullptr);
+    ~CustomTitleBar() override = default;
 
-    void setTitle(const QString& title);
-    void setIcon(const QIcon& icon);
+    void setTitle(const QString &title);
+    void setIcon(const QIcon &icon);
 
 protected:
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void mouseDoubleClickEvent(QMouseEvent* event) override;
-    bool eventFilter(QObject* obj, QEvent* event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
     void onMinimizeClicked();
@@ -35,12 +35,12 @@ private:
     void setupUI();
     void updateMaximizeRestoreIcon();
 
-    QLabel* iconLabel_ = nullptr;
-    QLabel* titleLabel_ = nullptr;
-    QPushButton* minimizeButton_ = nullptr;
-    QPushButton* maximizeRestoreButton_ = nullptr;
-    QPushButton* closeButton_ = nullptr;
-    QHBoxLayout* layout_ = nullptr;
+    QLabel *iconLabel_ = nullptr;
+    QLabel *titleLabel_ = nullptr;
+    QPushButton *minimizeButton_ = nullptr;
+    QPushButton *maximizeRestoreButton_ = nullptr;
+    QPushButton *closeButton_ = nullptr;
+    QHBoxLayout *layout_ = nullptr;
 
     QPoint dragPosition_;
     bool isMaximized_ = false;

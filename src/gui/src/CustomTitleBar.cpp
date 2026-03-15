@@ -1,19 +1,19 @@
 #include "CustomTitleBar.hpp"
 
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QMouseEvent>
-#include <QEvent>
-#include <QIcon>
-#include <QFont>
 #include <QApplication>
+#include <QEvent>
+#include <QFont>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QPushButton>
 
-CustomTitleBar::CustomTitleBar(QWidget* parent) 
-    : QWidget(parent)
+CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
 {
     setupUI();
-    if (parent) {
+    if (parent)
+    {
         window()->installEventFilter(this);
     }
 }
@@ -71,57 +71,73 @@ void CustomTitleBar::setupUI()
     connect(closeButton_, &QPushButton::clicked, this, &CustomTitleBar::onCloseClicked);
 }
 
-void CustomTitleBar::setTitle(const QString& title) 
-{ 
-    if (titleLabel_) titleLabel_->setText(title); 
-}
-
-void CustomTitleBar::setIcon(const QIcon& icon) 
-{ 
-    if (iconLabel_) iconLabel_->setPixmap(icon.pixmap(24, 24)); 
-}
-
-void CustomTitleBar::onMinimizeClicked() { window()->showMinimized(); }
-
-void CustomTitleBar::onMaximizeRestoreClicked() 
+void CustomTitleBar::setTitle(const QString &title)
 {
-    if (window()->isMaximized()) {
+    if (titleLabel_)
+        titleLabel_->setText(title);
+}
+
+void CustomTitleBar::setIcon(const QIcon &icon)
+{
+    if (iconLabel_)
+        iconLabel_->setPixmap(icon.pixmap(24, 24));
+}
+
+void CustomTitleBar::onMinimizeClicked()
+{
+    window()->showMinimized();
+}
+
+void CustomTitleBar::onMaximizeRestoreClicked()
+{
+    if (window()->isMaximized())
+    {
         window()->showNormal();
-    } else {
+    }
+    else
+    {
         window()->showMaximized();
     }
 }
 
-void CustomTitleBar::onCloseClicked() { window()->close(); }
-
-void CustomTitleBar::mousePressEvent(QMouseEvent* event) 
+void CustomTitleBar::onCloseClicked()
 {
-    if (event->button() == Qt::LeftButton) {
+    window()->close();
+}
+
+void CustomTitleBar::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+    {
         dragPosition_ = event->globalPos() - window()->frameGeometry().topLeft();
         event->accept();
     }
 }
 
-void CustomTitleBar::mouseMoveEvent(QMouseEvent* event) 
+void CustomTitleBar::mouseMoveEvent(QMouseEvent *event)
 {
-    if (event->buttons() & Qt::LeftButton) {
+    if (event->buttons() & Qt::LeftButton)
+    {
         window()->move(event->globalPos() - dragPosition_);
         event->accept();
     }
 }
 
-void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent* event) 
+void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
+    if (event->button() == Qt::LeftButton)
+    {
         onMaximizeRestoreClicked();
         event->accept();
     }
 }
 
-bool CustomTitleBar::eventFilter(QObject* obj, QEvent* event) 
+bool CustomTitleBar::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == window() && event->type() == QEvent::WindowStateChange) {
-        if (maximizeRestoreButton_) {
+    if (obj == window() && event->type() == QEvent::WindowStateChange)
+    {
+        if (maximizeRestoreButton_)
+        {
             maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
         }
     }
