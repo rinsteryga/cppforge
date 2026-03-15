@@ -5,32 +5,87 @@
 #include <chrono>
 #include <cstdint>
 
-namespace cppforge
+namespace cppforge::entities
 {
-    namespace entities
+    /**
+     * @brief Represents a user achievement within the application.
+     * 
+     * Achievements are awarded to users upon completing specific milestones or tasks.
+     * This class encapsulates the achievement's metadata, including its visual representation
+     * and the exact time it was earned by the user.
+     */
+    class Achievement
     {
-        class Achievement
-        {
-        public:
-            Achievement(int64_t id, const QString &name, const QString &description, const QString &iconPath,
-                        const std::chrono::system_clock::time_point &dateEarned);
+    public:
+        /**
+         * @brief Constructs a new Achievement instance.
+         * 
+         * @param achievementId The unique identifier of the achievement.
+         * @param name The display name of the achievement.
+         * @param description A detailed explanation of what the achievement represents.
+         * @param iconPath The file path or resource URI to the achievement's icon.
+         * @param dateEarned The timestamp indicating when the user unlocked this achievement.
+         */
+        Achievement(int64_t achievementId, QString name, QString description, QString iconPath,
+                    const std::chrono::system_clock::time_point &dateEarned);
 
-            uint64_t getId() const;
-            const QString &getName() const;
-            const QString &getDescription() const;
-            const QString &getIconPath() const;
-            std::chrono::system_clock::time_point getDateEarned() const;
+        /**
+         * @brief Retrieves the unique identifier of the achievement.
+         * @return The 64-bit unsigned integer representing the ID.
+         */
+        uint64_t getId() const;
 
-            bool operator<(const Achievement &other) const;
-            bool operator==(const Achievement &other) const;
+        /**
+         * @brief Retrieves the display name of the achievement.
+         * @return A constant reference to the QString containing the name.
+         */
+        const QString &getName() const;
 
-        private:
-            uint64_t id_;
-            QString name_;
-            QString description_;
+        /**
+         * @brief Retrieves the detailed description of the achievement.
+         * @return A constant reference to the QString containing the description.
+         */
+        const QString &getDescription() const;
 
-            QString iconPath_;
-            std::chrono::system_clock::time_point dateEarned_;
-        };
-    } // namespace entities
-} // namespace cppforge
+        /**
+         * @brief Retrieves the path to the achievement's icon.
+         * @return A constant reference to the QString containing the icon path.
+         */
+        const QString &getIconPath() const;
+
+        /**
+         * @brief Retrieves the timestamp of when the achievement was earned.
+         * @return A time_point representing the moment of unlocking.
+         */
+        std::chrono::system_clock::time_point getDateEarned() const;
+
+        /**
+         * @brief Compares this achievement with another for ordering.
+         * 
+         * The comparison is primarily based on the achievement ID to allow sorting
+         * within associative containers like std::set.
+         * 
+         * @param other The other Achievement to compare against.
+         * @return True if this achievement is considered less than the other; otherwise false.
+         */
+        bool operator<(const Achievement &other) const;
+
+        /**
+         * @brief Checks for equality between this achievement and another.
+         * 
+         * Equality is evaluated based on the unique identifier.
+         * 
+         * @param other The other Achievement to compare against.
+         * @return True if both achievements share the same ID; otherwise false.
+         */
+        bool operator==(const Achievement &other) const;
+
+    private:
+        uint64_t id_;
+        QString name_;
+        QString description_;
+
+        QString iconPath_;
+        std::chrono::system_clock::time_point dateEarned_;
+    };
+} // namespace cppforge::entities

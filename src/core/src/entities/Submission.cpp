@@ -1,11 +1,13 @@
 #include "../../include/entities/Submission.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    Submission::Submission(uint64_t id, uint64_t userId, uint64_t moduleId, uint64_t codingTaskId,
-                           const QString &sourceCode, const QDateTime &submittedAt, bool isSuccess)
-        : id_(id), userId_(userId), moduleId_(moduleId), codingTaskId_(codingTaskId), sourceCode_(sourceCode),
-          submittedAt_(submittedAt), isSuccess_(isSuccess)
+    Submission::Submission(uint64_t submissionId, uint64_t userId, uint64_t moduleId, uint64_t codingTaskId, QString sourceCode,
+                           QDateTime submittedAt, bool isSuccess)
+        : id_(submissionId), userId_(userId), moduleId_(moduleId), codingTaskId_(codingTaskId),
+          sourceCode_(std::move(sourceCode)), submittedAt_(std::move(submittedAt)), isSuccess_(isSuccess)
     {
     }
 
