@@ -23,11 +23,11 @@ signals:
 
 protected:
     void showEvent(QShowEvent *event) override;
-    // ОБЯЗАТЕЛЬНО для Frameless окон со стилями
     void paintEvent(QPaintEvent *event) override;
 
 private:
     void setupUI();
+    void setupStyles();
     void centerWindow();
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;

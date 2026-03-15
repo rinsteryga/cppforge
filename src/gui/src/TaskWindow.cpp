@@ -34,12 +34,6 @@ void TaskWindow::paintEvent(QPaintEvent *event)
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
 
-void TaskWindow::showEvent(QShowEvent *event)
-{
-    QWidget::showEvent(event);
-    fadeIn();
-}
-
 void TaskWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
@@ -49,40 +43,11 @@ void TaskWindow::centerWindow()
     }
 }
 
-void TaskWindow::fadeIn()
-{
-    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
-        transitionAnimation_->stop();
-
-    transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
-    transitionAnimation_->setDuration(300);
-    transitionAnimation_->setStartValue(0.0);
-    transitionAnimation_->setEndValue(1.0);
-    transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
-    transitionAnimation_->start();
-}
-
-void TaskWindow::fadeOut()
-{
-    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
-        transitionAnimation_->stop();
-
-    transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
-    transitionAnimation_->setDuration(200);
-    transitionAnimation_->setStartValue(1.0);
-    transitionAnimation_->setEndValue(0.0);
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() { 
-        hide(); 
-        emit windowClosed(); 
-    });
-    transitionAnimation_->start();
-}
-
 void TaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground, false);
-    setFixedSize(1200, 850);
+    setFixedSize(1250, 850);
     setObjectName("TaskWindow");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
 
@@ -90,32 +55,32 @@ void TaskWindow::setupUI()
     rootLayout->setContentsMargins(0, 0, 0, 0);
     rootLayout->setSpacing(0);
 
-    // 1. Тайтлбар
     customTitleBar_ = std::make_unique<CustomTitleBar>(this);
-    customTitleBar_->setTitle("cppforge - Редактор заданий");
+    customTitleBar_->setTitle("Название");
     customTitleBar_->setIcon(windowIcon());
     rootLayout->addWidget(customTitleBar_.get());
 
-    // 2. Основная область со сплиттером
-    auto mainSplitter = new QSplitter(Qt::Horizontal, this);
-    mainSplitter->setHandleWidth(1);
+    QFrame* line = new QFrame();
+    line->setFixedHeight(1);
+    line->setStyleSheet("background-color: #999;");
+    rootLayout->addWidget(line);
 
-    // --- ЛЕВАЯ ЧАСТЬ (Теория/Практика) ---
+    auto mainSplitter = new QSplitter(Qt::Horizontal, this);
+    mainSplitter->setHandleWidth(2);
+
     auto leftContainer = new QWidget();
     auto leftLayout = new QVBoxLayout(leftContainer);
     leftLayout->setContentsMargins(0, 0, 0, 0);
     leftLayout->setSpacing(0);
 
-    // Заголовки вкладок
-    auto tabHeader = new QWidget();
+    auto tabHeader = new QFrame();
     tabHeader->setObjectName("tabHeader");
-    tabHeader->setFixedHeight(45);
     auto tabLayout = new QHBoxLayout(tabHeader);
-    tabLayout->setContentsMargins(0, 0, 0, 0);
-    tabLayout->setSpacing(0);
+    tabLayout->setContentsMargins(15, 0, 0, 0);
+    tabLayout->setSpacing(20);
 
-    auto btnPractice = new QPushButton("Практика");
-    auto btnTheory = new QPushButton("Теория");
+    auto btnPractice = new QPushButton("✧ Практика");
+    auto btnTheory = new QPushButton("✧ Теория");
     btnPractice->setObjectName("tabButton");
     btnTheory->setObjectName("tabButton");
     btnPractice->setCheckable(true);
@@ -125,58 +90,56 @@ void TaskWindow::setupUI()
     tabLayout->addWidget(btnPractice);
     tabLayout->addWidget(btnTheory);
     tabLayout->addStretch();
+    
+    auto btnCollapse = new QPushButton("<");
+    btnCollapse->setFixedSize(30, 30);
+    btnCollapse->setFlat(true);
+    tabLayout->addWidget(btnCollapse);
     leftLayout->addWidget(tabHeader);
 
     auto contentStack = new QStackedWidget();
-
-    // Вкладка Теории
-    auto theoryScroll = new QScrollArea();
-    auto theoryContent = new QLabel("<h2>ТЕКТ ТЕОРИИ</h2><p>Инструкции и описание...</p>");
-    theoryContent->setWordWrap(true);
-    theoryContent->setContentsMargins(25, 25, 25, 25);
-    theoryContent->setAlignment(Qt::AlignTop);
-    theoryScroll->setWidget(theoryContent);
-    theoryScroll->setWidgetResizable(true);
-
-    // Вкладка Практики
+    
     auto practiceScroll = new QScrollArea();
-    auto practiceContent = new QLabel("<h2>ТЕКСТ ПРАКТИКИ</h2><p>Задание: напишите код...</p>");
-    practiceContent->setWordWrap(true);
-    practiceContent->setContentsMargins(25, 25, 25, 25);
+    auto practiceContent = new QLabel("ТЕКСТ ПРАКТИКИ\n\nТЕКСТ ЗАДАНИЯ\nТЕКСТ ТЕКСТ");
     practiceContent->setAlignment(Qt::AlignTop);
+    practiceContent->setContentsMargins(30, 30, 30, 30);
     practiceScroll->setWidget(practiceContent);
     practiceScroll->setWidgetResizable(true);
 
-    contentStack->addWidget(practiceScroll); // Index 0
-    contentStack->addWidget(theoryScroll);   // Index 1
+    auto theoryScroll = new QScrollArea();
+    auto theoryContent = new QLabel("ТЕКСТ ТЕОРИИ");
+    theoryContent->setAlignment(Qt::AlignTop);
+    theoryContent->setContentsMargins(30, 30, 30, 30);
+    theoryScroll->setWidget(theoryContent);
+    theoryScroll->setWidgetResizable(true);
+
+    contentStack->addWidget(practiceScroll);
+    contentStack->addWidget(theoryScroll);
     leftLayout->addWidget(contentStack);
 
-    // Кнопка Назад (как на фото в левом нижнем углу)
     auto footerLeft = new QHBoxLayout();
-    footerLeft->setContentsMargins(10, 10, 10, 10);
+    footerLeft->setContentsMargins(15, 15, 15, 15);
     auto btnBack = new QPushButton();
-    btnBack->setFixedSize(40, 40);
+    btnBack->setFixedSize(45, 45);
     btnBack->setObjectName("backButton");
-    btnBack->setIcon(QIcon(":/icons/back_arrow.png")); // Если нет иконки, будет просто круг
     footerLeft->addWidget(btnBack);
     footerLeft->addStretch();
     leftLayout->addLayout(footerLeft);
 
-    // --- ПРАВАЯ ЧАСТЬ (Код и Тесты) ---
     auto rightContainer = new QWidget();
     auto rightLayout = new QVBoxLayout(rightContainer);
-    rightLayout->setContentsMargins(10, 10, 10, 10);
-    rightLayout->setSpacing(10);
+    rightLayout->setContentsMargins(15, 15, 15, 15);
+    rightLayout->setSpacing(15);
 
-    // Редактор кода
+    auto rightSplitter = new QSplitter(Qt::Vertical);
+
     auto codeFrame = new QFrame();
     codeFrame->setObjectName("editorFrame");
     auto codeLayout = new QVBoxLayout(codeFrame);
-    
-    auto codeTitle = new QLabel("<font color='#555'>&lt;/&gt; Code</font>");
+    codeLayout->addWidget(new QLabel("<\\> Code"));
     auto codeEditor = new QTextEdit();
     codeEditor->setObjectName("codeEditor");
-    codeEditor->setPlaceholderText("// Твой код здесь...");
+    codeLayout->addWidget(codeEditor);
 
     auto codeActions = new QHBoxLayout();
     auto btnRun = new QPushButton("Run");
@@ -186,107 +149,75 @@ void TaskWindow::setupUI()
     codeActions->addStretch();
     codeActions->addWidget(btnRun);
     codeActions->addWidget(btnSubmit);
-
-    codeLayout->addWidget(codeTitle);
-    codeLayout->addWidget(codeEditor);
     codeLayout->addLayout(codeActions);
 
-    // Окно тестов
     auto testFrame = new QFrame();
     testFrame->setObjectName("testFrame");
     auto testLayout = new QVBoxLayout(testFrame);
-    
     auto testTabs = new QHBoxLayout();
-    testTabs->addWidget(new QLabel("Testcase"));
-    testTabs->addWidget(new QLabel("Test Result"));
+    testTabs->addWidget(new QLabel("✧ Testcase"));
+    testTabs->addWidget(new QLabel("✧ Test Result"));
     testTabs->addStretch();
-    auto btnExpand = new QPushButton("∧");
-    btnExpand->setFlat(true);
-    testTabs->addWidget(btnExpand);
-
+    testTabs->addWidget(new QLabel("∧"));
+    testLayout->addLayout(testTabs);
     auto testOutput = new QTextEdit();
     testOutput->setReadOnly(true);
     testOutput->setObjectName("testOutput");
-
-    testLayout->addLayout(testTabs);
     testLayout->addWidget(testOutput);
 
-    auto rightSplitter = new QSplitter(Qt::Vertical);
     rightSplitter->addWidget(codeFrame);
     rightSplitter->addWidget(testFrame);
+    rightSplitter->setStretchFactor(0, 3);
+    rightSplitter->setStretchFactor(1, 1);
     rightLayout->addWidget(rightSplitter);
 
     mainSplitter->addWidget(leftContainer);
     mainSplitter->addWidget(rightContainer);
-    mainSplitter->setStretchFactor(0, 1);
-    mainSplitter->setStretchFactor(1, 1);
-
     rootLayout->addWidget(mainSplitter);
 
-    // Логика переключения
-    connect(btnPractice, &QPushButton::clicked, [=]() {
-        contentStack->setCurrentIndex(0);
-        btnPractice->setChecked(true);
-        btnTheory->setChecked(false);
-    });
-    connect(btnTheory, &QPushButton::clicked, [=]() {
-        contentStack->setCurrentIndex(1);
-        btnTheory->setChecked(true);
-        btnPractice->setChecked(false);
-    });
+    connect(btnPractice, &QPushButton::clicked, [=](){ contentStack->setCurrentIndex(0); btnPractice->setChecked(true); btnTheory->setChecked(false); });
+    connect(btnTheory, &QPushButton::clicked, [=](){ contentStack->setCurrentIndex(1); btnTheory->setChecked(true); btnPractice->setChecked(false); });
     connect(btnBack, &QPushButton::clicked, this, &TaskWindow::fadeOut);
 
-    // Стили
+    setupStyles();
+}
+
+void TaskWindow::setupStyles()
+{
     setStyleSheet(R"(
-        #TaskWindow { background-color: #f0f0f0; border: 1px solid #d0d0d0; }
-        
-        #tabHeader { background-color: #d6d6d6; border-bottom: 1px solid #bbb; }
-        
-        QPushButton#tabButton {
-            border: none;
-            padding: 10px 30px;
-            font-weight: bold;
-            background: transparent;
-            border-right: 1px solid #ccc;
-        }
-        QPushButton#tabButton:checked { background-color: white; border-bottom: 2px solid #62639b; }
-        
-        QScrollArea { border: none; background-color: white; }
-        
-        #editorFrame, #testFrame {
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 0px;
-        }
-
-        #codeEditor, #testOutput {
-            border: 1px solid #eee;
-            font-family: 'Consolas', monospace;
-            font-size: 14px;
-        }
-
-        QPushButton#runButton {
-            padding: 6px 20px;
-            background: #eee;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        QPushButton#submitButton {
-            padding: 6px 20px;
-            background: #a8d5ba;
-            border: 1px solid #8dbf9f;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        QPushButton#backButton {
-            background-color: #ccc;
-            border-radius: 20px;
-            border: none;
-        }
-        QPushButton#backButton:hover { background-color: #bbb; }
-
-        QSplitter::handle { background-color: #ccc; }
+        #TaskWindow { background-color: white; border: 1px solid #777; }
+        #tabHeader { background-color: #eeeeee; border-bottom: 1px solid #bbbbbb; min-height: 40px; }
+        QPushButton#tabButton { border: none; background: transparent; font-weight: bold; font-size: 13px; padding: 5px 10px; }
+        QPushButton#tabButton:checked { border-bottom: 2px solid black; }
+        #editorFrame, #testFrame { background-color: white; border: 2px solid #dddddd; border-radius: 20px; }
+        #codeEditor, #testOutput { border: none; font-family: 'Consolas'; }
+        QPushButton#runButton, QPushButton#submitButton { border-radius: 12px; padding: 5px 20px; font-weight: bold; }
+        QPushButton#runButton { background-color: #f0f0f0; border: 1px solid #ccc; }
+        QPushButton#submitButton { background-color: #b8e2c8; border: none; }
+        QPushButton#backButton { background-color: #d9d9d9; border-radius: 22px; border: none; }
+        QSplitter::handle { background-color: #bbbbbb; }
+        QScrollArea { border: none; background: white; }
     )");
+}
+
+void TaskWindow::fadeIn() {
+    transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
+    transitionAnimation_->setDuration(300);
+    transitionAnimation_->setStartValue(0.0);
+    transitionAnimation_->setEndValue(1.0);
+    transitionAnimation_->start();
+}
+
+void TaskWindow::fadeOut() {
+    transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
+    transitionAnimation_->setDuration(200);
+    transitionAnimation_->setStartValue(1.0);
+    transitionAnimation_->setEndValue(0.0);
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() { hide(); emit windowClosed(); });
+    transitionAnimation_->start();
+}
+
+void TaskWindow::showEvent(QShowEvent *event) {
+    QWidget::showEvent(event);
+    fadeIn();
 }
