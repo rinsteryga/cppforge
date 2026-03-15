@@ -1,4 +1,4 @@
-#include "../../include/utils/EnvLoader.hpp"
+#include "utils/EnvLoader.hpp"
 
 #include <QDebug>
 #include <QFile>
@@ -22,11 +22,15 @@ namespace cppforge::utils
         {
             QString line = in.readLine().trimmed();
             if (line.isEmpty() || line.startsWith('#'))
+            {
                 continue;
+            }
 
             int eqPos = line.indexOf('=');
             if (eqPos == -1)
+            {
                 continue;
+            }
 
             QString key = line.left(eqPos).trimmed();
             QString value = line.mid(eqPos + 1).trimmed();
