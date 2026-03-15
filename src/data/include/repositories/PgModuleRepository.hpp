@@ -4,39 +4,36 @@
 
 #include <QtSql/QSqlDatabase>
 
-namespace cppforge
+namespace cppforge::repositories
 {
-    namespace repositories
+    /**
+     * @brief PostgreSQL-backed implementation of the Module repository.
+     *
+     * Manages top-level course modules and their structural metadata.
+     */
+    class PgModuleRepository : public IModuleRepository
     {
+    public:
         /**
-         * @brief PostgreSQL-backed implementation of the Module repository.
-         *
-         * Manages top-level course modules and their structural metadata.
+         * @brief Constructs a PgModuleRepository with a database connection.
+         * @param database Reference to an open QSqlDatabase.
          */
-        class PgModuleRepository : public IModuleRepository
-        {
-        public:
-            /**
-             * @brief Constructs a PgModuleRepository with a database connection.
-             * @param database Reference to an open QSqlDatabase.
-             */
-            explicit PgModuleRepository(QSqlDatabase &database);
+        explicit PgModuleRepository(QSqlDatabase &database);
 
-            /**
-             * @brief Retrieves all available modules.
-             * @return A vector of all Module entities.
-             */
-            std::vector<entities::Module> getAllModules() const override;
+        /**
+         * @brief Retrieves all available modules.
+         * @return A vector of all Module entities.
+         */
+        std::vector<entities::Module> getAllModules() const override;
 
-            /**
-             * @brief Fetches a specific module by its ID.
-             * @param id The module identifier.
-             * @return Module if found, std::nullopt otherwise.
-             */
-            std::optional<entities::Module> getModuleById(uint64_t id) const override;
+        /**
+         * @brief Fetches a specific module by its ID.
+         * @param id The module identifier.
+         * @return Module if found, std::nullopt otherwise.
+         */
+        std::optional<entities::Module> getModuleById(uint64_t id) const override;
 
-        private:
-            QSqlDatabase &database_;
-        };
-    } // namespace repositories
-} // namespace cppforge
+    private:
+        QSqlDatabase &database_;
+    };
+} // namespace cppforge::repositories
