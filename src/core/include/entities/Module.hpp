@@ -8,8 +8,8 @@ namespace cppforge::entities
 {
     /**
      * @brief Represents a top-level organizational unit in the learning curriculum.
-     * 
-     * A Module acts as a generic container that aggregates related Lessons 
+     *
+     * A Module acts as a generic container that aggregates related Lessons
      * under a single thematic topic or phase of learning.
      */
     class Module
@@ -17,7 +17,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new Module instance.
-         * 
+         *
          * @param moduleId The unique identifier of the module.
          * @param name The overarching thematic name of the module.
          * @param description A brief overview of what this module covers.

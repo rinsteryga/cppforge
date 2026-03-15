@@ -10,9 +10,9 @@ namespace cppforge::entities
 
     /**
      * @brief Represents a single educational lesson within a module.
-     * 
-     * A Lesson is a fundamental teaching unit in the platform. It encapsulates 
-     * educational content (like theoretical text or markdown) and is logically 
+     *
+     * A Lesson is a fundamental teaching unit in the platform. It encapsulates
+     * educational content (like theoretical text or markdown) and is logically
      * tied to a broader containing Module.
      */
     class Lesson
@@ -20,7 +20,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new Lesson instance.
-         * 
+         *
          * @param lessonId The unique identifier of the lesson.
          * @param moduleId The identifier of the parent module this lesson belongs to.
          * @param title The concise display title of the lesson.

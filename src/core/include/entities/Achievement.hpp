@@ -9,7 +9,7 @@ namespace cppforge::entities
 {
     /**
      * @brief Represents a user achievement within the application.
-     * 
+     *
      * Achievements are awarded to users upon completing specific milestones or tasks.
      * This class encapsulates the achievement's metadata, including its visual representation
      * and the exact time it was earned by the user.
@@ -19,7 +19,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new Achievement instance.
-         * 
+         *
          * @param achievementId The unique identifier of the achievement.
          * @param name The display name of the achievement.
          * @param description A detailed explanation of what the achievement represents.
@@ -61,10 +61,10 @@ namespace cppforge::entities
 
         /**
          * @brief Compares this achievement with another for ordering.
-         * 
+         *
          * The comparison is primarily based on the achievement ID to allow sorting
          * within associative containers like std::set.
-         * 
+         *
          * @param other The other Achievement to compare against.
          * @return True if this achievement is considered less than the other; otherwise false.
          */
@@ -72,9 +72,9 @@ namespace cppforge::entities
 
         /**
          * @brief Checks for equality between this achievement and another.
-         * 
+         *
          * Equality is evaluated based on the unique identifier.
-         * 
+         *
          * @param other The other Achievement to compare against.
          * @return True if both achievements share the same ID; otherwise false.
          */

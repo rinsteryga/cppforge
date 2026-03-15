@@ -12,7 +12,7 @@ namespace cppforge::entities
 {
     /**
      * @brief Represents a registered user of the cppforge platform.
-     * 
+     *
      * The User class is the central entity encapsulating personal profile data, authentication
      * credentials, and the user's relational associations like progress (unlocked levels)
      * and awarded achievements.
@@ -22,7 +22,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new User instance with registration time.
-         * 
+         *
          * @param userId The unique identifier of the user account.
          * @param username The display name of the user.
          * @param email The registered email address for login and contact.
@@ -31,10 +31,10 @@ namespace cppforge::entities
          */
         User(uint64_t userId, QString username, QString email, QString passwordHash,
              const std::chrono::system_clock::time_point &createdAt);
-             
+
         /**
          * @brief Constructs a new User instance without explicitly defining creation time.
-         * 
+         *
          * @param userId The unique identifier of the user account.
          * @param username The display name of the user.
          * @param email The registered email address.

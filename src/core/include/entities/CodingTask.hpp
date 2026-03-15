@@ -12,10 +12,10 @@ namespace cppforge::entities
 
     /**
      * @brief Represents a coding exercise assigned to a specific lesson.
-     * 
+     *
      * A CodingTask contains the requirements, initial code template, and the evaluation criteria
      * (test cases) necessary for a user to solve a programming problem. It also specifies the
-     * execution constraints such as time and memory limits, alongside optional lists of 
+     * execution constraints such as time and memory limits, alongside optional lists of
      * required or forbidden language constructs (whitelists and blacklists).
      */
     class CodingTask
@@ -23,7 +23,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new CodingTask instance.
-         * 
+         *
          * @param taskId The unique identifier of the coding task.
          * @param lessonId The ID of the lesson to which this task belongs.
          * @param title The concise title of the coding problem.

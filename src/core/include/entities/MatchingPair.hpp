@@ -8,7 +8,7 @@ namespace cppforge::entities
 {
     /**
      * @brief Represents a single correct pair in a matching exercise.
-     * 
+     *
      * A MatchingPair connects two related concepts (e.g., a term to its definition)
      * as part of a larger MatchingTask evaluation.
      */
@@ -17,7 +17,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new MatchingPair instance.
-         * 
+         *
          * @param pairId The unique identifier of this specific matching pair.
          * @param leftItem The first half of the logical pair (e.g., the concept).
          * @param rightItem The corresponding correct match (e.g., the definition).
@@ -44,9 +44,9 @@ namespace cppforge::entities
 
         /**
          * @brief Compares this matching pair against another to enable strict ordering.
-         * 
+         *
          * This defines a less-than operator based on the ID allowing the pair to be stored safely in sets.
-         * 
+         *
          * @param other The comparable MatchingPair entity.
          * @return True if this pair is strictly smaller than the other.
          */

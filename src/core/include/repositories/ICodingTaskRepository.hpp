@@ -15,7 +15,7 @@ namespace cppforge
     {
         /**
          * @brief Defines the abstract data access contract for CodingTask entities.
-         * 
+         *
          * This interface dictates how the application must fetch CodingTask instances
          * from the underlying data store, decoupling business logic from database tech.
          */
@@ -23,16 +23,17 @@ namespace cppforge
         {
         protected:
             ICodingTaskRepository() = default;
+
         public:
             virtual ~ICodingTaskRepository() = default;
-            ICodingTaskRepository(const ICodingTaskRepository&) = delete;
-            ICodingTaskRepository& operator=(const ICodingTaskRepository&) = delete;
-            ICodingTaskRepository(ICodingTaskRepository&&) = delete;
-            ICodingTaskRepository& operator=(ICodingTaskRepository&&) = delete;
+            ICodingTaskRepository(const ICodingTaskRepository &) = delete;
+            ICodingTaskRepository &operator=(const ICodingTaskRepository &) = delete;
+            ICodingTaskRepository(ICodingTaskRepository &&) = delete;
+            ICodingTaskRepository &operator=(ICodingTaskRepository &&) = delete;
 
             /**
              * @brief Retrieves all coding tasks associated with a specific lesson.
-             * 
+             *
              * @param lessonId The unique identifier of the parent lesson.
              * @return A vector of CodingTask entities belonging to the lesson.
              */
@@ -40,7 +41,7 @@ namespace cppforge
 
             /**
              * @brief Fetches a single coding task by its unique identifier.
-             * 
+             *
              * @param taskId The unique identifier of the coding task.
              * @return An std::optional containing the CodingTask if found; otherwise std::nullopt.
              */

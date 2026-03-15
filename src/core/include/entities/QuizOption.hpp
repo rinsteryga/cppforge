@@ -8,8 +8,8 @@ namespace cppforge::entities
 {
     /**
      * @brief Represents a single selectable answer inside a Quiz.
-     * 
-     * A QuizOption holds the text of a potential answer and a boolean 
+     *
+     * A QuizOption holds the text of a potential answer and a boolean
      * flag indicating whether it is the correct response.
      */
     class QuizOption
@@ -17,7 +17,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new QuizOption instance.
-         * 
+         *
          * @param optionId The unique identifier of this specific option.
          * @param optionText The display text of the answer option.
          * @param isCorrect A boolean determining if this option is the right answer.
@@ -44,10 +44,10 @@ namespace cppforge::entities
 
         /**
          * @brief Compares this option against another to enable strict ordering.
-         * 
+         *
          * Important for storing options inside an ordered std::set or analogous container,
          * sorting uniquely by their ID.
-         * 
+         *
          * @param other The comparable QuizOption entity.
          * @return True if this option's ID is strictly smaller than the other's.
          */

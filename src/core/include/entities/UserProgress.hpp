@@ -10,8 +10,8 @@ namespace cppforge::entities
 
     /**
      * @brief Serves as a mapping entity linking users to their modular progression.
-     * 
-     * UserProgress stores a transactional snapshot of whether a specific user 
+     *
+     * UserProgress stores a transactional snapshot of whether a specific user
      * has successfully concluded a discrete lesson within an explicit module block.
      */
     class UserProgress
@@ -19,7 +19,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new UserProgress instance.
-         * 
+         *
          * @param userId The ID of the student.
          * @param moduleId The overarching module umbrella enclosing the segment.
          * @param lessonId The explicit lesson being tracked.

@@ -4,8 +4,8 @@
 
 namespace cppforge::entities
 {
-    Submission::Submission(uint64_t submissionId, uint64_t userId, uint64_t moduleId, uint64_t codingTaskId, QString sourceCode,
-                           QDateTime submittedAt, bool isSuccess)
+    Submission::Submission(uint64_t submissionId, uint64_t userId, uint64_t moduleId, uint64_t codingTaskId,
+                           QString sourceCode, QDateTime submittedAt, bool isSuccess)
         : id_(submissionId), userId_(userId), moduleId_(moduleId), codingTaskId_(codingTaskId),
           sourceCode_(std::move(sourceCode)), submittedAt_(std::move(submittedAt)), isSuccess_(isSuccess)
     {

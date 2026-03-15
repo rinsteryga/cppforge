@@ -8,7 +8,7 @@ namespace cppforge::entities
 {
     /**
      * @brief Represents a single validation scenario for a coding task.
-     * 
+     *
      * A TestCase provides the standard input and the expected standard output
      * necessary to evaluate if a user's code submission is logically correct.
      */
@@ -17,7 +17,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new TestCase instance.
-         * 
+         *
          * @param testCaseId The unique identifier of the test case.
          * @param input The text fed into the standard input (stdin) of the program.
          * @param expectedOutput The exact text expected from the standard output (stdout).
@@ -51,10 +51,10 @@ namespace cppforge::entities
 
         /**
          * @brief Compares this test case against another for strict ordering.
-         * 
+         *
          * Important for storing options inside an ordered std::set or analogous container,
          * sorting uniquely by their ID.
-         * 
+         *
          * @param other The comparable TestCase entity.
          * @return True if this test case's ID is strictly smaller than the other's.
          */

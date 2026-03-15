@@ -11,7 +11,7 @@ namespace cppforge::entities
 
     /**
      * @brief Represents a multiple-choice question within a lesson.
-     * 
+     *
      * A Quiz encapsulates a single query (with an optional title) and pairs it with
      * a collection of possible answers, out of which only one is correct.
      */
@@ -20,7 +20,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new Quiz instance.
-         * 
+         *
          * @param quizId The unique identifier of the quiz.
          * @param lessonId The ID of the parent lesson managing this quiz.
          * @param title The concise display title or prefix of the quiz.

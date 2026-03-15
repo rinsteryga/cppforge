@@ -10,7 +10,7 @@ namespace cppforge::services
 {
     /**
      * @brief Singleton service managing the active user session and state.
-     * 
+     *
      * SessionManager keeps track of the currently authenticated User entity,
      * emits signals for session state changes (login/logout), and provides
      * a global access point to the active profile.

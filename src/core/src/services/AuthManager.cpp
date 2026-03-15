@@ -4,6 +4,7 @@
 #include "../../include/utils/security/PasswordHashGenerator.hpp"
 
 #include <QDebug>
+
 #include <chrono>
 
 namespace cppforge::services

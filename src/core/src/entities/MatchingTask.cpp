@@ -8,7 +8,8 @@ namespace cppforge::entities
 {
     MatchingTask::MatchingTask(uint64_t taskId, uint64_t lessonId, QString title, QString description,
                                const std::set<MatchingPair> &pairs)
-        : id_(taskId), lessonId_(lessonId), title_(std::move(title)), description_(std::move(description)), pairs_(pairs)
+        : id_(taskId), lessonId_(lessonId), title_(std::move(title)), description_(std::move(description)),
+          pairs_(pairs)
     {
     }
 

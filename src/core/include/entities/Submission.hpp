@@ -9,8 +9,8 @@ namespace cppforge::entities
 {
     /**
      * @brief Represents a user's logged answer to a coding task.
-     * 
-     * A Submission is captured every time a user executes their solution code, 
+     *
+     * A Submission is captured every time a user executes their solution code,
      * recording the timestamp, the user metadata, problem contexts, and lastly,
      * whether the execution succeeded against all test cases.
      */
@@ -19,7 +19,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new Submission instance.
-         * 
+         *
          * @param submissionId The unique database identifier of the submission.
          * @param userId The ID answering the task.
          * @param moduleId The ID of the module that housed the coding task.

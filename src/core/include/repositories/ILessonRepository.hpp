@@ -15,7 +15,7 @@ namespace cppforge
     {
         /**
          * @brief Defines the abstract data access contract for Lesson entities.
-         * 
+         *
          * This interface abstracts the persistence layer for acquiring learning lessons,
          * permitting modular swap-outs of the backend database.
          */
@@ -23,16 +23,17 @@ namespace cppforge
         {
         protected:
             ILessonRepository() = default;
+
         public:
             virtual ~ILessonRepository() = default;
-            ILessonRepository(const ILessonRepository&) = delete;
-            ILessonRepository& operator=(const ILessonRepository&) = delete;
-            ILessonRepository(ILessonRepository&&) = delete;
-            ILessonRepository& operator=(ILessonRepository&&) = delete;
+            ILessonRepository(const ILessonRepository &) = delete;
+            ILessonRepository &operator=(const ILessonRepository &) = delete;
+            ILessonRepository(ILessonRepository &&) = delete;
+            ILessonRepository &operator=(ILessonRepository &&) = delete;
 
             /**
              * @brief Retrieves an ordered collection of all lessons inside a specified module.
-             * 
+             *
              * @param moduleId The unique identifier of the container module.
              * @return A vector of Lesson entities associated with the given module.
              */
@@ -40,7 +41,7 @@ namespace cppforge
 
             /**
              * @brief Locates and returns a single lesson by its exact identifier.
-             * 
+             *
              * @param lessonId The unique identifier of the lesson.
              * @return An std::optional containing the Lesson if successful; otherwise std::nullopt.
              */

@@ -6,9 +6,9 @@ namespace cppforge::utils::security
 {
     /**
      * @brief Utility for securely hashing passwords and verifying them.
-     * 
+     *
      * PasswordHashGenerator provides static methods to transform raw passwords
-     * into secure hashes (e.g., using PBKDF2 or SHA-256 with salts) and to 
+     * into secure hashes (e.g., using PBKDF2 or SHA-256 with salts) and to
      * compare existing hashes against user input.
      */
     class PasswordHashGenerator

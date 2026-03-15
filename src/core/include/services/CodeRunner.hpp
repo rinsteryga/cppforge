@@ -13,9 +13,9 @@ namespace cppforge::services
 {
     /**
      * @brief Responsible for compiling and executing user-submitted code against test cases.
-     * 
+     *
      * CodeRunner provides both synchronous and asynchronous APIs to evaluate source code.
-     * It handles the temporary file creation, compilation via system tools, and 
+     * It handles the temporary file creation, compilation via system tools, and
      * captured execution output comparison.
      */
     class CodeRunner : public QObject
@@ -36,7 +36,7 @@ namespace cppforge::services
 
         /**
          * @brief Evaluates code against a set of tests in a background thread.
-         * 
+         *
          * @param code The source code text to be evaluated.
          * @param tests A collection of test cases defining expected behavior.
          * @return A QFuture that will contain the final ExecutionResult when finished.
@@ -46,7 +46,7 @@ namespace cppforge::services
 
         /**
          * @brief Evaluates code against a set of tests, blocking the current thread.
-         * 
+         *
          * @param code The source code text to be evaluated.
          * @param tests A collection of test cases defining expected behavior.
          * @return The final ExecutionResult report.
@@ -69,6 +69,6 @@ namespace cppforge::services
          * @return A consolidated ExecutionResult.
          */
         cppforge::entities::ExecutionResult runTestsBlocking(const QString &executablePath,
-                                                              const std::vector<cppforge::entities::TestCase> &tests);
+                                                             const std::vector<cppforge::entities::TestCase> &tests);
     };
 } // namespace cppforge::services

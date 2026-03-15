@@ -11,9 +11,9 @@ namespace cppforge::entities
 
     /**
      * @brief Represents a task where users must connect related items into pairs.
-     * 
-     * A MatchingTask is an interactive exercise tied to a Lesson, typically 
-     * presenting a shuffled list of concepts and definitions that the user 
+     *
+     * A MatchingTask is an interactive exercise tied to a Lesson, typically
+     * presenting a shuffled list of concepts and definitions that the user
      * must correctly associate.
      */
     class MatchingTask
@@ -21,7 +21,7 @@ namespace cppforge::entities
     public:
         /**
          * @brief Constructs a new MatchingTask instance.
-         * 
+         *
          * @param taskId The unique identifier of the task.
          * @param lessonId The ID of the parent lesson providing the context.
          * @param title The concise display title of the exercise.

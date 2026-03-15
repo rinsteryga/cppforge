@@ -15,7 +15,7 @@ namespace cppforge
     {
         /**
          * @brief Defines the abstract data access contract for Module entities.
-         * 
+         *
          * Provides methods to discover available curriculum modules and drill down
          * into specific module metadata.
          */
@@ -23,12 +23,13 @@ namespace cppforge
         {
         protected:
             IModuleRepository() = default;
+
         public:
             virtual ~IModuleRepository() = default;
-            IModuleRepository(const IModuleRepository&) = delete;
-            IModuleRepository& operator=(const IModuleRepository&) = delete;
-            IModuleRepository(IModuleRepository&&) = delete;
-            IModuleRepository& operator=(IModuleRepository&&) = delete;
+            IModuleRepository(const IModuleRepository &) = delete;
+            IModuleRepository &operator=(const IModuleRepository &) = delete;
+            IModuleRepository(IModuleRepository &&) = delete;
+            IModuleRepository &operator=(IModuleRepository &&) = delete;
 
             /**
              * @brief Retrieves the complete list of modules available in the platform.
@@ -38,7 +39,7 @@ namespace cppforge
 
             /**
              * @brief Fetches a specific module by its unique identifier.
-             * 
+             *
              * @param moduleId The unique identifier of the module.
              * @return An std::optional containing the Module if found; otherwise std::nullopt.
              */
