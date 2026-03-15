@@ -1,5 +1,6 @@
 #include "../../include/services/AuthManager.hpp"
 
+#include "../../include/services/SessionManager.hpp"
 #include "../../include/utils/security/PasswordHashGenerator.hpp"
 
 #include <chrono>
@@ -25,7 +26,7 @@ namespace cppforge::services
         if (!cppforge::utils::security::PasswordHashGenerator::verify(password, userOpt->getPasswordHash()))
             return false;
 
-        currentUser_ = userOpt.value();
+        SessionManager::instance().loginUser(std::make_shared<cppforge::entities::User>(std::move(userOpt.value())));
         return true;
     }
 

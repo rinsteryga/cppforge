@@ -1,6 +1,9 @@
+file(GLOB_RECURSE DATA_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+)
+
 add_library(cppforge_data STATIC
-    DataBaseConnection.cpp
-    repositories/PgUserRepository.cpp
+    ${DATA_SOURCES}
 )
 
 find_package(Qt5 REQUIRED COMPONENTS Sql)

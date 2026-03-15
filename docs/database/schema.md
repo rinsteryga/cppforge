@@ -97,10 +97,64 @@ Coding exercises linked to lessons.
 | title         | TEXT      | Required                             |
 | description   | TEXT      | Optional                             |
 | initial_code  | TEXT      | Optional                             |
+| whitelist     | TEXT      | Optional                             |
+| blacklist     | TEXT      | Optional                             |
 | time_limit    | INT       | Default: 2000 ms                     |
 | memory_limit  | INT       | Default: 256 MB                      |
 
 Index: `lesson_id`.
+
+---
+
+## 2.6a. `quizzes` & `quiz_options`
+
+Multiple choice questions linked to lessons.
+
+**`quizzes`**
+| Column    | Type      | Notes                                |
+|-----------|-----------|--------------------------------------|
+| id        | BIGSERIAL | Primary key                          |
+| lesson_id | BIGINT    | FK → lessons(id), cascade delete     |
+| title     | TEXT      | Required                             |
+| question  | TEXT      | Required                             |
+
+Index: `lesson_id`.
+
+**`quiz_options`**
+| Column      | Type      | Notes                                |
+|-------------|-----------|--------------------------------------|
+| id          | BIGSERIAL | Primary key                          |
+| quiz_id     | BIGINT    | FK → quizzes(id), cascade delete     |
+| option_text | TEXT      | Required                             |
+| is_correct  | BOOLEAN   | Default: FALSE                       |
+
+Index: `quiz_id`.
+
+---
+
+## 2.6b. `matching_tasks` & `matching_pairs`
+
+Tasks where users match items, linked to lessons.
+
+**`matching_tasks`**
+| Column      | Type      | Notes                                |
+|-------------|-----------|--------------------------------------|
+| id          | BIGSERIAL | Primary key                          |
+| lesson_id   | BIGINT    | FK → lessons(id), cascade delete     |
+| title       | TEXT      | Required                             |
+| description | TEXT      | Optional                             |
+
+Index: `lesson_id`.
+
+**`matching_pairs`**
+| Column           | Type      | Notes                                |
+|------------------|-----------|--------------------------------------|
+| id               | BIGSERIAL | Primary key                          |
+| matching_task_id | BIGINT    | FK → matching_tasks(id), cascade delete |
+| left_item        | TEXT      | Required                             |
+| right_item       | TEXT      | Required                             |
+
+Index: `matching_task_id`.
 
 ---
 
@@ -177,7 +231,9 @@ Unique constraint: `(user_id, lesson_id)`.
 
 - **User ↔ Achievement:** many-to-many  
 - **Module → Lessons:** one-to-many  
-- **Lesson → CodingTasks:** one-to-many  
+- **Lesson → CodingTasks / Quizzes / MatchingTasks:** one-to-many  
+- **Quiz → QuizOptions:** one-to-many  
+- **MatchingTask → MatchingPairs:** one-to-many  
 - **CodingTask → TestCases:** one-to-many  
 - **User + Task → Submissions:** many-to-many through submissions  
 - **Submission → ExecutionResults:** one-to-one  

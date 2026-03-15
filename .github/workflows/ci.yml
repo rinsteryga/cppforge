@@ -8,15 +8,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Setup Cache (ccache)
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ runner.os }}-ccache
+    
     - name: Install Qt5 and Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev
+        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev clang-format
     
+    - name: Code Style Check (clang-format)
+      run: |
+        find src -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" -o -name "*.c" \) -print -exec clang-format -i {} +
+        git diff --exit-code || (echo "Code formatting issues found. Please run clang-format." && exit 1)
+
     - name: Build Project
       run: |
         mkdir build && cd build
-        cmake .. -DCMAKE_CXX_STANDARD=20 -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt5
+        cmake .. -DCMAKE_CXX_STANDARD=20 -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt5 -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         make
         
     - name: Run Tests
