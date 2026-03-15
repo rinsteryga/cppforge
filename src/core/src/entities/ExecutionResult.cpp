@@ -1,11 +1,13 @@
 #include "../../include/entities/ExecutionResult.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    ExecutionResult::ExecutionResult(uint64_t submissionId, bool isSuccess, const QString &output,
-                                     const QString &errors, int32_t timeMs, uint32_t passedTestsCount)
-        : submissionId_(submissionId), isSuccess_(isSuccess), output_(output), errors_(errors), timeMs_(timeMs),
-          passedTestsCount_(passedTestsCount)
+    ExecutionResult::ExecutionResult(uint64_t submissionId, bool isSuccess, QString output, QString errors,
+                                     int32_t timeMs, uint32_t passedTestsCount)
+        : submissionId_(submissionId), isSuccess_(isSuccess), output_(std::move(output)), errors_(std::move(errors)),
+          timeMs_(timeMs), passedTestsCount_(passedTestsCount)
     {
     }
 
