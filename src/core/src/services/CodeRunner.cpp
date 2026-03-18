@@ -1,44 +1,45 @@
 #include "../../include/services/CodeRunner.hpp"
+
 #include "../../include/entities/ExecutionResult.hpp"
 #include "../../include/entities/TestCase.hpp"
 
+#include <QDir>
+#include <QFile>
 #include <QProcess>
 #include <QTemporaryFile>
-#include <QDir>
 #include <QtConcurrent>
-#include <QFile>
 
 namespace cppforge::services
 {
     CodeRunner::CodeRunner(QObject *parent) : QObject(parent) {}
     CodeRunner::~CodeRunner() = default;
 
-    QFuture<cppforge::entities::ExecutionResult> CodeRunner::runAsync(
-        const QString &code, 
-        const std::vector<cppforge::entities::TestCase> &tests) 
+    QFuture<cppforge::entities::ExecutionResult>
+    CodeRunner::runAsync(const QString &code, const std::vector<cppforge::entities::TestCase> &tests)
     {
-        return QtConcurrent::run([this, code, tests] {
-            return runBlocking(code, tests);
-        });
+        return QtConcurrent::run([this, code, tests] { return runBlocking(code, tests); });
     }
 
-    cppforge::entities::ExecutionResult CodeRunner::runBlocking(
-        const QString &code, 
-        const std::vector<cppforge::entities::TestCase> &tests) 
+    cppforge::entities::ExecutionResult CodeRunner::runBlocking(const QString &code,
+                                                                const std::vector<cppforge::entities::TestCase> &tests)
     {
-        try {
+        try
+        {
             QString exePath = compileCodeBlocking(code);
             return runTestsBlocking(exePath, tests);
-        } 
-        catch (const std::runtime_error &e) {
+        }
+        catch (const std::runtime_error &e)
+        {
             return cppforge::entities::ExecutionResult(0, false, "", QString::fromUtf8(e.what()), 0, 0);
         }
     }
 
-    QString CodeRunner::compileCodeBlocking(const QString &code) {
+    QString CodeRunner::compileCodeBlocking(const QString &code)
+    {
         QTemporaryFile sourceFile(QDir::tempPath() + "/cppforge_XXXXXX.cpp");
-        sourceFile.setAutoRemove(false); 
-        if (!sourceFile.open()) throw std::runtime_error("Не удалось создать временный файл");
+        sourceFile.setAutoRemove(false);
+        if (!sourceFile.open())
+            throw std::runtime_error("Не удалось создать временный файл");
 
         sourceFile.write(code.toUtf8());
         QString sourcePath = sourceFile.fileName();
@@ -49,8 +50,9 @@ namespace cppforge::services
         QProcess compiler;
         // Исправлено: добавлен QStringList() для соответствия сигнатуре метода
         compiler.start("g++", {sourcePath, "-o", exePath, "-O2"});
-        
-        if (!compiler.waitForFinished(10000) || compiler.exitCode() != 0) {
+
+        if (!compiler.waitForFinished(10000) || compiler.exitCode() != 0)
+        {
             QString errorLog = QString::fromLocal8Bit(compiler.readAllStandardError());
             QFile::remove(sourcePath);
             throw std::runtime_error("Compilation Error:\n" + errorLog.toStdString());
@@ -60,50 +62,60 @@ namespace cppforge::services
         return exePath;
     }
 
-    cppforge::entities::ExecutionResult CodeRunner::runTestsBlocking(
-        const QString &executablePath, 
-        const std::vector<cppforge::entities::TestCase> &tests) 
+    cppforge::entities::ExecutionResult
+    CodeRunner::runTestsBlocking(const QString &executablePath, const std::vector<cppforge::entities::TestCase> &tests)
     {
         uint32_t passedCount = 0;
         QString lastOutput;
         QString errorLog;
 
         // Если список тестов пуст, запускаем программу один раз, чтобы увидеть любой вывод
-        if (tests.empty()) {
+        if (tests.empty())
+        {
             QProcess process;
             process.setProcessChannelMode(QProcess::MergedChannels); // Склеиваем stdout и stderr
             process.start(executablePath, QStringList());
 
-            if (process.waitForFinished(3000)) {
+            if (process.waitForFinished(3000))
+            {
                 lastOutput = QString::fromLocal8Bit(process.readAll().trimmed());
-            } else {
+            }
+            else
+            {
                 process.kill();
                 errorLog = "Time Limit Exceeded (No tests provided)";
             }
-        } 
-        else {
+        }
+        else
+        {
             // Прогоняем по всем тестам
-            for (const auto &test : tests) {
+            for (const auto &test : tests)
+            {
                 QProcess process;
                 process.setProcessChannelMode(QProcess::MergedChannels);
                 process.start(executablePath, QStringList());
 
-                if (!test.getInput().isEmpty()) {
+                if (!test.getInput().isEmpty())
+                {
                     process.write(test.getInput().toUtf8());
                     process.closeWriteChannel();
                 }
 
-                if (process.waitForFinished(2000)) {
+                if (process.waitForFinished(2000))
+                {
                     QString output = QString::fromLocal8Bit(process.readAll().trimmed());
-                    
-                    if (output == test.getExpectedOutput().trimmed()) {
+
+                    if (output == test.getExpectedOutput().trimmed())
+                    {
                         passedCount++;
                     }
-                    lastOutput = output; 
-                } else {
+                    lastOutput = output;
+                }
+                else
+                {
                     process.kill();
                     lastOutput = "TLE (Time Limit Exceeded)";
-                    break; 
+                    break;
                 }
             }
         }
@@ -113,13 +125,6 @@ namespace cppforge::services
         // Результат: успех только если тесты были и все пройдены
         bool isAllPassed = (!tests.empty() && passedCount == tests.size()) || (tests.empty() && errorLog.isEmpty());
 
-        return cppforge::entities::ExecutionResult(
-            0, 
-            isAllPassed, 
-            lastOutput, 
-            errorLog, 
-            0, 
-            passedCount
-        );
+        return cppforge::entities::ExecutionResult(0, isAllPassed, lastOutput, errorLog, 0, passedCount);
     }
 } // namespace cppforge::services

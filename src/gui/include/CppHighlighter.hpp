@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QRegularExpression>
 #include <QSyntaxHighlighter>
 #include <QTextCharFormat>
-#include <QRegularExpression>
 #include <QVector>
 
 class CppHighlighter : public QSyntaxHighlighter

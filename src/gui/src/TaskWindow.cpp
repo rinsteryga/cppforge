@@ -1,6 +1,7 @@
 #include "../include/TaskWindow.hpp"
-#include "../include/CustomTitleBar.hpp"
+
 #include "../include/CppHighlighter.hpp"
+#include "../include/CustomTitleBar.hpp"
 
 #include <QFrame>
 #include <QGuiApplication>
@@ -18,9 +19,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-TaskWindow::TaskWindow(QWidget *parent) 
-    : QWidget(parent),
-      runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
+TaskWindow::TaskWindow(QWidget *parent)
+    : QWidget(parent), runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
       analyzer_(std::make_unique<cppforge::services::StaticAnalyzer>())
 {
     setupUI();
@@ -92,7 +92,8 @@ void TaskWindow::setupUI()
     auto btnTheory = new QPushButton("✧ Теория");
     btnPractice->setObjectName("tabButton");
     btnTheory->setObjectName("tabButton");
-    btnPractice->setCheckable(true); btnTheory->setCheckable(true);
+    btnPractice->setCheckable(true);
+    btnTheory->setCheckable(true);
     btnPractice->setChecked(true);
     tabLayout->addWidget(btnPractice);
     tabLayout->addWidget(btnTheory);
@@ -173,16 +174,22 @@ void TaskWindow::setupUI()
     rootLayout->addWidget(mainSplitter);
 
     // Логика переключения вкладок
-    connect(btnPractice, &QPushButton::clicked, [=]() {
-        contentStack->setCurrentIndex(0);
-        btnPractice->setChecked(true); btnTheory->setChecked(false);
-    });
-    connect(btnTheory, &QPushButton::clicked, [=]() {
-        contentStack->setCurrentIndex(1);
-        btnTheory->setChecked(true); btnPractice->setChecked(false);
-    });
+    connect(btnPractice, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(0);
+                btnPractice->setChecked(true);
+                btnTheory->setChecked(false);
+            });
+    connect(btnTheory, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(1);
+                btnTheory->setChecked(true);
+                btnPractice->setChecked(false);
+            });
     connect(btnBack, &QPushButton::clicked, this, &TaskWindow::fadeOut);
-    
+
     // Логика компиляции
     connect(btnRun, &QPushButton::clicked, this, &TaskWindow::onRunClicked);
     connect(btnSubmit, &QPushButton::clicked, this, &TaskWindow::onSubmitClicked);
@@ -190,40 +197,50 @@ void TaskWindow::setupUI()
     setupStyles();
 }
 
-void TaskWindow::onRunClicked() {
+void TaskWindow::onRunClicked()
+{
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
     testOutput_->append("Анализ безопасности...");
 
     auto violation = analyzer_->analyze(currentTask_, code);
-    if (violation.has_value()) {
+    if (violation.has_value())
+    {
         testOutput_->append("<span style='color:red;'>Ошибка: " + violation.value() + "</span>");
         return;
     }
 
     testOutput_->append("Компиляция...");
-    
-    std::vector<cppforge::entities::TestCase> testVector(
-        currentTask_.getTestCases().begin(), currentTask_.getTestCases().end()
-    );
+
+    std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
+                                                         currentTask_.getTestCases().end());
 
     auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
-    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished, [this, watcher]() {
-        auto result = watcher->result();
-        if (result.isSuccess()) {
-            testOutput_->append("<span style='color:green;'>[OK] Все тесты пройдены!</span>");
-            testOutput_->append("Вывод:\n" + result.getOutput());
-        } else {
-            testOutput_->append("<span style='color:red;'>[FAIL] Ошибка выполнения.</span>");
-            if (!result.getErrors().isEmpty()) testOutput_->append(result.getErrors());
-        }
-        watcher->deleteLater();
-    });
+    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
+            [this, watcher]()
+            {
+                auto result = watcher->result();
+                if (result.isSuccess())
+                {
+                    testOutput_->append("<span style='color:green;'>[OK] Все тесты пройдены!</span>");
+                    testOutput_->append("Вывод:\n" + result.getOutput());
+                }
+                else
+                {
+                    testOutput_->append("<span style='color:red;'>[FAIL] Ошибка выполнения.</span>");
+                    if (!result.getErrors().isEmpty())
+                        testOutput_->append(result.getErrors());
+                }
+                watcher->deleteLater();
+            });
 
     watcher->setFuture(runner_->runAsync(code, testVector));
 }
 
-void TaskWindow::onSubmitClicked() { onRunClicked(); }
+void TaskWindow::onSubmitClicked()
+{
+    onRunClicked();
+}
 
 void TaskWindow::setupStyles()
 {
@@ -241,7 +258,8 @@ void TaskWindow::setupStyles()
     )");
 }
 
-void TaskWindow::fadeIn() {
+void TaskWindow::fadeIn()
+{
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
     transitionAnimation_->setStartValue(0.0);
@@ -249,19 +267,23 @@ void TaskWindow::fadeIn() {
     transitionAnimation_->start();
 }
 
-void TaskWindow::fadeOut() {
+void TaskWindow::fadeOut()
+{
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(200);
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() {
-        hide();
-        emit windowClosed();
-    });
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
+            [this]()
+            {
+                hide();
+                emit windowClosed();
+            });
     transitionAnimation_->start();
 }
 
-void TaskWindow::showEvent(QShowEvent *event) {
+void TaskWindow::showEvent(QShowEvent *event)
+{
     QWidget::showEvent(event);
     fadeIn();
 }

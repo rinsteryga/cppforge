@@ -1,7 +1,6 @@
 #include "../include/CppHighlighter.hpp"
 
-CppHighlighter::CppHighlighter(QTextDocument *parent)
-    : QSyntaxHighlighter(parent)
+CppHighlighter::CppHighlighter(QTextDocument *parent) : QSyntaxHighlighter(parent)
 {
     // Ключевые слова (синий или фиолетовый)
     keywordFormat.setForeground(Qt::darkBlue);
@@ -16,10 +15,11 @@ CppHighlighter::CppHighlighter(QTextDocument *parent)
                     << "\\bstatic\\b" << "\\bstruct\\b" << "\\btemplate\\b"
                     << "\\btypedef\\b" << "\\btypename\\b" << "\\bunion\\b"
                     << "\\bunsigned\\b" << "\\bvirtual\\b" << "\\bvoid\\b"
-                    << "\\bvolatile\\b" << "\\bbool\\b" << "\\bif\\b" 
+                    << "\\bvolatile\\b" << "\\bbool\\b" << "\\bif\\b"
                     << "\\belse\\b" << "\\bfor\\b" << "\\bwhile\\b" << "\\breturn\\b";
 
-    for (const QString &pattern : keywordPatterns) {
+    for (const QString &pattern : keywordPatterns)
+    {
         highlightingRules.append({QRegularExpression(pattern), keywordFormat});
     }
 
@@ -44,9 +44,11 @@ CppHighlighter::CppHighlighter(QTextDocument *parent)
 
 void CppHighlighter::highlightBlock(const QString &text)
 {
-    for (const HighlightingRule &rule : highlightingRules) {
+    for (const HighlightingRule &rule : highlightingRules)
+    {
         QRegularExpressionMatchIterator matchIterator = rule.pattern.globalMatch(text);
-        while (matchIterator.hasNext()) {
+        while (matchIterator.hasNext())
+        {
             QRegularExpressionMatch match = matchIterator.next();
             setFormat(match.capturedStart(), match.capturedLength(), rule.format);
         }
