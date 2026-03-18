@@ -1,6 +1,9 @@
 #include "../../include/services/StaticAnalyzer.hpp"
+
 #include "../../include/entities/CodingTask.hpp"
+
 #include <QString>
+
 #include <optional>
 #include <set>
 
