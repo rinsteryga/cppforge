@@ -1,9 +1,6 @@
 #include "../../include/services/StaticAnalyzer.hpp"
-
 #include "../../include/entities/CodingTask.hpp"
-
 #include <QString>
-
 #include <optional>
 #include <set>
 
@@ -16,10 +13,10 @@ namespace cppforge::services
         {
             for (const QString &forbidden : task.getBlacklist().value())
             {
-                // Если код содержит запрещенную подстроку (например, "system")
                 if (code.contains(forbidden))
                 {
-                    return QString("Ошибка безопасности: использование '%1' запрещено!").arg(forbidden);
+                    // Тест ожидает наличие фразы "forbidden word" в результате
+                    return QString("Analysis error: code contains a forbidden word: %1").arg(forbidden);
                 }
             }
         }
@@ -29,10 +26,10 @@ namespace cppforge::services
         {
             for (const QString &required : task.getWhitelist().value())
             {
-                // Если обязательная конструкция отсутствует
                 if (!code.contains(required))
                 {
-                    return QString("В коде отсутствует обязательный элемент: '%1'").arg(required);
+                    // Тест ожидает наличие фразы "Missing required word" в результате
+                    return QString("Analysis error: Missing required word: %1").arg(required);
                 }
             }
         }
