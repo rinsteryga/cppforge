@@ -1,6 +1,6 @@
-#include "TaskWindow.hpp"
-
-#include "CustomTitleBar.hpp"
+#include "../include/TaskWindow.hpp"
+#include "../include/CustomTitleBar.hpp"
+#include "../include/CppHighlighter.hpp"
 
 #include <QFrame>
 #include <QGuiApplication>
@@ -18,7 +18,10 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-TaskWindow::TaskWindow(QWidget *parent) : QWidget(parent)
+TaskWindow::TaskWindow(QWidget *parent) 
+    : QWidget(parent),
+      runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
+      analyzer_(std::make_unique<cppforge::services::StaticAnalyzer>())
 {
     setupUI();
     setWindowOpacity(0.0);
@@ -26,6 +29,14 @@ TaskWindow::TaskWindow(QWidget *parent) : QWidget(parent)
 }
 
 TaskWindow::~TaskWindow() = default;
+
+void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
+{
+    currentTask_ = task;
+    customTitleBar_->setTitle(task.getTitle());
+    practiceContent_->setText(task.getDescription());
+    codeEditor_->setPlainText(task.getInitialCode());
+}
 
 void TaskWindow::paintEvent(QPaintEvent *event)
 {
@@ -58,7 +69,7 @@ void TaskWindow::setupUI()
     rootLayout->setSpacing(0);
 
     customTitleBar_ = std::make_unique<CustomTitleBar>(this);
-    customTitleBar_->setTitle("Название");
+    customTitleBar_->setTitle("Задание");
     customTitleBar_->setIcon(windowIcon());
     rootLayout->addWidget(customTitleBar_.get());
 
@@ -73,46 +84,36 @@ void TaskWindow::setupUI()
     auto leftContainer = new QWidget();
     auto leftLayout = new QVBoxLayout(leftContainer);
     leftLayout->setContentsMargins(0, 0, 0, 0);
-    leftLayout->setSpacing(0);
 
     auto tabHeader = new QFrame();
     tabHeader->setObjectName("tabHeader");
     auto tabLayout = new QHBoxLayout(tabHeader);
-    tabLayout->setContentsMargins(15, 0, 0, 0);
-    tabLayout->setSpacing(20);
-
     auto btnPractice = new QPushButton("✧ Практика");
     auto btnTheory = new QPushButton("✧ Теория");
     btnPractice->setObjectName("tabButton");
     btnTheory->setObjectName("tabButton");
-    btnPractice->setCheckable(true);
-    btnTheory->setCheckable(true);
+    btnPractice->setCheckable(true); btnTheory->setCheckable(true);
     btnPractice->setChecked(true);
-
     tabLayout->addWidget(btnPractice);
     tabLayout->addWidget(btnTheory);
     tabLayout->addStretch();
-
-    auto btnCollapse = new QPushButton("<");
-    btnCollapse->setFixedSize(30, 30);
-    btnCollapse->setFlat(true);
-    tabLayout->addWidget(btnCollapse);
     leftLayout->addWidget(tabHeader);
 
     auto contentStack = new QStackedWidget();
-
     auto practiceScroll = new QScrollArea();
-    auto practiceContent = new QLabel("ТЕКСТ ПРАКТИКИ\n\nТЕКСТ ЗАДАНИЯ\nТЕКСТ ТЕКСТ");
-    practiceContent->setAlignment(Qt::AlignTop);
-    practiceContent->setContentsMargins(30, 30, 30, 30);
-    practiceScroll->setWidget(practiceContent);
+    practiceContent_ = new QLabel("Загрузка...");
+    practiceContent_->setAlignment(Qt::AlignTop);
+    practiceContent_->setWordWrap(true);
+    practiceContent_->setContentsMargins(30, 30, 30, 30);
+    practiceScroll->setWidget(practiceContent_);
     practiceScroll->setWidgetResizable(true);
 
     auto theoryScroll = new QScrollArea();
-    auto theoryContent = new QLabel("ТЕКСТ ТЕОРИИ");
-    theoryContent->setAlignment(Qt::AlignTop);
-    theoryContent->setContentsMargins(30, 30, 30, 30);
-    theoryScroll->setWidget(theoryContent);
+    theoryContent_ = new QLabel("Теория появится здесь");
+    theoryContent_->setAlignment(Qt::AlignTop);
+    theoryContent_->setWordWrap(true);
+    theoryContent_->setContentsMargins(30, 30, 30, 30);
+    theoryScroll->setWidget(theoryContent_);
     theoryScroll->setWidgetResizable(true);
 
     contentStack->addWidget(practiceScroll);
@@ -131,17 +132,16 @@ void TaskWindow::setupUI()
     auto rightContainer = new QWidget();
     auto rightLayout = new QVBoxLayout(rightContainer);
     rightLayout->setContentsMargins(15, 15, 15, 15);
-    rightLayout->setSpacing(15);
 
     auto rightSplitter = new QSplitter(Qt::Vertical);
-
     auto codeFrame = new QFrame();
     codeFrame->setObjectName("editorFrame");
     auto codeLayout = new QVBoxLayout(codeFrame);
     codeLayout->addWidget(new QLabel("<\\> Code"));
-    auto codeEditor = new QTextEdit();
-    codeEditor->setObjectName("codeEditor");
-    codeLayout->addWidget(codeEditor);
+    codeEditor_ = new QTextEdit();
+    new CppHighlighter(codeEditor_->document());
+    codeEditor_->setObjectName("codeEditor");
+    codeLayout->addWidget(codeEditor_);
 
     auto codeActions = new QHBoxLayout();
     auto btnRun = new QPushButton("Run");
@@ -156,16 +156,11 @@ void TaskWindow::setupUI()
     auto testFrame = new QFrame();
     testFrame->setObjectName("testFrame");
     auto testLayout = new QVBoxLayout(testFrame);
-    auto testTabs = new QHBoxLayout();
-    testTabs->addWidget(new QLabel("✧ Testcase"));
-    testTabs->addWidget(new QLabel("✧ Test Result"));
-    testTabs->addStretch();
-    testTabs->addWidget(new QLabel("∧"));
-    testLayout->addLayout(testTabs);
-    auto testOutput = new QTextEdit();
-    testOutput->setReadOnly(true);
-    testOutput->setObjectName("testOutput");
-    testLayout->addWidget(testOutput);
+    testLayout->addWidget(new QLabel("✧ Test Result"));
+    testOutput_ = new QTextEdit();
+    testOutput_->setReadOnly(true);
+    testOutput_->setObjectName("testOutput");
+    testLayout->addWidget(testOutput_);
 
     rightSplitter->addWidget(codeFrame);
     rightSplitter->addWidget(testFrame);
@@ -177,24 +172,58 @@ void TaskWindow::setupUI()
     mainSplitter->addWidget(rightContainer);
     rootLayout->addWidget(mainSplitter);
 
-    connect(btnPractice, &QPushButton::clicked,
-            [=]()
-            {
-                contentStack->setCurrentIndex(0);
-                btnPractice->setChecked(true);
-                btnTheory->setChecked(false);
-            });
-    connect(btnTheory, &QPushButton::clicked,
-            [=]()
-            {
-                contentStack->setCurrentIndex(1);
-                btnTheory->setChecked(true);
-                btnPractice->setChecked(false);
-            });
+    // Логика переключения вкладок
+    connect(btnPractice, &QPushButton::clicked, [=]() {
+        contentStack->setCurrentIndex(0);
+        btnPractice->setChecked(true); btnTheory->setChecked(false);
+    });
+    connect(btnTheory, &QPushButton::clicked, [=]() {
+        contentStack->setCurrentIndex(1);
+        btnTheory->setChecked(true); btnPractice->setChecked(false);
+    });
     connect(btnBack, &QPushButton::clicked, this, &TaskWindow::fadeOut);
+    
+    // Логика компиляции
+    connect(btnRun, &QPushButton::clicked, this, &TaskWindow::onRunClicked);
+    connect(btnSubmit, &QPushButton::clicked, this, &TaskWindow::onSubmitClicked);
 
     setupStyles();
 }
+
+void TaskWindow::onRunClicked() {
+    QString code = codeEditor_->toPlainText();
+    testOutput_->clear();
+    testOutput_->append("Анализ безопасности...");
+
+    auto violation = analyzer_->analyze(currentTask_, code);
+    if (violation.has_value()) {
+        testOutput_->append("<span style='color:red;'>Ошибка: " + violation.value() + "</span>");
+        return;
+    }
+
+    testOutput_->append("Компиляция...");
+    
+    std::vector<cppforge::entities::TestCase> testVector(
+        currentTask_.getTestCases().begin(), currentTask_.getTestCases().end()
+    );
+
+    auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
+    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished, [this, watcher]() {
+        auto result = watcher->result();
+        if (result.isSuccess()) {
+            testOutput_->append("<span style='color:green;'>[OK] Все тесты пройдены!</span>");
+            testOutput_->append("Вывод:\n" + result.getOutput());
+        } else {
+            testOutput_->append("<span style='color:red;'>[FAIL] Ошибка выполнения.</span>");
+            if (!result.getErrors().isEmpty()) testOutput_->append(result.getErrors());
+        }
+        watcher->deleteLater();
+    });
+
+    watcher->setFuture(runner_->runAsync(code, testVector));
+}
+
+void TaskWindow::onSubmitClicked() { onRunClicked(); }
 
 void TaskWindow::setupStyles()
 {
@@ -204,18 +233,15 @@ void TaskWindow::setupStyles()
         QPushButton#tabButton { border: none; background: transparent; font-weight: bold; font-size: 13px; padding: 5px 10px; }
         QPushButton#tabButton:checked { border-bottom: 2px solid black; }
         #editorFrame, #testFrame { background-color: white; border: 2px solid #dddddd; border-radius: 20px; }
-        #codeEditor, #testOutput { border: none; font-family: 'Consolas'; }
+        #codeEditor, #testOutput { border: none; font-family: 'Consolas'; font-size: 13px; }
         QPushButton#runButton, QPushButton#submitButton { border-radius: 12px; padding: 5px 20px; font-weight: bold; }
         QPushButton#runButton { background-color: #f0f0f0; border: 1px solid #ccc; }
         QPushButton#submitButton { background-color: #b8e2c8; border: none; }
         QPushButton#backButton { background-color: #d9d9d9; border-radius: 22px; border: none; }
-        QSplitter::handle { background-color: #bbbbbb; }
-        QScrollArea { border: none; background: white; }
     )");
 }
 
-void TaskWindow::fadeIn()
-{
+void TaskWindow::fadeIn() {
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
     transitionAnimation_->setStartValue(0.0);
@@ -223,23 +249,24 @@ void TaskWindow::fadeIn()
     transitionAnimation_->start();
 }
 
-void TaskWindow::fadeOut()
-{
+void TaskWindow::fadeOut() {
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(200);
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
-            [this]()
-            {
-                hide();
-                emit windowClosed();
-            });
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() {
+        hide();
+        emit windowClosed();
+    });
     transitionAnimation_->start();
 }
 
-void TaskWindow::showEvent(QShowEvent *event)
-{
+void TaskWindow::showEvent(QShowEvent *event) {
     QWidget::showEvent(event);
     fadeIn();
+}
+
+void TaskWindow::loadModule(int moduleId)
+{
+    qDebug() << "TaskWindow: loadModule called for ID" << moduleId;
 }

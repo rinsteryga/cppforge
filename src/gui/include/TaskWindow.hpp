@@ -2,9 +2,17 @@
 
 #include "CustomTitleBar.hpp"
 
+// Исправленные пути инклудов
+#include "../../core/include/entities/CodingTask.hpp"
+#include "../../core/include/services/CodeRunner.hpp"
+#include "../../core/include/services/StaticAnalyzer.hpp"
+
 #include <QPropertyAnimation>
 #include <QWidget>
-
+#include <QTextEdit>
+#include <QLabel>
+#include <QFutureWatcher>
+#include <QDebug>
 #include <memory>
 
 class TaskWindow : public QWidget
@@ -15,7 +23,10 @@ public:
     explicit TaskWindow(QWidget *parent = nullptr);
     ~TaskWindow();
 
-    void loadModule(int moduleId) {}
+    // Этот метод вызывается из MainWindow.cpp, его нужно обязательно объявить
+    void loadModule(int moduleId); 
+
+    void setTask(const cppforge::entities::CodingTask &task);
     void fadeIn();
     void fadeOut();
 
@@ -31,7 +42,19 @@ private:
     void setupUI();
     void setupStyles();
     void centerWindow();
+    
+    void onRunClicked();
+    void onSubmitClicked();
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
+
+    QTextEdit* codeEditor_{nullptr};
+    QTextEdit* testOutput_{nullptr};
+    QLabel* practiceContent_{nullptr};
+    QLabel* theoryContent_{nullptr};
+
+    std::unique_ptr<cppforge::services::CodeRunner> runner_;
+    std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
+    cppforge::entities::CodingTask currentTask_;
 };
