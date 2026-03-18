@@ -21,6 +21,7 @@ namespace cppforge::entities
     class CodingTask
     {
     public:
+        CodingTask();
         /**
          * @brief Constructs a new CodingTask instance.
          *
