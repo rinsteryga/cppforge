@@ -124,7 +124,7 @@ void TaskWindow::loadModule(int lessonId)
             QSqlQuery testQuery;
             testQuery.prepare(
                 "SELECT id, input, expected_output, is_public FROM test_cases WHERE coding_task_id = :tid");
-            testQuery.bindValue(":tid", taskId);
+            testQuery.bindValue(":tid", static_cast<qulonglong>(taskId));
 
             if (testQuery.exec())
             {
