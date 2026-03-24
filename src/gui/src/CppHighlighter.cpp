@@ -2,7 +2,6 @@
 
 CppHighlighter::CppHighlighter(QTextDocument *parent) : QSyntaxHighlighter(parent)
 {
-    // Ключевые слова (синий или фиолетовый)
     keywordFormat.setForeground(Qt::darkBlue);
     keywordFormat.setFontWeight(QFont::Bold);
     QStringList keywordPatterns;
@@ -19,20 +18,16 @@ CppHighlighter::CppHighlighter(QTextDocument *parent) : QSyntaxHighlighter(paren
         highlightingRules.append({QRegularExpression(pattern), keywordFormat});
     }
 
-    // Препроцессор (#include и т.д. - темно-оранжевый)
     preprocessorFormat.setForeground(QColor(200, 100, 0));
     highlightingRules.append({QRegularExpression("^\\s*#\\s*[a-zA-Z]+"), preprocessorFormat});
 
-    // Кавычки/Строки (красный)
     quotationFormat.setForeground(Qt::darkRed);
     highlightingRules.append({QRegularExpression("\".*\""), quotationFormat});
 
-    // Функции (темно-синий курсив)
     functionFormat.setFontItalic(true);
     functionFormat.setForeground(Qt::blue);
     highlightingRules.append({QRegularExpression("\\b[A-Za-z0-9_]+(?=\\()"), functionFormat});
 
-    // Комментарии (серый)
     commentFormat.setForeground(Qt::darkGray);
     highlightingRules.append({QRegularExpression("//.*"), commentFormat});
     highlightingRules.append({QRegularExpression("/\\*.*\\*/"), commentFormat});

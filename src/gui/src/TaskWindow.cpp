@@ -59,7 +59,6 @@ void TaskWindow::loadModule(int lessonId)
     testOutput_->clear();
     
     QSqlQuery query;
-    // Добавляем order_index, чтобы понимать позицию урока в курсе
     query.prepare(R"(
         SELECT 
             l.title, 
@@ -88,7 +87,6 @@ void TaskWindow::loadModule(int lessonId)
         
         customTitleBar_->setTitle(title);
         
-        // 1. СЛОВА АВТОРА (Теория) - всегда на первой вкладке
         auto* theoryEdit = qobject_cast<QTextEdit*>(theoryContent_);
         if (theoryEdit) {
             theoryEdit->setPlainText(theory);
@@ -148,11 +146,9 @@ void TaskWindow::loadModule(int lessonId)
     }
 }
 
-// ПЕРЕКЛЮЧЕНИЕ ПО ПОРЯДКУ (ORDER_INDEX)
 void TaskWindow::onNextTask()
 {
     QSqlQuery query;
-    // Ищем следующий урок на основе order_index текущего урока
     query.prepare(R"(
         SELECT id FROM lessons 
         WHERE order_index > (SELECT order_index FROM lessons WHERE id = :id) 
@@ -167,7 +163,6 @@ void TaskWindow::onNextTask()
 void TaskWindow::onPrevTask()
 {
     QSqlQuery query;
-    // Ищем предыдущий урок на основе order_index текущего урока
     query.prepare(R"(
         SELECT id FROM lessons 
         WHERE order_index < (SELECT order_index FROM lessons WHERE id = :id) 
@@ -218,7 +213,6 @@ void TaskWindow::setupUI()
     btnPractice->setCheckable(true);
     btnTheory->setCheckable(true);
     
-    // По умолчанию открываем теорию (слова автора)
     btnTheory->setChecked(true);
     
     tabLayout->addWidget(btnTheory);
@@ -240,8 +234,8 @@ void TaskWindow::setupUI()
     practiceEdit->setContentsMargins(20, 20, 20, 20);
     practiceContent_ = reinterpret_cast<QLabel *>(practiceEdit);
 
-    contentStack->addWidget(theoryEdit);    // Index 0
-    contentStack->addWidget(practiceEdit);  // Index 1
+    contentStack->addWidget(theoryEdit);    
+    contentStack->addWidget(practiceEdit);  
     leftLayout->addWidget(contentStack);
 
     auto footerLeft = new QHBoxLayout();

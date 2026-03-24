@@ -44,7 +44,6 @@ private:
     void onRunClicked();
     void onSubmitClicked();
     
-    // Методы переключения
     void onNextTask();
     void onPrevTask();
 
@@ -56,7 +55,6 @@ private:
     QLabel *practiceContent_{nullptr};
     QLabel *theoryContent_{nullptr};
     
-    // Кнопки для переключения (добавляем в приватную часть)
     QPushButton *btnNext_{nullptr};
     QPushButton *btnPrev_{nullptr};
 

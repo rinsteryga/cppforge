@@ -37,7 +37,6 @@ int main(int argc, char *argv[])
         encodingQuery = "SET client_encoding TO 'WIN1251';";
         qDebug() << "Applying Windows compatibility settings (WIN1251).";
 #else
-        // Для Linux (Ubuntu), macOS и прочих — используем стандартный UTF8
         encodingQuery = "SET client_encoding TO 'UTF8';";
         qDebug() << "Applying Unix-like compatibility settings (UTF8).";
 #endif

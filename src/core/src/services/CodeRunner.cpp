@@ -48,7 +48,6 @@ namespace cppforge::services
         QString exePath = sourcePath + ".exe";
 
         QProcess compiler;
-        // Исправлено: добавлен QStringList() для соответствия сигнатуре метода
         compiler.start("g++", {sourcePath, "-o", exePath, "-O2"});
 
         if (!compiler.waitForFinished(10000) || compiler.exitCode() != 0)
@@ -69,11 +68,10 @@ namespace cppforge::services
         QString lastOutput;
         QString errorLog;
 
-        // Если список тестов пуст, запускаем программу один раз, чтобы увидеть любой вывод
         if (tests.empty())
         {
             QProcess process;
-            process.setProcessChannelMode(QProcess::MergedChannels); // Склеиваем stdout и stderr
+            process.setProcessChannelMode(QProcess::MergedChannels); 
             process.start(executablePath, QStringList());
 
             if (process.waitForFinished(3000))
@@ -88,7 +86,6 @@ namespace cppforge::services
         }
         else
         {
-            // Прогоняем по всем тестам
             for (const auto &test : tests)
             {
                 QProcess process;
@@ -122,7 +119,6 @@ namespace cppforge::services
 
         QFile::remove(executablePath);
 
-        // Результат: успех только если тесты были и все пройдены
         bool isAllPassed = (!tests.empty() && passedCount == tests.size()) || (tests.empty() && errorLog.isEmpty());
 
         return cppforge::entities::ExecutionResult(0, isAllPassed, lastOutput, errorLog, 0, passedCount);
