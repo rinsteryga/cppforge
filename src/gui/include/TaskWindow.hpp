@@ -1,19 +1,17 @@
 #pragma once
 
 #include "CustomTitleBar.hpp"
-
-// Исправленные пути инклудов
 #include "../../core/include/entities/CodingTask.hpp"
 #include "../../core/include/services/CodeRunner.hpp"
 #include "../../core/include/services/StaticAnalyzer.hpp"
 
+#include <QWidget>
 #include <QDebug>
 #include <QFutureWatcher>
 #include <QLabel>
 #include <QPropertyAnimation>
 #include <QTextEdit>
-#include <QWidget>
-
+#include <QPushButton>
 #include <memory>
 
 class TaskWindow : public QWidget
@@ -24,9 +22,7 @@ public:
     explicit TaskWindow(QWidget *parent = nullptr);
     ~TaskWindow();
 
-    // Этот метод вызывается из MainWindow.cpp, его нужно обязательно объявить
     void loadModule(int moduleId);
-
     void setTask(const cppforge::entities::CodingTask &task);
     void fadeIn();
     void fadeOut();
@@ -38,6 +34,7 @@ signals:
 protected:
     void showEvent(QShowEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     void setupUI();
@@ -46,6 +43,10 @@ private:
 
     void onRunClicked();
     void onSubmitClicked();
+    
+    // Методы переключения
+    void onNextTask();
+    void onPrevTask();
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
@@ -54,8 +55,14 @@ private:
     QTextEdit *testOutput_{nullptr};
     QLabel *practiceContent_{nullptr};
     QLabel *theoryContent_{nullptr};
+    
+    // Кнопки для переключения (добавляем в приватную часть)
+    QPushButton *btnNext_{nullptr};
+    QPushButton *btnPrev_{nullptr};
 
     std::unique_ptr<cppforge::services::CodeRunner> runner_;
     std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
     cppforge::entities::CodingTask currentTask_;
+    
+    int currentModuleId_{-1};
 };
