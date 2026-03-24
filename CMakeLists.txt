@@ -29,10 +29,11 @@ target_link_libraries(cppforge
     cppforge_core
     cppforge_gui
     Qt5::Widgets
+    Qt5::Sql
     Qt5::Core
 )
 
 set_target_properties(cppforge PROPERTIES
-    WIN32_EXECUTABLE ON
+    WIN32_EXECUTABLE OFF
     MACOSX_BUNDLE ON
 )
