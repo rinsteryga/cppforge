@@ -58,9 +58,11 @@ int main(int argc, char *argv[])
     MainWindow mainWindow;
 
     QObject::connect(&authWindow, &AuthWindow::switchToMainMenu,
-                     [&]()
+                     [&](const QString &username)
                      {
-                         qDebug() << "Switching to MainWindow...";
+                         qDebug() << "Switching to MainWindow for user:" << username;
+
+                         mainWindow.setCurrentUser(username);
 
                          QScreen *screen = QGuiApplication::primaryScreen();
                          if (screen)
@@ -73,7 +75,8 @@ int main(int argc, char *argv[])
 
                          mainWindow.show();
                          mainWindow.fadeIn();
-                         authWindow.close();
+
+                         authWindow.hide();
                      });
 
     authWindow.show();

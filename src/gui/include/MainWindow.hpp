@@ -1,6 +1,10 @@
 #pragma once
 
+#include "ProfilePage.hpp"
+
 #include <QPropertyAnimation>
+#include <QStackedWidget>
+#include <QString>
 #include <QWidget>
 
 #include <memory>
@@ -24,6 +28,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void setCurrentUser(const QString &username) { m_currentUsername = username; }
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     void showEvent(QShowEvent *event) override;
@@ -36,6 +42,7 @@ public slots:
 private slots:
     void onModuleButtonClicked();
     void onLearnButtonClicked();
+    void onProfileButtonClicked();
     void onTaskWindowClosed();
     void updateModuleProgress(int moduleId, int progress);
 
@@ -56,6 +63,12 @@ private:
     std::unique_ptr<QVBoxLayout> centerPanelLayout_;
     std::unique_ptr<TaskWindow> taskWindow_;
 
+    std::unique_ptr<QStackedWidget> contentStack;
+    ProfilePage *profilePage;
+    QWidget *learningPage;
+
+    QString m_currentUsername;
+
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;
     std::unique_ptr<QFrame> dailyTaskCard;
@@ -70,10 +83,13 @@ private:
     QList<QPushButton *> moduleButtons;
 
     std::unique_ptr<QHBoxLayout> footerLinksLayout;
+
     QPushButton *aboutBtn;
     QPushButton *contactsBtn;
     QPushButton *privacyBtn;
     QPushButton *learnBtn;
+    QPushButton *profileBtn;
+    QPushButton *ratingBtn;
 
     bool isTransitioning_;
     int pendingModuleId_;

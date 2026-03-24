@@ -25,7 +25,7 @@ public:
 
 signals:
     void loginSuccessful();
-    void switchToMainMenu();
+    void switchToMainMenu(const QString &username);
 
 private:
     void setupUI();

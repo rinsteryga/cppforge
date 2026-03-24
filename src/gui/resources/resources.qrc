@@ -3,5 +3,9 @@
         <file>icons/main_logo.ico</file>
         <file>images/eye_open.png</file>
         <file>images/eye_slash.png</file>
+        <file>images/default_avatar1.png</file>
+        <file>images/default_avatar2.png</file>
+        <file>images/default_avatar3.png</file>
+        <file>images/default_avatar4.png</file>
     </qresource>
 </RCC>

@@ -206,34 +206,20 @@ void AuthWindow::setupInputFields()
         openEyePixmap = openEyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         passwordToggleButton_->setIcon(QIcon(openEyePixmap));
         passwordToggleButton_->setIconSize(QSize(20, 20));
-        qDebug() << "Open eye icon loaded";
-    }
-    else
-    {
-        qDebug() << "Open eye icon not found";
     }
 }
 
 void AuthWindow::togglePasswordVisibility()
 {
     passwordVisible_ = !passwordVisible_;
-
     passwordInput_->setEchoMode(passwordVisible_ ? QLineEdit::Normal : QLineEdit::Password);
-
     QString resourcePath = passwordVisible_ ? ":/images/eye_slash.png" : ":/images/eye_open.png";
-
     QPixmap eyePixmap(resourcePath);
-
     if (!eyePixmap.isNull())
     {
         eyePixmap = eyePixmap.scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         passwordToggleButton_->setIcon(QIcon(eyePixmap));
         passwordToggleButton_->setIconSize(QSize(20, 20));
-        qDebug() << (passwordVisible_ ? "Slash" : "Open") << "eye icon loaded";
-    }
-    else
-    {
-        qDebug() << "Eye icon not found:" << resourcePath;
     }
 }
 
@@ -282,9 +268,6 @@ void AuthWindow::setupCreateAccountLink()
                                         "QPushButton:hover {"
                                         "   color: #3367d6;"
                                         "   text-decoration: underline;"
-                                        "}"
-                                        "QPushButton:pressed {"
-                                        "   color: #2a56c6;"
                                         "}");
 }
 
@@ -296,41 +279,33 @@ void AuthWindow::setupLayout()
 
     mainLayout_->addWidget(customTitleBar_.get());
 
-    auto centerContainer = std::make_unique<QWidget>();
-    centerContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    auto centerLayout = std::make_unique<QVBoxLayout>();
+    auto centerContainer = new QWidget();
+    auto centerLayout = new QVBoxLayout(centerContainer);
     centerLayout->setAlignment(Qt::AlignCenter);
     centerLayout->setSpacing(25);
 
     centerLayout->addWidget(iconLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(5);
-
     centerLayout->addWidget(titleLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
-
     centerLayout->addWidget(usernameInput_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(20);
 
-    auto passwordContainer = std::make_unique<QWidget>();
+    auto passwordContainer = new QWidget();
     passwordContainer->setFixedWidth(500);
     passwordContainer->setFixedHeight(65);
-
-    passwordInput_->setParent(passwordContainer.get());
+    passwordInput_->setParent(passwordContainer);
     passwordInput_->setGeometry(0, 0, 500, 65);
-
-    passwordToggleButton_->setParent(passwordContainer.get());
+    passwordToggleButton_->setParent(passwordContainer);
     passwordToggleButton_->setGeometry(500 - 42, 16, 32, 32);
 
-    centerLayout->addWidget(passwordContainer.release(), 0, Qt::AlignCenter);
+    centerLayout->addWidget(passwordContainer, 0, Qt::AlignCenter);
     centerLayout->addSpacing(40);
-
     centerLayout->addWidget(loginButton_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(30);
-
     centerLayout->addWidget(createAccountButton_.get(), 0, Qt::AlignCenter);
 
-    centerContainer->setLayout(centerLayout.release());
-    mainLayout_->addWidget(centerContainer.release());
+    mainLayout_->addWidget(centerContainer);
 }
 
 void AuthWindow::onLoginClicked()
@@ -352,10 +327,10 @@ void AuthWindow::onLoginClicked()
         transitionAnimation_->setEndValue(0.0);
 
         connect(transitionAnimation_.get(), &QPropertyAnimation::finished,
-                [this]()
+                [this, usernameOrEmail]()
                 {
                     this->hide();
-                    emit switchToMainMenu();
+                    emit switchToMainMenu(usernameOrEmail);
                 });
 
         transitionAnimation_->start();
@@ -366,62 +341,17 @@ void AuthWindow::onLoginClicked()
     }
 }
 
+void AuthWindow::onCreateAccountClicked()
+{
+    openSignUpWindow();
+}
+
 void AuthWindow::openSignUpWindow()
 {
     if (!signUpWindow_)
     {
         signUpWindow_ = std::make_unique<SignUpWindow>(authManager_);
-
-        connect(signUpWindow_.get(), &SignUpWindow::switchToLogin,
-                [this]()
-                {
-                    if (signUpWindow_->isMaximized())
-                    {
-                        this->showMaximized();
-                    }
-                    else
-                    {
-                        this->showNormal();
-                        this->move(signUpWindow_->pos());
-                    }
-                    this->raise();
-                    this->activateWindow();
-                    this->fadeIn();
-                });
-
-        connect(signUpWindow_.get(), &QObject::destroyed, [this]() { signUpWindow_.release(); });
     }
-
-    transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
-    transitionAnimation_->setDuration(100);
-    transitionAnimation_->setStartValue(1.0);
-    transitionAnimation_->setEndValue(0.0);
-
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished,
-            [this]()
-            {
-                this->hide();
-
-                if (this->isMaximized())
-                {
-                    signUpWindow_->showMaximized();
-                }
-                else
-                {
-                    signUpWindow_->showNormal();
-                    signUpWindow_->move(this->pos());
-                }
-
-                signUpWindow_->raise();
-                signUpWindow_->activateWindow();
-                signUpWindow_->fadeIn();
-            });
-
-    transitionAnimation_->start();
-}
-
-void AuthWindow::onCreateAccountClicked()
-{
-    qDebug() << "Create Account button clicked";
-    openSignUpWindow();
+    this->hide();
+    signUpWindow_->show();
 }

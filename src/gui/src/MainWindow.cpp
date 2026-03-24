@@ -1,6 +1,7 @@
 #include "MainWindow.hpp"
 
 #include "CustomTitleBar.hpp"
+#include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
 
 #include <QDebug>
@@ -20,12 +21,16 @@
 #include <QScreen>
 #include <QScrollArea>
 #include <QSpacerItem>
+#include <QStackedWidget>
 #include <QStyleOption>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QVariant>
+#include <QtSql/QSqlError>
+#include <QtSql/QSqlQuery>
 
-MainWindow::MainWindow(QWidget *parent) : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1)
+MainWindow::MainWindow(QWidget *parent)
+    : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1), m_currentUsername("")
 {
     setupUI();
     setWindowOpacity(0.0);
@@ -175,11 +180,11 @@ void MainWindow::setupLeftPanel()
     logoContainer->setLayout(logoLayout.release());
 
     learnBtn = new QPushButton("Учиться");
-    auto ratingBtn = std::make_unique<QPushButton>("Рейтинг");
-    auto profileBtn = std::make_unique<QPushButton>("Профиль");
+    ratingBtn = new QPushButton("Рейтинг");
+    profileBtn = new QPushButton("Профиль");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
-    for (auto btn : {learnBtn, ratingBtn.get(), profileBtn.get()})
+    for (auto btn : {learnBtn, ratingBtn, profileBtn})
     {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
@@ -188,12 +193,13 @@ void MainWindow::setupLeftPanel()
     }
 
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
+    connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
 
     layout->addWidget(logoContainer.release(), 0, Qt::AlignCenter);
     layout->addSpacing(20);
     layout->addWidget(learnBtn);
-    layout->addWidget(ratingBtn.release());
-    layout->addWidget(profileBtn.release());
+    layout->addWidget(ratingBtn);
+    layout->addWidget(profileBtn);
     layout->addStretch();
 
     sideBar->setLayout(layout.release());
@@ -411,14 +417,27 @@ void MainWindow::setupUI()
     setupRightPanel();
     setupCenterPanel();
 
+    contentStack = std::make_unique<QStackedWidget>();
+    profilePage = new ProfilePage(this);
+
+    learningPage = new QWidget();
+    auto *learningLayout = new QHBoxLayout(learningPage);
+    learningLayout->setContentsMargins(0, 0, 0, 0);
+    learningLayout->setSpacing(30);
+
     auto eventWidget = std::make_unique<QWidget>();
     eventWidget->setLayout(centerPanelLayout_.release());
 
-    containerLayout->addWidget(sideBar.get(), 1);
-    containerLayout->addWidget(modulesScrollArea.get(), 2);
-    containerLayout->addWidget(eventWidget.release(), 1);
-    contentContainer->setLayout(containerLayout.release());
+    learningLayout->addWidget(modulesScrollArea.release(), 2);
+    learningLayout->addWidget(eventWidget.release(), 1);
 
+    contentStack->addWidget(learningPage);
+    contentStack->addWidget(profilePage);
+
+    containerLayout->addWidget(sideBar.get(), 1);
+    containerLayout->addWidget(contentStack.get(), 4);
+
+    contentContainer->setLayout(containerLayout.release());
     mainVerticalLayout->addWidget(contentContainer.release());
     setLayout(mainVerticalLayout.release());
 
@@ -667,7 +686,44 @@ void MainWindow::onModuleButtonClicked()
 void MainWindow::onLearnButtonClicked()
 {
     qDebug() << "Learn button clicked";
-    animateToTaskWindow(0);
+    if (contentStack && contentStack->currentIndex() != 0)
+    {
+        contentStack->setCurrentIndex(0);
+    }
+    else
+    {
+        animateToTaskWindow(0);
+    }
+}
+
+void MainWindow::onProfileButtonClicked()
+{
+    qDebug() << "Profile button clicked: Searching user" << m_currentUsername << "in DB...";
+
+    QSqlQuery query;
+    query.prepare("SELECT id, username, avatar_path FROM users WHERE username = :name");
+    query.bindValue(":name", m_currentUsername);
+
+    if (query.exec() && query.next())
+    {
+        int id = query.value("id").toInt();
+        QString name = query.value("username").toString();
+        QString avatar = query.value("avatar_path").toString();
+
+        if (profilePage)
+        {
+            profilePage->setUserData(id, name, avatar);
+        }
+    }
+    else
+    {
+        qDebug() << "Profile Error:" << query.lastError().text();
+    }
+
+    if (contentStack)
+    {
+        contentStack->setCurrentIndex(1);
+    }
 }
 
 void MainWindow::animateToTaskWindow(int moduleId)
@@ -705,13 +761,13 @@ void MainWindow::onTaskWindowClosed()
 
 void MainWindow::updateModuleProgress(int moduleId, int progress)
 {
-    if (moduleId >= 1 && moduleId <= moduleProgressBars.size())
+    if (moduleId >= 1 && moduleId <= (int)moduleProgressBars.size())
     {
         moduleProgressBars[moduleId - 1]->setValue(progress);
         moduleProgressLabels[moduleId - 1]->setText(QString("%1% выполнено").arg(progress));
     }
 
-    if (progress == 100 && moduleId < moduleButtons.size())
+    if (progress == 100 && moduleId < (int)moduleButtons.size())
     {
         QPushButton *nextButton = moduleButtons[moduleId];
         if (nextButton && !nextButton->isEnabled())
