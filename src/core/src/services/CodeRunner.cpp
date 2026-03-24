@@ -71,7 +71,7 @@ namespace cppforge::services
         if (tests.empty())
         {
             QProcess process;
-            process.setProcessChannelMode(QProcess::MergedChannels); 
+            process.setProcessChannelMode(QProcess::MergedChannels);
             process.start(executablePath, QStringList());
 
             if (process.waitForFinished(3000))

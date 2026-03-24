@@ -1,13 +1,16 @@
 #include "../include/TaskWindow.hpp"
+
 #include "../include/CppHighlighter.hpp"
 #include "../include/CustomTitleBar.hpp"
 
 #include <QFrame>
+#include <QFutureWatcher>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QPainter>
+#include <QPropertyAnimation>
 #include <QPushButton>
 #include <QScreen>
 #include <QScrollArea>
@@ -21,15 +24,12 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
-#include <QPropertyAnimation>
-#include <QFutureWatcher>
 
 #include <optional>
 #include <set>
 
 TaskWindow::TaskWindow(QWidget *parent)
-    : QWidget(parent), 
-      runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
+    : QWidget(parent), runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
       analyzer_(std::make_unique<cppforge::services::StaticAnalyzer>())
 {
     setupUI();
@@ -57,7 +57,7 @@ void TaskWindow::loadModule(int lessonId)
     qDebug() << "TaskWindow: Начало загрузки урока ID:" << lessonId;
 
     testOutput_->clear();
-    
+
     QSqlQuery query;
     query.prepare(R"(
         SELECT 
@@ -76,37 +76,44 @@ void TaskWindow::loadModule(int lessonId)
     )");
     query.bindValue(":lessonId", lessonId);
 
-    if (!query.exec()) {
+    if (!query.exec())
+    {
         qDebug() << "КРИТИЧЕСКАЯ ОШИБКА SQL:" << query.lastError().text();
         return;
     }
 
-    if (query.next()) {
+    if (query.next())
+    {
         QString title = query.value("title").toString();
         QString theory = query.value("content").toString();
-        
+
         customTitleBar_->setTitle(title);
-        
-        auto* theoryEdit = qobject_cast<QTextEdit*>(theoryContent_);
-        if (theoryEdit) {
+
+        auto *theoryEdit = qobject_cast<QTextEdit *>(theoryContent_);
+        if (theoryEdit)
+        {
             theoryEdit->setPlainText(theory);
         }
 
         QVariant taskIdVar = query.value("id");
-        auto* practiceEdit = qobject_cast<QTextEdit*>(practiceContent_);
-        
-        if (!taskIdVar.isNull()) {
+        auto *practiceEdit = qobject_cast<QTextEdit *>(practiceContent_);
+
+        if (!taskIdVar.isNull())
+        {
             uint64_t taskId = taskIdVar.toULongLong();
             QString practiceDesc = query.value("description").toString();
             QString initCode = query.value("initial_code").toString();
             int tLimit = query.value("time_limit").isValid() ? query.value("time_limit").toInt() : 1000;
             int mLimit = query.value("memory_limit").isValid() ? query.value("memory_limit").toInt() : 256;
 
-            auto parseTags = [](const QString& str) -> std::optional<std::set<QString>> {
-                if (str.trimmed().isEmpty()) return std::nullopt;
+            auto parseTags = [](const QString &str) -> std::optional<std::set<QString>>
+            {
+                if (str.trimmed().isEmpty())
+                    return std::nullopt;
                 std::set<QString> resultSet;
                 QStringList list = str.split(',', Qt::SkipEmptyParts);
-                for (const QString& item : list) resultSet.insert(item.trimmed());
+                for (const QString &item : list)
+                    resultSet.insert(item.trimmed());
                 return resultSet;
             };
 
@@ -115,33 +122,35 @@ void TaskWindow::loadModule(int lessonId)
 
             std::set<cppforge::entities::TestCase> testCases;
             QSqlQuery testQuery;
-            testQuery.prepare("SELECT id, input, expected_output, is_public FROM test_cases WHERE coding_task_id = :tid");
+            testQuery.prepare(
+                "SELECT id, input, expected_output, is_public FROM test_cases WHERE coding_task_id = :tid");
             testQuery.bindValue(":tid", taskId);
 
-            if (testQuery.exec()) {
-                while (testQuery.next()) {
-                    testCases.emplace(
-                        testQuery.value("id").toULongLong(),
-                        testQuery.value("input").toString(),
-                        testQuery.value("expected_output").toString(),
-                        testQuery.value("is_public").toBool()
-                    );
+            if (testQuery.exec())
+            {
+                while (testQuery.next())
+                {
+                    testCases.emplace(testQuery.value("id").toULongLong(), testQuery.value("input").toString(),
+                                      testQuery.value("expected_output").toString(),
+                                      testQuery.value("is_public").toBool());
                 }
             }
 
-            currentTask_ = cppforge::entities::CodingTask(
-                taskId, static_cast<uint64_t>(lessonId), title, practiceDesc, 
-                initCode, testCases, tLimit, mLimit, whitelist, blacklist
-            );
+            currentTask_ = cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc,
+                                                          initCode, testCases, tLimit, mLimit, whitelist, blacklist);
 
-            if (practiceEdit) practiceEdit->setPlainText(practiceDesc);
+            if (practiceEdit)
+                practiceEdit->setPlainText(practiceDesc);
             codeEditor_->setPlainText(initCode);
             codeEditor_->setReadOnly(false);
-        } else {
-            if (practiceEdit) practiceEdit->setPlainText("Для этого модуля практических заданий не предусмотрено.");
+        }
+        else
+        {
+            if (practiceEdit)
+                practiceEdit->setPlainText("Для этого модуля практических заданий не предусмотрено.");
             codeEditor_->setPlainText("// В этом уроке только теоретический материал.");
             codeEditor_->setReadOnly(true);
-            currentTask_ = cppforge::entities::CodingTask(); 
+            currentTask_ = cppforge::entities::CodingTask();
         }
     }
 }
@@ -155,7 +164,8 @@ void TaskWindow::onNextTask()
         ORDER BY order_index ASC LIMIT 1
     )");
     query.bindValue(":id", currentModuleId_);
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next())
+    {
         loadModule(query.value(0).toInt());
     }
 }
@@ -169,7 +179,8 @@ void TaskWindow::onPrevTask()
         ORDER BY order_index DESC LIMIT 1
     )");
     query.bindValue(":id", currentModuleId_);
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next())
+    {
         loadModule(query.value(0).toInt());
     }
 }
@@ -212,9 +223,9 @@ void TaskWindow::setupUI()
     btnTheory->setObjectName("tabButton");
     btnPractice->setCheckable(true);
     btnTheory->setCheckable(true);
-    
+
     btnTheory->setChecked(true);
-    
+
     tabLayout->addWidget(btnTheory);
     tabLayout->addWidget(btnPractice);
     tabLayout->addStretch();
@@ -234,30 +245,30 @@ void TaskWindow::setupUI()
     practiceEdit->setContentsMargins(20, 20, 20, 20);
     practiceContent_ = reinterpret_cast<QLabel *>(practiceEdit);
 
-    contentStack->addWidget(theoryEdit);    
-    contentStack->addWidget(practiceEdit);  
+    contentStack->addWidget(theoryEdit);
+    contentStack->addWidget(practiceEdit);
     leftLayout->addWidget(contentStack);
 
     auto footerLeft = new QHBoxLayout();
     footerLeft->setContentsMargins(15, 15, 15, 15);
-    
+
     auto btnBack = new QPushButton();
     btnBack->setFixedSize(45, 45);
     btnBack->setObjectName("backButton");
     footerLeft->addWidget(btnBack);
 
     footerLeft->addSpacing(10);
-    
+
     auto btnPrev = new QPushButton("← Назад");
     auto btnNext = new QPushButton("Вперед →");
     btnPrev->setObjectName("navButton");
     btnNext->setObjectName("navButton");
     btnPrev->setFixedSize(100, 45);
     btnNext->setFixedSize(100, 45);
-    
+
     footerLeft->addWidget(btnPrev);
     footerLeft->addWidget(btnNext);
-    
+
     footerLeft->addStretch();
     leftLayout->addLayout(footerLeft);
 
@@ -313,17 +324,21 @@ void TaskWindow::setupUI()
     mainSplitter->addWidget(rightContainer);
     rootLayout->addWidget(mainSplitter);
 
-    connect(btnTheory, &QPushButton::clicked, [=]() {
-        contentStack->setCurrentIndex(0);
-        btnTheory->setChecked(true);
-        btnPractice->setChecked(false);
-    });
-    connect(btnPractice, &QPushButton::clicked, [=]() {
-        contentStack->setCurrentIndex(1);
-        btnPractice->setChecked(true);
-        btnTheory->setChecked(false);
-    });
-    
+    connect(btnTheory, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(0);
+                btnTheory->setChecked(true);
+                btnPractice->setChecked(false);
+            });
+    connect(btnPractice, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(1);
+                btnPractice->setChecked(true);
+                btnTheory->setChecked(false);
+            });
+
     connect(btnBack, &QPushButton::clicked, this, &TaskWindow::fadeOut);
     connect(btnNext, &QPushButton::clicked, this, &TaskWindow::onNextTask);
     connect(btnPrev, &QPushButton::clicked, this, &TaskWindow::onPrevTask);
@@ -337,34 +352,43 @@ void TaskWindow::onRunClicked()
 {
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
-    
-    if (currentTask_.getId() == 0) {
+
+    if (currentTask_.getId() == 0)
+    {
         testOutput_->append("<span style='color:orange;'>Это теоретический модуль. Практика недоступна.</span>");
         return;
     }
 
     testOutput_->append("Анализ безопасности...");
     auto violation = analyzer_->analyze(currentTask_, code);
-    if (violation.has_value()) {
+    if (violation.has_value())
+    {
         testOutput_->append("<span style='color:red;'>Ошибка: " + violation.value() + "</span>");
         return;
     }
 
     testOutput_->append("Компиляция...");
-    std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(), currentTask_.getTestCases().end());
+    std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
+                                                         currentTask_.getTestCases().end());
 
     auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
-    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished, [this, watcher]() {
-        auto result = watcher->result();
-        if (result.isSuccess()) {
-            testOutput_->append("<span style='color:green;'>[OK] Все тесты пройдены!</span>");
-            testOutput_->append("Вывод:\n" + result.getOutput());
-        } else {
-            testOutput_->append("<span style='color:red;'>[FAIL] Ошибка выполнения.</span>");
-            if (!result.getErrors().isEmpty()) testOutput_->append(result.getErrors());
-        }
-        watcher->deleteLater();
-    });
+    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
+            [this, watcher]()
+            {
+                auto result = watcher->result();
+                if (result.isSuccess())
+                {
+                    testOutput_->append("<span style='color:green;'>[OK] Все тесты пройдены!</span>");
+                    testOutput_->append("Вывод:\n" + result.getOutput());
+                }
+                else
+                {
+                    testOutput_->append("<span style='color:red;'>[FAIL] Ошибка выполнения.</span>");
+                    if (!result.getErrors().isEmpty())
+                        testOutput_->append(result.getErrors());
+                }
+                watcher->deleteLater();
+            });
 
     watcher->setFuture(runner_->runAsync(code, testVector));
 }
@@ -386,7 +410,8 @@ void TaskWindow::paintEvent(QPaintEvent *event)
 void TaskWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen) {
+    if (screen)
+    {
         QRect adj = screen->availableGeometry();
         move(adj.x() + (adj.width() - width()) / 2, adj.y() + (adj.height() - height()) / 2);
     }
@@ -394,11 +419,15 @@ void TaskWindow::centerWindow()
 
 bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == codeEditor_ && event->type() == QEvent::Wheel) {
+    if (obj == codeEditor_ && event->type() == QEvent::Wheel)
+    {
         auto *wheelEvent = static_cast<QWheelEvent *>(event);
-        if (wheelEvent->modifiers() & Qt::ControlModifier) {
-            if (wheelEvent->angleDelta().y() > 0) codeEditor_->zoomIn(1);
-            else codeEditor_->zoomOut(1);
+        if (wheelEvent->modifiers() & Qt::ControlModifier)
+        {
+            if (wheelEvent->angleDelta().y() > 0)
+                codeEditor_->zoomIn(1);
+            else
+                codeEditor_->zoomOut(1);
             return true;
         }
     }
@@ -436,10 +465,12 @@ void TaskWindow::fadeOut()
     transitionAnimation_->setDuration(200);
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() {
-        hide();
-        emit windowClosed();
-    });
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
+            [this]()
+            {
+                hide();
+                emit windowClosed();
+            });
     transitionAnimation_->start();
 }
 

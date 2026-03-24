@@ -33,6 +33,6 @@ namespace cppforge::services
             }
         }
 
-        return std::nullopt; 
+        return std::nullopt;
     }
 } // namespace cppforge::services

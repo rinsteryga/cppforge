@@ -1,17 +1,18 @@
 #pragma once
 
-#include "CustomTitleBar.hpp"
 #include "../../core/include/entities/CodingTask.hpp"
 #include "../../core/include/services/CodeRunner.hpp"
 #include "../../core/include/services/StaticAnalyzer.hpp"
+#include "CustomTitleBar.hpp"
 
-#include <QWidget>
 #include <QDebug>
 #include <QFutureWatcher>
 #include <QLabel>
 #include <QPropertyAnimation>
-#include <QTextEdit>
 #include <QPushButton>
+#include <QTextEdit>
+#include <QWidget>
+
 #include <memory>
 
 class TaskWindow : public QWidget
@@ -43,7 +44,7 @@ private:
 
     void onRunClicked();
     void onSubmitClicked();
-    
+
     void onNextTask();
     void onPrevTask();
 
@@ -54,13 +55,13 @@ private:
     QTextEdit *testOutput_{nullptr};
     QLabel *practiceContent_{nullptr};
     QLabel *theoryContent_{nullptr};
-    
+
     QPushButton *btnNext_{nullptr};
     QPushButton *btnPrev_{nullptr};
 
     std::unique_ptr<cppforge::services::CodeRunner> runner_;
     std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
     cppforge::entities::CodingTask currentTask_;
-    
+
     int currentModuleId_{-1};
 };
