@@ -52,7 +52,7 @@ CREATE TABLE lessons (
     module_id BIGINT NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     content TEXT,
-    order_index INT NOT NULL DEFAULT 0 -- Поле для сохранения порядка теории
+    order_index INT NOT NULL DEFAULT 0
 );
 CREATE INDEX idx_lessons_module_id ON lessons(module_id);
 
