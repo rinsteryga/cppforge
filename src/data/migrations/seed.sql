@@ -2,6 +2,8 @@
 -- CPPFORGE Database Seed Script (Fixed Order)
 -- ===========================================================
 
+SET client_encoding = 'UTF8';
+
 BEGIN;
 
 TRUNCATE TABLE 
