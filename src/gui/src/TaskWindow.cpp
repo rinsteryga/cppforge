@@ -31,15 +31,14 @@
 #include <optional>
 #include <set>
 
-// Функция для интеграции "темы с абзацами"
 void applyTextFormatting(QTextEdit *editor)
 {
     if (!editor)
         return;
     QTextCursor cursor = editor->textCursor();
     QTextBlockFormat blockFormat;
-    blockFormat.setBottomMargin(15);                                      // Отступ между абзацами
-    blockFormat.setLineHeight(145, QTextBlockFormat::ProportionalHeight); // Межстрочный интервал
+    blockFormat.setBottomMargin(15);
+    blockFormat.setLineHeight(145, QTextBlockFormat::ProportionalHeight);
     cursor.select(QTextCursor::Document);
     cursor.setBlockFormat(blockFormat);
 }
@@ -265,14 +264,14 @@ void TaskWindow::setupUI()
     theoryEdit_->setFrameStyle(QFrame::NoFrame);
     theoryEdit_->setFont(QFont("Roboto", 13));
     theoryEdit_->setStyleSheet("padding: 25px; line-height: 1.6;");
-    theoryEdit_->installEventFilter(this); // УСТАНОВКА ФИЛЬТРА
+    theoryEdit_->installEventFilter(this);
 
     practiceEdit_ = new QTextEdit();
     practiceEdit_->setReadOnly(true);
     practiceEdit_->setFrameStyle(QFrame::NoFrame);
     practiceEdit_->setFont(QFont("Roboto", 13));
     practiceEdit_->setStyleSheet("padding: 25px;");
-    practiceEdit_->installEventFilter(this); // УСТАНОВКА ФИЛЬТРА
+    practiceEdit_->installEventFilter(this);
 
     contentStack->addWidget(theoryEdit_);
     contentStack->addWidget(practiceEdit_);
@@ -322,7 +321,7 @@ void TaskWindow::setupUI()
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
-    codeEditor_->installEventFilter(this); // УСТАНОВКА ФИЛЬТРА
+    codeEditor_->installEventFilter(this);
 
     QFont codeFont("Consolas", 13);
     codeEditor_->setFont(codeFont);
@@ -357,7 +356,7 @@ void TaskWindow::setupUI()
     testOutput_->setReadOnly(true);
     testOutput_->setObjectName("testOutput");
     testOutput_->setFont(QFont("Consolas", 12));
-    testOutput_->installEventFilter(this); // Опционально: зум и в выводе тестов
+    testOutput_->installEventFilter(this);
     testLayout->addWidget(testOutput_);
 
     rightSplitter->addWidget(codeFrame);
@@ -463,7 +462,6 @@ void TaskWindow::centerWindow()
     }
 }
 
-// УНИВЕРСАЛЬНЫЙ ФИЛЬТР СОБЫТИЙ ДЛЯ ЗУМА
 bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 {
     QTextEdit *editor = qobject_cast<QTextEdit *>(obj);
