@@ -10,9 +10,9 @@
 #include <QLabel>
 #include <QPropertyAnimation>
 #include <QPushButton>
+#include <QStackedWidget>
 #include <QTextEdit>
 #include <QWidget>
-#include <QStackedWidget>
 
 #include <memory>
 
@@ -59,10 +59,10 @@ private:
     // Основные компоненты UI
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
-    
+
     // Сайдбар и стек контента (Теория/Практика)
-    QWidget* leftSidebar_{nullptr};       // Тот самый "пропавший" сайдбар
-    QStackedWidget* contentStack_{nullptr}; // Контейнер для теории и практики
+    QWidget *leftSidebar_{nullptr};         // Тот самый "пропавший" сайдбар
+    QStackedWidget *contentStack_{nullptr}; // Контейнер для теории и практики
 
     // Анимация и виджеты выпадающего меню
     std::unique_ptr<QPropertyAnimation> navAnimation_;
@@ -72,7 +72,7 @@ private:
     // Элементы редактора и вывода
     QTextEdit *codeEditor_{nullptr};
     QTextEdit *testOutput_{nullptr};
-    
+
     QTextEdit *practiceEdit_{nullptr};
     QTextEdit *theoryEdit_{nullptr};
 

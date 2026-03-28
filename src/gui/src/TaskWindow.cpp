@@ -1,4 +1,5 @@
 #include "../include/TaskWindow.hpp"
+
 #include "../include/CppHighlighter.hpp"
 #include "../include/CustomTitleBar.hpp"
 
@@ -7,6 +8,7 @@
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QIcon>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QPainter>
 #include <QPropertyAnimation>
@@ -19,32 +21,31 @@
 #include <QSqlQuery>
 #include <QStackedWidget>
 #include <QStyleOption>
+#include <QTextBlockFormat>
+#include <QTextCursor>
 #include <QTextEdit>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
-#include <QKeyEvent>
-#include <QTextBlockFormat>
-#include <QTextCursor>
 
 #include <optional>
 #include <set>
 
 // Функция для интеграции "темы с абзацами"
-void applyTextFormatting(QTextEdit* editor)
+void applyTextFormatting(QTextEdit *editor)
 {
-    if (!editor) return;
+    if (!editor)
+        return;
     QTextCursor cursor = editor->textCursor();
     QTextBlockFormat blockFormat;
-    blockFormat.setBottomMargin(15); // Отступ между абзацами
+    blockFormat.setBottomMargin(15);                                      // Отступ между абзацами
     blockFormat.setLineHeight(145, QTextBlockFormat::ProportionalHeight); // Межстрочный интервал
     cursor.select(QTextCursor::Document);
     cursor.setBlockFormat(blockFormat);
 }
 
 TaskWindow::TaskWindow(QWidget *parent)
-    : QWidget(parent), 
-      runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
+    : QWidget(parent), runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
       analyzer_(std::make_unique<cppforge::services::StaticAnalyzer>())
 {
     setupUI();
@@ -59,7 +60,8 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
     currentTask_ = task;
     customTitleBar_->setTitle(task.getTitle());
 
-    if (practiceEdit_) {
+    if (practiceEdit_)
+    {
         practiceEdit_->setPlainText(task.getDescription());
         applyTextFormatting(practiceEdit_);
     }
@@ -154,7 +156,8 @@ void TaskWindow::loadModule(int lessonId)
             currentTask_ = cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc,
                                                           initCode, testCases, tLimit, mLimit, whitelist, blacklist);
 
-            if (practiceEdit_) {
+            if (practiceEdit_)
+            {
                 practiceEdit_->setPlainText(practiceDesc);
                 applyTextFormatting(practiceEdit_);
             }
@@ -163,7 +166,8 @@ void TaskWindow::loadModule(int lessonId)
         }
         else
         {
-            if (practiceEdit_) {
+            if (practiceEdit_)
+            {
                 practiceEdit_->setPlainText("Для этого модуля практических заданий не предусмотрено.");
                 applyTextFormatting(practiceEdit_);
             }
@@ -208,7 +212,7 @@ void TaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground, false);
-    setFixedSize(1300, 900); 
+    setFixedSize(1300, 900);
     setObjectName("TaskWindow");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
 
@@ -235,7 +239,7 @@ void TaskWindow::setupUI()
 
     auto tabHeader = new QFrame();
     tabHeader->setObjectName("tabHeader");
-    tabHeader->setFixedHeight(60); 
+    tabHeader->setFixedHeight(60);
     auto tabLayout = new QHBoxLayout(tabHeader);
     auto btnTheory = new QPushButton("✧ Теория");
     auto btnPractice = new QPushButton("✧ Практика");
@@ -244,7 +248,7 @@ void TaskWindow::setupUI()
     btnPractice->setCheckable(true);
     btnTheory->setCheckable(true);
     btnTheory->setChecked(true);
-    
+
     QFont tabFont("Roboto", 14, QFont::Bold);
     btnTheory->setFont(tabFont);
     btnPractice->setFont(tabFont);
@@ -278,7 +282,7 @@ void TaskWindow::setupUI()
     footerLeft->setContentsMargins(20, 20, 20, 20);
 
     btnBack_ = new QPushButton("←");
-    btnBack_->setFixedSize(55, 55); 
+    btnBack_->setFixedSize(55, 55);
     btnBack_->setObjectName("backButton");
     btnBack_->setFont(QFont("Roboto", 18, QFont::Bold));
     footerLeft->addWidget(btnBack_);
@@ -289,9 +293,9 @@ void TaskWindow::setupUI()
     btnNext_ = new QPushButton("Вперед");
     btnPrev_->setObjectName("navButton");
     btnNext_->setObjectName("navButton");
-    btnPrev_->setFixedSize(130, 55); 
+    btnPrev_->setFixedSize(130, 55);
     btnNext_->setFixedSize(130, 55);
-    
+
     QFont navFont("Roboto", 12, QFont::Bold);
     btnPrev_->setFont(navFont);
     btnNext_->setFont(navFont);
@@ -310,7 +314,7 @@ void TaskWindow::setupUI()
     auto codeFrame = new QFrame();
     codeFrame->setObjectName("editorFrame");
     auto codeLayout = new QVBoxLayout(codeFrame);
-    
+
     auto codeLabel = new QLabel("<\\> Code Editor");
     codeLabel->setFont(QFont("Roboto", 12, QFont::Bold));
     codeLayout->addWidget(codeLabel);
@@ -320,7 +324,7 @@ void TaskWindow::setupUI()
     codeEditor_->setObjectName("codeEditor");
     codeEditor_->installEventFilter(this); // УСТАНОВКА ФИЛЬТРА
 
-    QFont codeFont("Consolas", 13); 
+    QFont codeFont("Consolas", 13);
     codeEditor_->setFont(codeFont);
     QFontMetrics metrics(codeFont);
     codeEditor_->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
@@ -366,16 +370,20 @@ void TaskWindow::setupUI()
     mainSplitter->addWidget(rightContainer);
     rootLayout->addWidget(mainSplitter);
 
-    connect(btnTheory, &QPushButton::clicked, [=](){
-        contentStack->setCurrentIndex(0);
-        btnTheory->setChecked(true);
-        btnPractice->setChecked(false);
-    });
-    connect(btnPractice, &QPushButton::clicked, [=](){
-        contentStack->setCurrentIndex(1);
-        btnPractice->setChecked(true);
-        btnTheory->setChecked(false);
-    });
+    connect(btnTheory, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(0);
+                btnTheory->setChecked(true);
+                btnPractice->setChecked(false);
+            });
+    connect(btnPractice, &QPushButton::clicked,
+            [=]()
+            {
+                contentStack->setCurrentIndex(1);
+                btnPractice->setChecked(true);
+                btnTheory->setChecked(false);
+            });
 
     connect(btnBack_, &QPushButton::clicked, this, &TaskWindow::fadeOut);
     connect(btnNext_, &QPushButton::clicked, this, &TaskWindow::onNextTask);
@@ -458,7 +466,7 @@ void TaskWindow::centerWindow()
 // УНИВЕРСАЛЬНЫЙ ФИЛЬТР СОБЫТИЙ ДЛЯ ЗУМА
 bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    QTextEdit *editor = qobject_cast<QTextEdit*>(obj);
+    QTextEdit *editor = qobject_cast<QTextEdit *>(obj);
     if (editor)
     {
         if (event->type() == QEvent::Wheel)
@@ -473,7 +481,7 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
                 return true;
             }
         }
-        else if (event->type() == QEvent::KeyPress) 
+        else if (event->type() == QEvent::KeyPress)
         {
             auto *keyEvent = static_cast<QKeyEvent *>(event);
             if (keyEvent->modifiers() & Qt::ControlModifier)
@@ -538,14 +546,17 @@ void TaskWindow::fadeOut()
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
     transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
-    
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() {
-        this->hide();
-        if (parentWidget()) {
-            parentWidget()->show(); 
-        }
-        emit windowClosed();
-    });
+
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
+            [this]()
+            {
+                this->hide();
+                if (parentWidget())
+                {
+                    parentWidget()->show();
+                }
+                emit windowClosed();
+            });
     transitionAnimation_->start();
 }
 
