@@ -113,6 +113,9 @@ void MainWindow::fadeOut()
                     }
 
                     taskWindow_->loadModule(pendingModuleId_);
+
+                    this->hide();
+
                     taskWindow_->show();
                     taskWindow_->fadeIn();
 
@@ -755,8 +758,9 @@ void MainWindow::openTaskWindow(int moduleId)
 
 void MainWindow::onTaskWindowClosed()
 {
-    show();
-    fadeIn();
+    this->setWindowOpacity(0.0);
+    this->show();
+    this->fadeIn();
 }
 
 void MainWindow::updateModuleProgress(int moduleId, int progress)
