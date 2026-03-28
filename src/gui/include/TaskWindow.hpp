@@ -12,8 +12,13 @@
 #include <QPushButton>
 #include <QTextEdit>
 #include <QWidget>
+#include <QStackedWidget>
 
 #include <memory>
+
+// Forward declarations для ускорения компиляции
+class QFrame;
+class QListWidget;
 
 class TaskWindow : public QWidget
 {
@@ -42,23 +47,41 @@ private:
     void setupStyles();
     void centerWindow();
 
+    // Логика выпадающего меню
+    void toggleNavMenu(bool open);
+
     void onRunClicked();
     void onSubmitClicked();
 
     void onNextTask();
     void onPrevTask();
 
+    // Основные компоненты UI
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
+    
+    // Сайдбар и стек контента (Теория/Практика)
+    QWidget* leftSidebar_{nullptr};       // Тот самый "пропавший" сайдбар
+    QStackedWidget* contentStack_{nullptr}; // Контейнер для теории и практики
 
+    // Анимация и виджеты выпадающего меню
+    std::unique_ptr<QPropertyAnimation> navAnimation_;
+    QFrame *navPanel_{nullptr};
+    QListWidget *lessonList_{nullptr};
+
+    // Элементы редактора и вывода
     QTextEdit *codeEditor_{nullptr};
     QTextEdit *testOutput_{nullptr};
-    QLabel *practiceContent_{nullptr};
-    QLabel *theoryContent_{nullptr};
+    
+    QTextEdit *practiceEdit_{nullptr};
+    QTextEdit *theoryEdit_{nullptr};
 
+    // Кнопки управления
     QPushButton *btnNext_{nullptr};
     QPushButton *btnPrev_{nullptr};
+    QPushButton *btnBack_{nullptr};
 
+    // Сервисы и данные
     std::unique_ptr<cppforge::services::CodeRunner> runner_;
     std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
     cppforge::entities::CodingTask currentTask_;

@@ -1,5 +1,4 @@
 #include "../include/TaskWindow.hpp"
-
 #include "../include/CppHighlighter.hpp"
 #include "../include/CustomTitleBar.hpp"
 
@@ -24,12 +23,28 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
+#include <QKeyEvent>
+#include <QTextBlockFormat>
+#include <QTextCursor>
 
 #include <optional>
 #include <set>
 
+// Функция для интеграции "темы с абзацами"
+void applyTextFormatting(QTextEdit* editor)
+{
+    if (!editor) return;
+    QTextCursor cursor = editor->textCursor();
+    QTextBlockFormat blockFormat;
+    blockFormat.setBottomMargin(15); // Отступ между абзацами
+    blockFormat.setLineHeight(145, QTextBlockFormat::ProportionalHeight); // Межстрочный интервал
+    cursor.select(QTextCursor::Document);
+    cursor.setBlockFormat(blockFormat);
+}
+
 TaskWindow::TaskWindow(QWidget *parent)
-    : QWidget(parent), runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
+    : QWidget(parent), 
+      runner_(std::make_unique<cppforge::services::CodeRunner>(this)),
       analyzer_(std::make_unique<cppforge::services::StaticAnalyzer>())
 {
     setupUI();
@@ -44,9 +59,10 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
     currentTask_ = task;
     customTitleBar_->setTitle(task.getTitle());
 
-    auto *practiceEdit = qobject_cast<QTextEdit *>(practiceContent_);
-    if (practiceEdit)
-        practiceEdit->setPlainText(task.getDescription());
+    if (practiceEdit_) {
+        practiceEdit_->setPlainText(task.getDescription());
+        applyTextFormatting(practiceEdit_);
+    }
 
     codeEditor_->setPlainText(task.getInitialCode());
 }
@@ -89,14 +105,13 @@ void TaskWindow::loadModule(int lessonId)
 
         customTitleBar_->setTitle(title);
 
-        auto *theoryEdit = qobject_cast<QTextEdit *>(theoryContent_);
-        if (theoryEdit)
+        if (theoryEdit_)
         {
-            theoryEdit->setPlainText(theory);
+            theoryEdit_->setPlainText(theory);
+            applyTextFormatting(theoryEdit_);
         }
 
         QVariant taskIdVar = query.value("id");
-        auto *practiceEdit = qobject_cast<QTextEdit *>(practiceContent_);
 
         if (!taskIdVar.isNull())
         {
@@ -139,15 +154,19 @@ void TaskWindow::loadModule(int lessonId)
             currentTask_ = cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc,
                                                           initCode, testCases, tLimit, mLimit, whitelist, blacklist);
 
-            if (practiceEdit)
-                practiceEdit->setPlainText(practiceDesc);
+            if (practiceEdit_) {
+                practiceEdit_->setPlainText(practiceDesc);
+                applyTextFormatting(practiceEdit_);
+            }
             codeEditor_->setPlainText(initCode);
             codeEditor_->setReadOnly(false);
         }
         else
         {
-            if (practiceEdit)
-                practiceEdit->setPlainText("Для этого модуля практических заданий не предусмотрено.");
+            if (practiceEdit_) {
+                practiceEdit_->setPlainText("Для этого модуля практических заданий не предусмотрено.");
+                applyTextFormatting(practiceEdit_);
+            }
             codeEditor_->setPlainText("// В этом уроке только теоретический материал.");
             codeEditor_->setReadOnly(true);
             currentTask_ = cppforge::entities::CodingTask();
@@ -189,7 +208,7 @@ void TaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground, false);
-    setFixedSize(1250, 850);
+    setFixedSize(1300, 900); 
     setObjectName("TaskWindow");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
 
@@ -208,7 +227,7 @@ void TaskWindow::setupUI()
     rootLayout->addWidget(line);
 
     auto mainSplitter = new QSplitter(Qt::Horizontal, this);
-    mainSplitter->setHandleWidth(2);
+    mainSplitter->setHandleWidth(4);
 
     auto leftContainer = new QWidget();
     auto leftLayout = new QVBoxLayout(leftContainer);
@@ -216,6 +235,7 @@ void TaskWindow::setupUI()
 
     auto tabHeader = new QFrame();
     tabHeader->setObjectName("tabHeader");
+    tabHeader->setFixedHeight(60); 
     auto tabLayout = new QHBoxLayout(tabHeader);
     auto btnTheory = new QPushButton("✧ Теория");
     auto btnPractice = new QPushButton("✧ Практика");
@@ -223,8 +243,11 @@ void TaskWindow::setupUI()
     btnTheory->setObjectName("tabButton");
     btnPractice->setCheckable(true);
     btnTheory->setCheckable(true);
-
     btnTheory->setChecked(true);
+    
+    QFont tabFont("Roboto", 14, QFont::Bold);
+    btnTheory->setFont(tabFont);
+    btnPractice->setFont(tabFont);
 
     tabLayout->addWidget(btnTheory);
     tabLayout->addWidget(btnPractice);
@@ -233,62 +256,71 @@ void TaskWindow::setupUI()
 
     auto contentStack = new QStackedWidget();
 
-    auto *theoryEdit = new QTextEdit();
-    theoryEdit->setReadOnly(true);
-    theoryEdit->setFrameStyle(QFrame::NoFrame);
-    theoryEdit->setContentsMargins(20, 20, 20, 20);
-    theoryContent_ = reinterpret_cast<QLabel *>(theoryEdit);
+    theoryEdit_ = new QTextEdit();
+    theoryEdit_->setReadOnly(true);
+    theoryEdit_->setFrameStyle(QFrame::NoFrame);
+    theoryEdit_->setFont(QFont("Roboto", 13));
+    theoryEdit_->setStyleSheet("padding: 25px; line-height: 1.6;");
+    theoryEdit_->installEventFilter(this); // УСТАНОВКА ФИЛЬТРА
 
-    auto *practiceEdit = new QTextEdit();
-    practiceEdit->setReadOnly(true);
-    practiceEdit->setFrameStyle(QFrame::NoFrame);
-    practiceEdit->setContentsMargins(20, 20, 20, 20);
-    practiceContent_ = reinterpret_cast<QLabel *>(practiceEdit);
+    practiceEdit_ = new QTextEdit();
+    practiceEdit_->setReadOnly(true);
+    practiceEdit_->setFrameStyle(QFrame::NoFrame);
+    practiceEdit_->setFont(QFont("Roboto", 13));
+    practiceEdit_->setStyleSheet("padding: 25px;");
+    practiceEdit_->installEventFilter(this); // УСТАНОВКА ФИЛЬТРА
 
-    contentStack->addWidget(theoryEdit);
-    contentStack->addWidget(practiceEdit);
+    contentStack->addWidget(theoryEdit_);
+    contentStack->addWidget(practiceEdit_);
     leftLayout->addWidget(contentStack);
 
     auto footerLeft = new QHBoxLayout();
-    footerLeft->setContentsMargins(15, 15, 15, 15);
+    footerLeft->setContentsMargins(20, 20, 20, 20);
 
-    auto btnBack = new QPushButton();
-    btnBack->setFixedSize(45, 45);
-    btnBack->setObjectName("backButton");
-    footerLeft->addWidget(btnBack);
+    btnBack_ = new QPushButton("←");
+    btnBack_->setFixedSize(55, 55); 
+    btnBack_->setObjectName("backButton");
+    btnBack_->setFont(QFont("Roboto", 18, QFont::Bold));
+    footerLeft->addWidget(btnBack_);
 
-    footerLeft->addSpacing(10);
+    footerLeft->addSpacing(15);
 
-    auto btnPrev = new QPushButton("← Назад");
-    auto btnNext = new QPushButton("Вперед →");
-    btnPrev->setObjectName("navButton");
-    btnNext->setObjectName("navButton");
-    btnPrev->setFixedSize(100, 45);
-    btnNext->setFixedSize(100, 45);
+    btnPrev_ = new QPushButton("Назад");
+    btnNext_ = new QPushButton("Вперед");
+    btnPrev_->setObjectName("navButton");
+    btnNext_->setObjectName("navButton");
+    btnPrev_->setFixedSize(130, 55); 
+    btnNext_->setFixedSize(130, 55);
+    
+    QFont navFont("Roboto", 12, QFont::Bold);
+    btnPrev_->setFont(navFont);
+    btnNext_->setFont(navFont);
 
-    footerLeft->addWidget(btnPrev);
-    footerLeft->addWidget(btnNext);
+    footerLeft->addWidget(btnPrev_);
+    footerLeft->addWidget(btnNext_);
 
     footerLeft->addStretch();
     leftLayout->addLayout(footerLeft);
 
     auto rightContainer = new QWidget();
     auto rightLayout = new QVBoxLayout(rightContainer);
-    rightLayout->setContentsMargins(15, 15, 15, 15);
+    rightLayout->setContentsMargins(20, 20, 20, 20);
 
     auto rightSplitter = new QSplitter(Qt::Vertical);
     auto codeFrame = new QFrame();
     codeFrame->setObjectName("editorFrame");
     auto codeLayout = new QVBoxLayout(codeFrame);
-    codeLayout->addWidget(new QLabel("<\\> Code"));
+    
+    auto codeLabel = new QLabel("<\\> Code Editor");
+    codeLabel->setFont(QFont("Roboto", 12, QFont::Bold));
+    codeLayout->addWidget(codeLabel);
 
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
-    codeEditor_->installEventFilter(this);
+    codeEditor_->installEventFilter(this); // УСТАНОВКА ФИЛЬТРА
 
-    QFont codeFont("Consolas", 12);
-    codeFont.setStyleHint(QFont::Monospace);
+    QFont codeFont("Consolas", 13); 
     codeEditor_->setFont(codeFont);
     QFontMetrics metrics(codeFont);
     codeEditor_->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
@@ -300,6 +332,11 @@ void TaskWindow::setupUI()
     auto btnSubmit = new QPushButton("Submit");
     btnRun->setObjectName("runButton");
     btnSubmit->setObjectName("submitButton");
+    btnRun->setFixedSize(120, 50);
+    btnSubmit->setFixedSize(120, 50);
+    btnRun->setFont(navFont);
+    btnSubmit->setFont(navFont);
+
     codeActions->addStretch();
     codeActions->addWidget(btnRun);
     codeActions->addWidget(btnSubmit);
@@ -308,10 +345,15 @@ void TaskWindow::setupUI()
     auto testFrame = new QFrame();
     testFrame->setObjectName("testFrame");
     auto testLayout = new QVBoxLayout(testFrame);
-    testLayout->addWidget(new QLabel("✧ Test Result"));
+    auto testLabel = new QLabel("✧ Test Result");
+    testLabel->setFont(QFont("Roboto", 12, QFont::Bold));
+    testLayout->addWidget(testLabel);
+
     testOutput_ = new QTextEdit();
     testOutput_->setReadOnly(true);
     testOutput_->setObjectName("testOutput");
+    testOutput_->setFont(QFont("Consolas", 12));
+    testOutput_->installEventFilter(this); // Опционально: зум и в выводе тестов
     testLayout->addWidget(testOutput_);
 
     rightSplitter->addWidget(codeFrame);
@@ -324,24 +366,20 @@ void TaskWindow::setupUI()
     mainSplitter->addWidget(rightContainer);
     rootLayout->addWidget(mainSplitter);
 
-    connect(btnTheory, &QPushButton::clicked,
-            [=]()
-            {
-                contentStack->setCurrentIndex(0);
-                btnTheory->setChecked(true);
-                btnPractice->setChecked(false);
-            });
-    connect(btnPractice, &QPushButton::clicked,
-            [=]()
-            {
-                contentStack->setCurrentIndex(1);
-                btnPractice->setChecked(true);
-                btnTheory->setChecked(false);
-            });
+    connect(btnTheory, &QPushButton::clicked, [=](){
+        contentStack->setCurrentIndex(0);
+        btnTheory->setChecked(true);
+        btnPractice->setChecked(false);
+    });
+    connect(btnPractice, &QPushButton::clicked, [=](){
+        contentStack->setCurrentIndex(1);
+        btnPractice->setChecked(true);
+        btnTheory->setChecked(false);
+    });
 
-    connect(btnBack, &QPushButton::clicked, this, &TaskWindow::fadeOut);
-    connect(btnNext, &QPushButton::clicked, this, &TaskWindow::onNextTask);
-    connect(btnPrev, &QPushButton::clicked, this, &TaskWindow::onPrevTask);
+    connect(btnBack_, &QPushButton::clicked, this, &TaskWindow::fadeOut);
+    connect(btnNext_, &QPushButton::clicked, this, &TaskWindow::onNextTask);
+    connect(btnPrev_, &QPushButton::clicked, this, &TaskWindow::onPrevTask);
     connect(btnRun, &QPushButton::clicked, this, &TaskWindow::onRunClicked);
     connect(btnSubmit, &QPushButton::clicked, this, &TaskWindow::onSubmitClicked);
 
@@ -378,14 +416,14 @@ void TaskWindow::onRunClicked()
                 auto result = watcher->result();
                 if (result.isSuccess())
                 {
-                    testOutput_->append("<span style='color:green;'>[OK] Все тесты пройдены!</span>");
+                    testOutput_->append("<span style='color:green; font-weight:bold;'>[OK] Все тесты пройдены!</span>");
                     testOutput_->append("Вывод:\n" + result.getOutput());
                 }
                 else
                 {
-                    testOutput_->append("<span style='color:red;'>[FAIL] Ошибка выполнения.</span>");
+                    testOutput_->append("<span style='color:red; font-weight:bold;'>[FAIL] Ошибка выполнения.</span>");
                     if (!result.getErrors().isEmpty())
-                        testOutput_->append(result.getErrors());
+                        testOutput_->append("<pre style='color:#ff4444;'>" + result.getErrors() + "</pre>");
                 }
                 watcher->deleteLater();
             });
@@ -417,18 +455,40 @@ void TaskWindow::centerWindow()
     }
 }
 
+// УНИВЕРСАЛЬНЫЙ ФИЛЬТР СОБЫТИЙ ДЛЯ ЗУМА
 bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == codeEditor_ && event->type() == QEvent::Wheel)
+    QTextEdit *editor = qobject_cast<QTextEdit*>(obj);
+    if (editor)
     {
-        auto *wheelEvent = static_cast<QWheelEvent *>(event);
-        if (wheelEvent->modifiers() & Qt::ControlModifier)
+        if (event->type() == QEvent::Wheel)
         {
-            if (wheelEvent->angleDelta().y() > 0)
-                codeEditor_->zoomIn(1);
-            else
-                codeEditor_->zoomOut(1);
-            return true;
+            auto *wheelEvent = static_cast<QWheelEvent *>(event);
+            if (wheelEvent->modifiers() & Qt::ControlModifier)
+            {
+                if (wheelEvent->angleDelta().y() > 0)
+                    editor->zoomIn(1);
+                else
+                    editor->zoomOut(1);
+                return true;
+            }
+        }
+        else if (event->type() == QEvent::KeyPress) 
+        {
+            auto *keyEvent = static_cast<QKeyEvent *>(event);
+            if (keyEvent->modifiers() & Qt::ControlModifier)
+            {
+                if (keyEvent->key() == Qt::Key_Plus || keyEvent->key() == Qt::Key_Equal)
+                {
+                    editor->zoomIn(1);
+                    return true;
+                }
+                if (keyEvent->key() == Qt::Key_Minus)
+                {
+                    editor->zoomOut(1);
+                    return true;
+                }
+            }
         }
     }
     return QWidget::eventFilter(obj, event);
@@ -438,39 +498,54 @@ void TaskWindow::setupStyles()
 {
     setStyleSheet(R"(
         #TaskWindow { background-color: white; border: 1px solid #777; }
-        #tabHeader { background-color: #eeeeee; border-bottom: 1px solid #bbbbbb; min-height: 40px; }
-        QPushButton#tabButton { border: none; background: transparent; font-weight: bold; font-size: 13px; padding: 5px 10px; }
-        QPushButton#tabButton:checked { border-bottom: 2px solid black; }
-        #editorFrame, #testFrame { background-color: white; border: 2px solid #dddddd; border-radius: 0px; }
-        #codeEditor, #testOutput { border: none; font-family: 'Consolas';}
-        QPushButton#runButton, QPushButton#submitButton, QPushButton#navButton { border-radius: 0px; padding: 5px 20px; font-weight: bold; border: 1px solid #ccc; }
+        #tabHeader { background-color: #f8f8f8; border-bottom: 2px solid #ddd; }
+        QPushButton#tabButton { border: none; background: transparent; padding: 0 25px; color: #666; }
+        QPushButton#tabButton:checked { border-bottom: 4px solid #62639b; color: #62639b; }
+        #editorFrame, #testFrame { background-color: white; border: 1px solid #ccc; border-radius: 8px; }
+        #codeEditor, #testOutput { border: none; }
+        QPushButton#runButton, QPushButton#submitButton, QPushButton#navButton { 
+            border-radius: 8px; font-weight: bold; border: 1px solid #ccc; 
+        }
         QPushButton#runButton, QPushButton#navButton { background-color: #f0f0f0; }
-        QPushButton#submitButton { background-color: #b8e2c8; border: none; }
-        QPushButton#backButton { background-color: #d9d9d9; border-radius: 0px; border: none; }
+        QPushButton#runButton:hover { background-color: #e5e5e5; }
+        QPushButton#submitButton { background-color: #b8e2c8; border: none; color: #2d5a3d; }
+        QPushButton#submitButton:hover { background-color: #a4cfb5; }
+        QPushButton#backButton { background-color: #e0e0e0; border-radius: 8px; border: none; color: #444; }
+        QPushButton#backButton:hover { background-color: #d5d5d5; }
     )");
 }
 
 void TaskWindow::fadeIn()
 {
+    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
+        transitionAnimation_->stop();
+
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
     transitionAnimation_->setStartValue(0.0);
     transitionAnimation_->setEndValue(1.0);
+    transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
     transitionAnimation_->start();
 }
 
 void TaskWindow::fadeOut()
 {
+    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
+        transitionAnimation_->stop();
+
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
-    transitionAnimation_->setDuration(200);
+    transitionAnimation_->setDuration(250);
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
-            [this]()
-            {
-                hide();
-                emit windowClosed();
-            });
+    transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
+    
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() {
+        this->hide();
+        if (parentWidget()) {
+            parentWidget()->show(); 
+        }
+        emit windowClosed();
+    });
     transitionAnimation_->start();
 }
 
