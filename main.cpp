@@ -26,28 +26,20 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(resources);
     QApplication app(argc, argv);
 
+    app.setQuitOnLastWindowClosed(false);
+
     QSqlDatabase db = cppforge::data::connectDatabase();
 
     if (db.isOpen())
     {
         QSqlQuery syncQuery(db);
-        QString encodingQuery;
-
-#ifdef Q_OS_WIN
-        encodingQuery = "SET client_encoding TO 'WIN1251';";
-        qDebug() << "Applying Windows compatibility settings (WIN1251).";
-#else
-        encodingQuery = "SET client_encoding TO 'UTF8';";
-        qDebug() << "Applying Unix-like compatibility settings (UTF8).";
-#endif
-
-        if (syncQuery.exec(encodingQuery))
+        if (syncQuery.exec("SET client_encoding TO 'UTF8';"))
         {
-            qDebug() << "Database client encoding successfully synchronized.";
+            qDebug() << "Encoding set to UTF8 successfully.";
         }
         else
         {
-            qWarning() << "Failed to set database encoding:" << syncQuery.lastError().text();
+            qWarning() << "Failed to set encoding:" << syncQuery.lastError().text();
         }
     }
 
@@ -60,26 +52,22 @@ int main(int argc, char *argv[])
     QObject::connect(&authWindow, &AuthWindow::switchToMainMenu,
                      [&](const QString &username)
                      {
-                         qDebug() << "Switching to MainWindow for user:" << username;
-
                          mainWindow.setCurrentUser(username);
 
                          QScreen *screen = QGuiApplication::primaryScreen();
                          if (screen)
                          {
-                             QRect availableGeometry = screen->availableGeometry();
-                             int x = availableGeometry.x() + (availableGeometry.width() - mainWindow.width()) / 2;
-                             int y = availableGeometry.y() + (availableGeometry.height() - mainWindow.height()) / 2;
-                             mainWindow.move(x, y);
+                             QRect geom = screen->availableGeometry();
+                             mainWindow.move(geom.center() - mainWindow.rect().center());
                          }
 
                          mainWindow.show();
                          mainWindow.fadeIn();
-
                          authWindow.hide();
                      });
 
-    authWindow.show();
+    QObject::connect(&app, &QApplication::lastWindowClosed, &app, &QApplication::quit);
 
+    authWindow.show();
     return app.exec();
 }
