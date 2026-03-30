@@ -181,6 +181,13 @@ main — строго зарезервированное имя для глав�
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
     VALUES (v_task_id, '', 'Hello, cppforge!\n', TRUE);
 
+    INSERT INTO achievements (name, description, icon_path, condition_type, condition_value) VALUES
+    ('First Code', 'Solve your first coding task!', '/icons/first-code.png', 'LEVELS_COMPLETED', 1),
+    ('Expert', 'Solve 10 tasks to become an expert.', '/icons/expert.png', 'LEVELS_COMPLETED', 10),
+    ('Persistent', 'Solve tasks 3 days in a row.', '/icons/persistent.png', 'STREAK_DAYS', 3),
+    ('Tenacious', 'Solve tasks 7 days in a row.', '/icons/tenacious.png', 'STREAK_DAYS', 7),
+    ('Easter Egg Finder', 'Find the hidden secret.', '/icons/easter-egg.png', 'CUSTOM_EVENT', 0);
+
     RAISE NOTICE 'Database seeding completed successfully.';
 END $$;
 
