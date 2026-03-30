@@ -9,13 +9,13 @@ namespace cppforge::entities
     User::User(uint64_t userId, QString username, QString email, QString passwordHash,
                const std::chrono::system_clock::time_point &createdAt)
         : id_(userId), username_(std::move(username)), email_(std::move(email)), passwordHash_(std::move(passwordHash)),
-          createdAt_(createdAt)
+          currentStreakDays_(0), createdAt_(createdAt)
     {
     }
 
     User::User(uint64_t userId, QString username, QString email, QString passwordHash)
         : id_(userId), username_(std::move(username)), email_(std::move(email)), passwordHash_(std::move(passwordHash)),
-          createdAt_(std::chrono::system_clock::now())
+          currentStreakDays_(0), createdAt_(std::chrono::system_clock::now())
     {
     }
 
@@ -52,6 +52,16 @@ namespace cppforge::entities
     const std::chrono::system_clock::time_point &User::getCreatedAt() const
     {
         return createdAt_;
+    }
+
+    uint32_t User::getCurrentStreakDays() const
+    {
+        return currentStreakDays_;
+    }
+
+    const std::chrono::system_clock::time_point &User::getLastLevelSolvedAt() const
+    {
+        return lastLevelSolvedAt_;
     }
 
     const std::set<uint64_t> &User::getAvailableLevelsIds() const
@@ -97,6 +107,16 @@ namespace cppforge::entities
     void User::setBio(const QString &bio)
     {
         bio_ = bio;
+    }
+
+    void User::setCurrentStreakDays(uint32_t streak)
+    {
+        currentStreakDays_ = streak;
+    }
+
+    void User::setLastLevelSolvedAt(const std::chrono::system_clock::time_point &timestamp)
+    {
+        lastLevelSolvedAt_ = timestamp;
     }
 
     void User::addAvailableLevel(uint64_t levelId)
