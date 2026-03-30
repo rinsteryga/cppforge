@@ -31,8 +31,8 @@ namespace cppforge::services
         for (const auto &achievement : systemAchievements)
         {
             auto iter = std::find_if(userAchievements.begin(), userAchievements.end(),
-                                   [&](const entities::Achievement &userAchievement)
-                                   { return userAchievement.getId() == achievement.getId(); });
+                                     [&](const entities::Achievement &userAchievement)
+                                     { return userAchievement.getId() == achievement.getId(); });
 
             if (iter != userAchievements.end())
             {
