@@ -24,6 +24,8 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     avatar_path TEXT,
     bio TEXT,
+    current_streak_days INT DEFAULT 0,
+    last_level_solved_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -31,7 +33,9 @@ CREATE TABLE achievements (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
-    icon_path TEXT
+    icon_path TEXT,
+    condition_type TEXT NOT NULL,
+    condition_value INT NOT NULL
 );
 
 CREATE TABLE user_achievements (
