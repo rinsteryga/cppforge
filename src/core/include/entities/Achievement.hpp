@@ -8,6 +8,16 @@
 namespace cppforge::entities
 {
     /**
+     * @brief The trigger type determining how an achievement is unlocked.
+     */
+    enum class ConditionType
+    {
+        LevelsCompleted,
+        StreakDays,
+        CustomEvent
+    };
+
+    /**
      * @brief Represents a user achievement within the application.
      *
      * Achievements are awarded to users upon completing specific milestones or tasks.
@@ -24,9 +34,12 @@ namespace cppforge::entities
          * @param name The display name of the achievement.
          * @param description A detailed explanation of what the achievement represents.
          * @param iconPath The file path or resource URI to the achievement's icon.
+         * @param conditionType The type of condition required to unlock.
+         * @param conditionValue The integer threshold value for the condition.
          * @param dateEarned The timestamp indicating when the user unlocked this achievement.
          */
         Achievement(int64_t achievementId, QString name, QString description, QString iconPath,
+                    ConditionType conditionType, uint32_t conditionValue,
                     const std::chrono::system_clock::time_point &dateEarned);
 
         /**
@@ -52,6 +65,18 @@ namespace cppforge::entities
          * @return A constant reference to the QString containing the icon path.
          */
         const QString &getIconPath() const;
+
+        /**
+         * @brief Retrieves the condition type of the achievement.
+         * @return The condition required to unlock this achievement.
+         */
+        ConditionType getConditionType() const;
+
+        /**
+         * @brief Retrieves the numeric threshold for unlocking the achievement.
+         * @return A 32-bit unsigned integer representing the condition value.
+         */
+        uint32_t getConditionValue() const;
 
         /**
          * @brief Retrieves the timestamp of when the achievement was earned.
@@ -84,8 +109,11 @@ namespace cppforge::entities
         uint64_t id_;
         QString name_;
         QString description_;
-
         QString iconPath_;
+
+        ConditionType conditionType_;
+        uint32_t conditionValue_;
+
         std::chrono::system_clock::time_point dateEarned_;
     };
 } // namespace cppforge::entities

@@ -25,7 +25,7 @@ public:
 
 signals:
     void loginSuccessful();
-    void switchToMainMenu();
+    void switchToMainMenu(const QString &username);
 
 private:
     void setupUI();
@@ -36,18 +36,14 @@ private:
     void setupWindowProperties();
     void setupLoginButton();
     void setupCreateAccountLink();
-    void setupForgotPasswordLink();
     void setupLayout();
     void showFallbackLogo();
     void centerWindow();
     void togglePasswordVisibility();
 
     void openSignUpWindow();
-    void openForgotPasswordWindow();
-
     void onLoginClicked();
     void onCreateAccountClicked();
-    void onForgotPasswordClicked();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -61,11 +57,9 @@ protected:
 
     std::unique_ptr<QPushButton> loginButton_;
     std::unique_ptr<QPushButton> createAccountButton_;
-    std::unique_ptr<QPushButton> forgotPasswordButton_;
     std::unique_ptr<QPushButton> passwordToggleButton_;
 
     std::unique_ptr<SignUpWindow> signUpWindow_;
-
     std::unique_ptr<QVBoxLayout> mainLayout_;
 
     std::shared_ptr<cppforge::services::AuthManager> authManager_;

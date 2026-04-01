@@ -85,6 +85,18 @@ namespace cppforge::entities
         const std::chrono::system_clock::time_point &getCreatedAt() const;
 
         /**
+         * @brief Retrieves the user's current consecutive days of solving tasks.
+         * @return A 32-bit unsigned integer representing the streak.
+         */
+        uint32_t getCurrentStreakDays() const;
+
+        /**
+         * @brief Retrieves the timestamp of when the user last solved a task.
+         * @return A time_point reflecting the last solved date.
+         */
+        const std::chrono::system_clock::time_point &getLastLevelSolvedAt() const;
+
+        /**
          * @brief Retrieves the set of level IDs currently open for the user to solve.
          * @return A constant reference to a generic set containing accessible level IDs.
          */
@@ -138,6 +150,18 @@ namespace cppforge::entities
         void setBio(const QString &bio);
 
         /**
+         * @brief Updates the user's current consecutive days streak.
+         * @param streak The new streak count.
+         */
+        void setCurrentStreakDays(uint32_t streak);
+
+        /**
+         * @brief Updates the timestamp of when the user last solved a task.
+         * @param timestamp The exact time to set.
+         */
+        void setLastLevelSolvedAt(const std::chrono::system_clock::time_point &timestamp);
+
+        /**
          * @brief Unlocks a target level, allowing the user to attempt it.
          * @param levelId The ID indicating the specified scope level.
          */
@@ -181,6 +205,8 @@ namespace cppforge::entities
 
         QString avatarPath_;
         QString bio_;
+        uint32_t currentStreakDays_;
+        std::chrono::system_clock::time_point lastLevelSolvedAt_;
         std::chrono::system_clock::time_point createdAt_;
 
         std::set<uint64_t> availableLevelsIds_;

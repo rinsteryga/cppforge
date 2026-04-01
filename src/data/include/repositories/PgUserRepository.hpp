@@ -47,5 +47,9 @@ namespace cppforge::repositories
 
     private:
         QSqlDatabase &database_;
+
+        void loadUserAchievements(entities::User &user) const;
+        void loadUserCompletedLevels(entities::User &user) const;
+        void saveUserAchievements(const entities::User &user);
     };
 } // namespace cppforge::repositories

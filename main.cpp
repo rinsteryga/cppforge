@@ -9,6 +9,8 @@
 #include <QGuiApplication>
 #include <QResource>
 #include <QScreen>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTimer>
 
 namespace cppforge
@@ -24,35 +26,48 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(resources);
     QApplication app(argc, argv);
 
+    app.setQuitOnLastWindowClosed(false);
+
     QSqlDatabase db = cppforge::data::connectDatabase();
 
-    auto userRepository = std::make_unique<cppforge::repositories::PgUserRepository>(db);
+    if (db.isOpen())
+    {
+        QSqlQuery syncQuery(db);
+        if (syncQuery.exec("SET client_encoding TO 'UTF8';"))
+        {
+            qDebug() << "Encoding set to UTF8 successfully.";
+        }
+        else
+        {
+            qWarning() << "Failed to set encoding:" << syncQuery.lastError().text();
+        }
+    }
 
+    auto userRepository = std::make_unique<cppforge::repositories::PgUserRepository>(db);
     auto authManager = std::make_shared<cppforge::services::AuthManager>(std::move(userRepository));
 
     AuthWindow authWindow(authManager);
     MainWindow mainWindow;
 
     QObject::connect(&authWindow, &AuthWindow::switchToMainMenu,
-                     [&]()
+                     [&](const QString &username)
                      {
-                         qDebug() << "Switching to MainWindow...";
+                         mainWindow.setCurrentUser(username);
 
                          QScreen *screen = QGuiApplication::primaryScreen();
                          if (screen)
                          {
-                             QRect availableGeometry = screen->availableGeometry();
-                             int x = availableGeometry.x() + (availableGeometry.width() - mainWindow.width()) / 2;
-                             int y = availableGeometry.y() + (availableGeometry.height() - mainWindow.height()) / 2;
-                             mainWindow.move(x, y);
+                             QRect geom = screen->availableGeometry();
+                             mainWindow.move(geom.center() - mainWindow.rect().center());
                          }
 
                          mainWindow.show();
                          mainWindow.fadeIn();
-                         authWindow.close();
+                         authWindow.hide();
                      });
 
-    authWindow.show();
+    QObject::connect(&app, &QApplication::lastWindowClosed, &app, &QApplication::quit);
 
+    authWindow.show();
     return app.exec();
 }

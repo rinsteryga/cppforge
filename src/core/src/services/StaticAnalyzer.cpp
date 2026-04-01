@@ -1,27 +1,34 @@
 #include "../../include/services/StaticAnalyzer.hpp"
 
+#include "../../include/entities/CodingTask.hpp"
+
+#include <QString>
+
+#include <optional>
+#include <set>
+
 namespace cppforge::services
 {
     std::optional<QString> StaticAnalyzer::analyze(const entities::CodingTask &task, const QString &code) const
     {
-        if (auto blacklistOpt = task.getBlacklist(); blacklistOpt.has_value())
+        if (task.getBlacklist().has_value())
         {
-            for (const auto &word : blacklistOpt.value())
+            for (const QString &forbidden : task.getBlacklist().value())
             {
-                if (code.contains(word))
+                if (code.contains(forbidden))
                 {
-                    return std::optional<QString>("Use of forbidden word: " + word);
+                    return QString("Analysis error: code contains a forbidden word: %1").arg(forbidden);
                 }
             }
         }
 
-        if (auto whitelistOpt = task.getWhitelist(); whitelistOpt.has_value())
+        if (task.getWhitelist().has_value())
         {
-            for (const auto &word : whitelistOpt.value())
+            for (const QString &required : task.getWhitelist().value())
             {
-                if (!code.contains(word))
+                if (!code.contains(required))
                 {
-                    return std::optional<QString>("Missing required word: " + word);
+                    return QString("Analysis error: Missing required word: %1").arg(required);
                 }
             }
         }

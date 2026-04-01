@@ -5,9 +5,11 @@
 namespace cppforge::entities
 {
     Achievement::Achievement(int64_t achievementId, QString name, QString description, QString iconPath,
+                             ConditionType conditionType, uint32_t conditionValue,
                              const std::chrono::system_clock::time_point &dateEarned)
         : id_(achievementId), name_(std::move(name)), description_(std::move(description)),
-          iconPath_(std::move(iconPath)), dateEarned_(dateEarned)
+          iconPath_(std::move(iconPath)), conditionType_(conditionType), conditionValue_(conditionValue),
+          dateEarned_(dateEarned)
     {
     }
 
@@ -29,6 +31,16 @@ namespace cppforge::entities
     const QString &Achievement::getIconPath() const
     {
         return iconPath_;
+    }
+
+    ConditionType Achievement::getConditionType() const
+    {
+        return conditionType_;
+    }
+
+    uint32_t Achievement::getConditionValue() const
+    {
+        return conditionValue_;
     }
 
     std::chrono::system_clock::time_point Achievement::getDateEarned() const
