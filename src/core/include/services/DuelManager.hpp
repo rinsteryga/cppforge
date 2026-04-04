@@ -117,6 +117,7 @@ namespace cppforge::services
         void onSocketError(QAbstractSocket::SocketError socketError);
         void onSocketDisconnected();
 
+    private:
         void processMessage(const QJsonObject &json);
         void sendMessage(const QJsonObject &json);
         QJsonObject serializeTask(const cppforge::entities::CodingTask &task) const;
