@@ -6,10 +6,10 @@
 #include <optional>
 #include <set>
 
+#include "TestCase.hpp"
+
 namespace cppforge::entities
 {
-    class TestCase;
-
     /**
      * @brief Represents a coding exercise assigned to a specific lesson.
      *
@@ -114,3 +114,6 @@ namespace cppforge::entities
         std::optional<std::set<QString>> blacklist_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::CodingTask)
