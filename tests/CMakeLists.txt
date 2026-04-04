@@ -21,6 +21,7 @@ foreach(TEST_FILE ${TEST_SOURCES})
             cppforge_data
             Qt5::Test
             Qt5::Sql
+            Qt5::Network
     )
 
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
