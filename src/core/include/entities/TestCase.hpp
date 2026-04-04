@@ -15,6 +15,8 @@ namespace cppforge::entities
     class TestCase
     {
     public:
+        TestCase() = default;
+
         /**
          * @brief Constructs a new TestCase instance.
          *
@@ -67,3 +69,6 @@ namespace cppforge::entities
         bool isPublic_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::TestCase)
