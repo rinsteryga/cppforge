@@ -46,7 +46,7 @@ namespace cppforge::services
         sendMessage(json);
     }
 
-    void DuelManager::sendProgress(const DuelProgress &progress)
+    void DuelManager::sendProgress(const cppforge::services::DuelProgress &progress)
     {
         QJsonObject payload;
         payload["passed"] = static_cast<qint64>(progress.passedTests);
@@ -142,7 +142,7 @@ namespace cppforge::services
         else if (type == "PROGRESS")
         {
             QJsonObject payload = json["payload"].toObject();
-            DuelProgress progress;
+            cppforge::services::DuelProgress progress;
             progress.passedTests = static_cast<uint32_t>(payload["passed"].toInt());
             progress.totalTests = static_cast<uint32_t>(payload["total"].toInt());
             emit opponentProgressUpdated(progress);

@@ -69,7 +69,7 @@ namespace cppforge::services
          * @brief Broadcasts the current test progress to the opponent.
          * @param progress The progress instance.
          */
-        void sendProgress(const DuelProgress &progress);
+        void sendProgress(const cppforge::services::DuelProgress &progress);
 
         /**
          * @brief Notifies the opponent that this user has won the duel.
@@ -98,7 +98,7 @@ namespace cppforge::services
          * @brief Emitted when the opponent's test progress is updated.
          * @param progress The opponent's progress instance.
          */
-        void opponentProgressUpdated(const DuelProgress &progress);
+        void opponentProgressUpdated(const cppforge::services::DuelProgress &progress);
 
         /**
          * @brief Emitted when the opponent finishes all tests before the current user.
