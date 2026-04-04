@@ -27,6 +27,8 @@ namespace cppforge::entities
     class Achievement
     {
     public:
+        Achievement() = default;
+        
         /**
          * @brief Constructs a new Achievement instance.
          *
@@ -117,3 +119,6 @@ namespace cppforge::entities
         std::chrono::system_clock::time_point dateEarned_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::Achievement)
