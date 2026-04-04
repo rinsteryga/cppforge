@@ -28,7 +28,7 @@ namespace cppforge::entities
     {
     public:
         Achievement() = default;
-        
+
         /**
          * @brief Constructs a new Achievement instance.
          *

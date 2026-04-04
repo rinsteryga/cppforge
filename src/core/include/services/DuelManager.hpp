@@ -8,8 +8,8 @@
 #include <QtNetwork/QTcpServer>
 #include <QtNetwork/QTcpSocket>
 
-#include <memory>
 #include <cstdint>
+#include <memory>
 
 namespace cppforge::services
 {

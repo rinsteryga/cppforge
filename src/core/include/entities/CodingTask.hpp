@@ -1,12 +1,12 @@
 #pragma once
 
+#include "TestCase.hpp"
+
 #include <QString>
 
 #include <cstdint>
 #include <optional>
 #include <set>
-
-#include "TestCase.hpp"
 
 namespace cppforge::entities
 {
