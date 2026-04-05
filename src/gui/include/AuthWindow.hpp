@@ -8,6 +8,8 @@
 #include <QLineEdit>
 #include <QPropertyAnimation>
 #include <QPushButton>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -25,7 +27,7 @@ public:
 
 signals:
     void loginSuccessful();
-    void switchToMainMenu(const QString &username);
+    void switchToMainMenu(const QString &username, int userId);
 
 private:
     void setupUI();
