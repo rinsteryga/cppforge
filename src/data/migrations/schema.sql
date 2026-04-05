@@ -69,7 +69,8 @@ CREATE TABLE coding_tasks (
     whitelist TEXT,
     blacklist TEXT,
     time_limit INT DEFAULT 2000,
-    memory_limit INT DEFAULT 256
+    memory_limit INT DEFAULT 256,
+    is_duel BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE quizzes (

@@ -15,6 +15,8 @@ namespace cppforge::entities
     class Module
     {
     public:
+        Module() = default;
+
         /**
          * @brief Constructs a new Module instance.
          *
@@ -48,3 +50,6 @@ namespace cppforge::entities
         QString description_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::Module)

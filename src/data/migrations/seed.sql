@@ -134,7 +134,7 @@ main — строго зарезервированное имя для глав�
 Команда gcc main.c -o program выполнит все 4 этапа автоматически.', 5)
     RETURNING id INTO v_lesson_id;
 
-    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit)
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
     VALUES (
         v_lesson_id, 
         'Ваша первая пустая программа.', 
@@ -143,7 +143,8 @@ main — строго зарезервированное имя для глав�
         'main,return,int,void', 
         '#include,#define,while,goto,do,asm,__asm__,__asm,FILE,fopen,fclose,fread,fwrite,system,exec', 
         2000, 
-        256
+        256,
+        FALSE
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
@@ -166,7 +167,7 @@ main — строго зарезервированное имя для глав�
 "Hello, Platform!\n" — это строковый литерал. \n — это управляющая последовательность для перевода курсора на следующую строку.', 6)
     RETURNING id INTO v_lesson_id;
 
-    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit)
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
     VALUES (
         v_lesson_id, 
         'Базовый буферизованный вывод.', 
@@ -175,7 +176,25 @@ main — строго зарезервированное имя для глав�
         'main,return,int,void,#include,stdio.h,printf', 
         '#define,while,goto,do,asm,__asm__,__asm,stdlib.h,string.h,math.h', 
         2000, 
-        256
+        256,
+        FALSE
+    ) RETURNING id INTO v_task_id;
+
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
+    VALUES (v_task_id, '', 'Hello, cppforge!\n', TRUE);
+
+    -- Duel Tasks Pool
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
+    VALUES (
+        v_lesson_id, 
+        '[ДУЭЛЬ] Четное или Нечетное', 
+        'Напишите программу, которая принимает одно целое число со стандартного ввода и выводит "Even", если оно четное, и "Odd", если нечетное.', 
+        '#include <stdio.h>\n\nint main(void) {\n    int n;\n    scanf("%d", &n);\n    \n    return 0;\n}',
+        'main,return,int,void,#include,stdio.h,printf,scanf', 
+        '', 
+        2000, 
+        256,
+        TRUE
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)

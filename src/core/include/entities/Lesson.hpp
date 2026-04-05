@@ -18,6 +18,8 @@ namespace cppforge::entities
     class Lesson
     {
     public:
+        Lesson() = default;
+
         /**
          * @brief Constructs a new Lesson instance.
          *
@@ -59,3 +61,6 @@ namespace cppforge::entities
         QString content_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::Lesson)

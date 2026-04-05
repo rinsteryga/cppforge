@@ -15,6 +15,8 @@ namespace cppforge::entities
     class QuizOption
     {
     public:
+        QuizOption() = default;
+
         /**
          * @brief Constructs a new QuizOption instance.
          *
@@ -59,3 +61,6 @@ namespace cppforge::entities
         bool isCorrect_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::QuizOption)

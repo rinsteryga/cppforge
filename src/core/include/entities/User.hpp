@@ -20,6 +20,8 @@ namespace cppforge::entities
     class User
     {
     public:
+        User() = default;
+
         /**
          * @brief Constructs a new User instance with registration time.
          *
@@ -216,3 +218,6 @@ namespace cppforge::entities
         std::set<cppforge::entities::Achievement> achievements_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::User)

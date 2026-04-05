@@ -34,6 +34,13 @@ namespace cppforge::repositories
          */
         std::optional<entities::CodingTask> getTaskById(uint64_t id) const override;
 
+        /**
+         * @brief Fetches a random duel coding task.
+         * @param lessonId The ID of the lesson.
+         * @return CodingTask if found, std::nullopt otherwise.
+         */
+        std::optional<entities::CodingTask> getRandomDuelTaskByLessonId(uint64_t lessonId) const override;
+
     private:
         QSqlDatabase &database_;
     };

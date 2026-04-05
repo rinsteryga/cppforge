@@ -17,6 +17,8 @@ namespace cppforge::entities
     class UserProgress
     {
     public:
+        UserProgress() = default;
+
         /**
          * @brief Constructs a new UserProgress instance.
          *
@@ -64,3 +66,6 @@ namespace cppforge::entities
         bool isCompleted_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::UserProgress)
