@@ -8,6 +8,7 @@
 #include <QStackedWidget>
 #include <QString>
 #include <QWidget>
+#include <QtSql/QSqlQuery>
 
 #include <memory>
 #include <vector>
@@ -60,6 +61,8 @@ private:
     void centerWindow();
     void animateToTaskWindow(int moduleId);
 
+    void loadAllModulesProgress();
+
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
     std::unique_ptr<QVBoxLayout> centerPanelLayout_;
@@ -70,7 +73,7 @@ private:
     QWidget *learningPage{nullptr};
 
     QString m_currentUsername;
-    int m_currentUserId{1};
+    int m_currentUserId{-1};
 
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;
