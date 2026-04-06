@@ -1,4 +1,5 @@
 #include "MainWindow.hpp"
+
 #include "CustomTitleBar.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
@@ -29,15 +30,11 @@
 #include <QtSql/QSqlQuery>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent)
-    , isTransitioning_(false)
-    , pendingModuleId_(-1)
-    , m_currentUsername("")
-    , m_currentUserId(-1)
+    : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1), m_currentUsername(""), m_currentUserId(-1)
 {
     setupUI();
     setWindowOpacity(0.0);
-    
+
     QTimer::singleShot(50, this, &MainWindow::centerWindow);
     QTimer::singleShot(100, this, &MainWindow::fadeIn);
 }
@@ -48,15 +45,17 @@ void MainWindow::setUserId(int id)
 {
     m_currentUserId = id;
     qDebug() << "MainWindow: ID пользователя установлен:" << m_currentUserId;
-    
+
     loadAllModulesProgress();
 }
 
 void MainWindow::loadAllModulesProgress()
 {
-    if (m_currentUserId == -1 || moduleProgressBars.isEmpty()) return;
+    if (m_currentUserId == -1 || moduleProgressBars.isEmpty())
+        return;
 
-    for (int i = 1; i <= 14; ++i) {
+    for (int i = 1; i <= 14; ++i)
+    {
         QSqlQuery query;
         query.prepare(R"(
             SELECT 
@@ -64,14 +63,17 @@ void MainWindow::loadAllModulesProgress()
                  WHERE user_id = :uid AND module_id = :mid AND is_completed = TRUE) * 100 / 
                 NULLIF((SELECT COUNT(*) FROM lessons WHERE module_id = :mid), 0)
         )");
-        
+
         query.bindValue(":uid", m_currentUserId);
         query.bindValue(":mid", i);
 
         int progressValue = 0;
-        if (query.exec() && query.next()) {
+        if (query.exec() && query.next())
+        {
             progressValue = query.value(0).toInt();
-        } else {
+        }
+        else
+        {
             qDebug() << "SQL Error Module" << i << ":" << query.lastError().text();
         }
 
@@ -81,20 +83,23 @@ void MainWindow::loadAllModulesProgress()
 
 void MainWindow::updateModuleProgress(int moduleId, int progress)
 {
-    if (moduleId < 1 || moduleId > (int)moduleProgressBars.size()) {
+    if (moduleId < 1 || moduleId > (int)moduleProgressBars.size())
+    {
         return;
     }
 
     moduleProgressBars[moduleId - 1]->setValue(progress);
     moduleProgressLabels[moduleId - 1]->setText(QString("%1% выполнено").arg(progress));
 
-    if (progress == 100 && moduleId < (int)moduleButtons.size()) {
-        QPushButton *nextBtn = moduleButtons[moduleId]; 
-        if (nextBtn && !nextBtn->isEnabled()) {
+    if (progress == 100 && moduleId < (int)moduleButtons.size())
+    {
+        QPushButton *nextBtn = moduleButtons[moduleId];
+        if (nextBtn && !nextBtn->isEnabled())
+        {
             nextBtn->setEnabled(true);
             nextBtn->setText("Начать обучение");
-            nextBtn->setStyleSheet(""); 
-            
+            nextBtn->setStyleSheet("");
+
             disconnect(nextBtn, &QPushButton::clicked, nullptr, nullptr);
             connect(nextBtn, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
         }
@@ -105,9 +110,9 @@ void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
     this->show();
-    
+
     loadAllModulesProgress();
-    
+
     fadeIn();
 }
 
@@ -123,7 +128,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
 void MainWindow::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
-    if (!isTransitioning_) {
+    if (!isTransitioning_)
+    {
         loadAllModulesProgress();
     }
 }
@@ -131,7 +137,8 @@ void MainWindow::showEvent(QShowEvent *event)
 void MainWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::primaryScreen();
-    if (screen) {
+    if (screen)
+    {
         QRect availableGeometry = screen->availableGeometry();
         int x = availableGeometry.x() + (availableGeometry.width() - width()) / 2;
         int y = availableGeometry.y() + (availableGeometry.height() - height()) / 2;
@@ -141,7 +148,8 @@ void MainWindow::centerWindow()
 
 void MainWindow::fadeIn()
 {
-    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running) {
+    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
+    {
         transitionAnimation_->stop();
     }
 
@@ -155,7 +163,8 @@ void MainWindow::fadeIn()
 
 void MainWindow::fadeOut()
 {
-    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running) {
+    if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
+    {
         transitionAnimation_->stop();
     }
 
@@ -165,22 +174,27 @@ void MainWindow::fadeOut()
     transitionAnimation_->setEndValue(0.0);
     transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
 
-    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this, [this]() {
-        if (pendingModuleId_ != -1) {
-            if (!taskWindow_) {
-                taskWindow_ = std::make_unique<TaskWindow>();
-                connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this, &MainWindow::updateModuleProgress);
-                connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
-            }
-            taskWindow_->setUserId(m_currentUserId);
-            taskWindow_->loadModule(pendingModuleId_);
-            this->hide();
-            taskWindow_->show();
-            taskWindow_->fadeIn();
-            pendingModuleId_ = -1;
-            isTransitioning_ = false;
-        }
-    });
+    connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
+            [this]()
+            {
+                if (pendingModuleId_ != -1)
+                {
+                    if (!taskWindow_)
+                    {
+                        taskWindow_ = std::make_unique<TaskWindow>();
+                        connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this,
+                                &MainWindow::updateModuleProgress);
+                        connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
+                    }
+                    taskWindow_->setUserId(m_currentUserId);
+                    taskWindow_->loadModule(pendingModuleId_);
+                    this->hide();
+                    taskWindow_->show();
+                    taskWindow_->fadeIn();
+                    pendingModuleId_ = -1;
+                    isTransitioning_ = false;
+                }
+            });
     transitionAnimation_->start();
 }
 
@@ -214,22 +228,24 @@ void MainWindow::setupLeftPanel()
     auto logoContainer = new QFrame();
     logoContainer->setObjectName("logoContainer");
     auto logoLayout = new QVBoxLayout(logoContainer);
-    
+
     auto logoIcon = new QLabel();
     logoIcon->setAlignment(Qt::AlignCenter);
     QPixmap logoPixmap(":/icons/main_logo.ico");
-    if (!logoPixmap.isNull()) {
+    if (!logoPixmap.isNull())
+    {
         logoIcon->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
     logoIcon->setFixedSize(100, 100);
     logoLayout->addWidget(logoIcon);
-    
+
     learnBtn = new QPushButton("Учиться");
     ratingBtn = new QPushButton("Рейтинг");
     profileBtn = new QPushButton("Профиль");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
-    for (auto btn : {learnBtn, ratingBtn, profileBtn}) {
+    for (auto btn : {learnBtn, ratingBtn, profileBtn})
+    {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setFixedHeight(48);
@@ -255,7 +271,7 @@ void MainWindow::setupCenterPanel()
     eventCard->setProperty("class", "card");
     auto eLayout = new QVBoxLayout(eventCard.get());
     eLayout->setContentsMargins(25, 25, 25, 25);
-    
+
     auto eventTitle = new QLabel("События");
     eventTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     eLayout->addWidget(eventTitle);
@@ -266,11 +282,11 @@ void MainWindow::setupCenterPanel()
     dailyTaskCard->setProperty("class", "card");
     auto dLayout = new QVBoxLayout(dailyTaskCard.get());
     dLayout->setContentsMargins(25, 25, 25, 25);
-    
+
     auto dailyTitle = new QLabel("Задание дня");
     dailyTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     dLayout->addWidget(dailyTitle);
-    
+
     auto dailyProgress = new QProgressBar();
     dailyProgress->setFixedHeight(16);
     dailyProgress->setValue(0);
@@ -293,7 +309,8 @@ void MainWindow::setupRightPanel()
     modulesLayout->setContentsMargins(0, 0, 0, 0);
     modulesLayout->setSpacing(15);
 
-    for (int i = 1; i <= 14; ++i) {
+    for (int i = 1; i <= 14; ++i)
+    {
         auto moduleCard = std::make_unique<QFrame>();
         moduleCard->setProperty("class", "card");
         auto mLayout = new QVBoxLayout(moduleCard.get());
@@ -316,9 +333,12 @@ void MainWindow::setupRightPanel()
         button->setCursor(Qt::PointingHandCursor);
         button->setEnabled(!isLocked);
 
-        if (!isLocked) {
+        if (!isLocked)
+        {
             connect(button, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
-        } else {
+        }
+        else
+        {
             button->setStyleSheet("background: #f0f0f0; color: #999; border: 1px solid #e0e0e0;");
         }
 
@@ -330,7 +350,7 @@ void MainWindow::setupRightPanel()
         moduleProgressBars.append(progress);
         moduleProgressLabels.append(progressLabel);
         moduleButtons.append(button);
-        
+
         modulesLayout->addWidget(moduleCard.get());
         moduleCards.push_back(std::move(moduleCard));
     }
@@ -402,7 +422,8 @@ void MainWindow::setupStyles()
 void MainWindow::onModuleButtonClicked()
 {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
-    if (button) {
+    if (button)
+    {
         int moduleId = button->property("moduleId").toInt();
         animateToTaskWindow(moduleId);
     }
@@ -419,7 +440,8 @@ void MainWindow::onProfileButtonClicked()
     query.prepare("SELECT id, username, avatar_path FROM users WHERE username = :name");
     query.bindValue(":name", m_currentUsername);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next())
+    {
         int id = query.value("id").toInt();
         QString name = query.value("username").toString();
         QString avatar = query.value("avatar_path").toString();
@@ -431,7 +453,8 @@ void MainWindow::onProfileButtonClicked()
 
 void MainWindow::animateToTaskWindow(int moduleId)
 {
-    if (isTransitioning_) return;
+    if (isTransitioning_)
+        return;
     isTransitioning_ = true;
     pendingModuleId_ = moduleId;
     fadeOut();
