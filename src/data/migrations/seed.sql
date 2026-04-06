@@ -88,7 +88,7 @@ rinster (rinsterr@yandex.ru)', 1);
     INSERT INTO matching_pairs (matching_task_id, left_item, right_item) VALUES 
     (v_matching_task_id, 'pwd', 'Вывод абсолютного пути текущей рабочей директории'),
     (v_matching_task_id, 'ls -la', 'Форматированный вывод содержимого директории, включая скрытые файлы'),
-    (v_matching_task_id, 'cd ..', 'Переход в родительскую директорию относительно текущей'),
+    (v_matching_task_id, 'cd ..', 'Переход в родительская директорию относительно текущей'),
     (v_matching_task_id, 'mkdir src', 'Создание новой директории в текущем каталоге');
 
     INSERT INTO quizzes (lesson_id, title, question) VALUES (v_lesson_id, 'Создание файлов', 'Что технически делает команда touch file.txt, если файл еще не существует?') RETURNING id INTO v_quiz_id;
@@ -139,7 +139,7 @@ main — строго зарезервированное имя для глав�
         v_lesson_id, 
         'Ваша первая пустая программа.', 
         'Напишите минимально возможную программу на языке C, которая компилируется и завершается успешно. Помните про правильное определение сигнатуры точки входа (без параметров командной строки) и код возврата ОС. Никакого текста выводить не нужно.', 
-        'int main(void) {\n    return 0;\n}',
+        E'int main(void) {\n    return 0;\n}',
         'main,return,int,void', 
         '#include,#define,while,goto,do,asm,__asm__,__asm,FILE,fopen,fclose,fread,fwrite,system,exec', 
         2000, 
@@ -172,7 +172,7 @@ main — строго зарезервированное имя для глав�
         v_lesson_id, 
         'Базовый буферизованный вывод.', 
         'Напишите программу, которая выводит в stdout ровно одну строку: Hello, cppforge! и выполняет перевод курсора на новую строку терминала через \n.', 
-        '#include <stdio.h>\n\nint main(void) {\n    // Ваш код\n    return 0;\n}',
+        E'#include <stdio.h>\n\nint main(void) {\n    // Ваш код\n    return 0;\n}',
         'main,return,int,void,#include,stdio.h,printf', 
         '#define,while,goto,do,asm,__asm__,__asm,stdlib.h,string.h,math.h', 
         2000, 
@@ -181,15 +181,14 @@ main — строго зарезервированное имя для глав�
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
-    VALUES (v_task_id, '', 'Hello, cppforge!\n', TRUE);
+    VALUES (v_task_id, '', E'Hello, cppforge!\n', TRUE);
 
-    -- Duel Tasks Pool
     INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
     VALUES (
         v_lesson_id, 
         '[ДУЭЛЬ] Четное или Нечетное', 
         'Напишите программу, которая принимает одно целое число со стандартного ввода и выводит "Even", если оно четное, и "Odd", если нечетное.', 
-        '#include <stdio.h>\n\nint main(void) {\n    int n;\n    scanf("%d", &n);\n    \n    return 0;\n}',
+        E'#include <stdio.h>\n\nint main(void) {\n    int n;\n    scanf("%d", &n);\n    \n    return 0;\n}',
         'main,return,int,void,#include,stdio.h,printf,scanf', 
         '', 
         2000, 
@@ -198,7 +197,8 @@ main — строго зарезервированное имя для глав�
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
-    VALUES (v_task_id, '', 'Hello, cppforge!\n', TRUE);
+    VALUES (v_task_id, '4', E'Even\n', TRUE),
+           (v_task_id, '7', E'Odd\n', TRUE);
 
     INSERT INTO achievements (name, description, icon_path, condition_type, condition_value) VALUES
     ('First Code', 'Solve your first coding task!', '/icons/first-code.png', 'LEVELS_COMPLETED', 1),
