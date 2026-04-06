@@ -15,6 +15,8 @@ namespace cppforge::entities
     class MatchingPair
     {
     public:
+        MatchingPair() = default;
+
         /**
          * @brief Constructs a new MatchingPair instance.
          *
@@ -58,3 +60,6 @@ namespace cppforge::entities
         QString rightItem_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::MatchingPair)

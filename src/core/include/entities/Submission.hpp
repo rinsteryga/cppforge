@@ -17,6 +17,8 @@ namespace cppforge::entities
     class Submission
     {
     public:
+        Submission() = default;
+
         /**
          * @brief Constructs a new Submission instance.
          *
@@ -83,3 +85,6 @@ namespace cppforge::entities
         bool isSuccess_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::Submission)

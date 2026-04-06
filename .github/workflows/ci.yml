@@ -3,33 +3,86 @@ name: cppforge CI
 on: [push, pull_request]
 
 jobs:
-  build:
+  format:
+    name: Code Formatting
     runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install clang-format
+      run: sudo apt-get update && sudo apt-get install -y clang-format
+      
+    - name: Code Style Check (clang-format)
+      run: |
+        find src -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" -o -name "*.c" \) -print -exec clang-format -i {} +
+        git diff --exit-code || (echo "Code formatting issues found. Please run clang-format." && exit 1)
+
+  build:
+    name: Build & Test (${{ matrix.os }})
+    needs: format
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        
     steps:
     - uses: actions/checkout@v4
     
     - name: Setup Cache (ccache)
       uses: hendrikmuhs/ccache-action@v1.2
       with:
-        key: ${{ runner.os }}-ccache
-    
-    - name: Install Qt5 and Dependencies
+        key: ${{ matrix.os }}-ccache
+
+    - name: Install Qt5 and Dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev clang-format
-    
-    - name: Code Style Check (clang-format)
-      run: |
-        find src -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" -o -name "*.c" \) -print -exec clang-format -i {} +
-        git diff --exit-code || (echo "Code formatting issues found. Please run clang-format." && exit 1)
+        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev ccache
 
-    - name: Build Project
+    - name: Install Qt5 and Dependencies (macOS)
+      if: matrix.os == 'macos-latest'
       run: |
-        mkdir build && cd build
-        cmake .. -DCMAKE_CXX_STANDARD=20 -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt5 -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-        make
+        brew install qt@5 ccache
+        echo "CMAKE_PREFIX_PATH=$(brew --prefix qt@5)" >> $GITHUB_ENV
+
+    - name: Setup MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-qt5-base
+          mingw-w64-ucrt-x86_64-ninja
+          mingw-w64-ucrt-x86_64-ccache
+
+    - name: Configure CMake (Linux & macOS)
+      if: matrix.os != 'windows-latest'
+      run: cmake -B build -DCMAKE_CXX_STANDARD=20 -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      
+    - name: Build Project (Linux & macOS)
+      if: matrix.os != 'windows-latest'
+      run: cmake --build build --parallel 2
         
-    - name: Run Tests
-      run: |
-        cd build
-        ctest --output-on-failure
+    - name: Run Tests (Linux & macOS)
+      if: matrix.os != 'windows-latest'
+      run: cd build && ctest --output-on-failure
+
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: cmake -B build -G Ninja -DCMAKE_CXX_STANDARD=20 -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      
+    - name: Build Project (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: cmake --build build
+        
+    - name: Run Tests (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: cd build && ctest --output-on-failure
+      

@@ -79,3 +79,6 @@ namespace cppforge::entities
         uint32_t passedTestsCount_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::ExecutionResult)

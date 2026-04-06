@@ -18,6 +18,8 @@ namespace cppforge::entities
     class Quiz
     {
     public:
+        Quiz() = default;
+
         /**
          * @brief Constructs a new Quiz instance.
          *
@@ -67,3 +69,6 @@ namespace cppforge::entities
         std::set<QuizOption> options_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::Quiz)

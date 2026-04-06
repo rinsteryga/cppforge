@@ -19,6 +19,8 @@ namespace cppforge::entities
     class MatchingTask
     {
     public:
+        MatchingTask() = default;
+
         /**
          * @brief Constructs a new MatchingTask instance.
          *
@@ -69,3 +71,6 @@ namespace cppforge::entities
         std::set<MatchingPair> pairs_;
     };
 } // namespace cppforge::entities
+
+#include <QMetaType>
+Q_DECLARE_METATYPE(cppforge::entities::MatchingTask)

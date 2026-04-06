@@ -46,6 +46,14 @@ namespace cppforge
              * @return An std::optional containing the CodingTask if found; otherwise std::nullopt.
              */
             virtual std::optional<entities::CodingTask> getTaskById(uint64_t taskId) const = 0;
+
+            /**
+             * @brief Fetches a random duel coding task.
+             *
+             * @param lessonId The unique identifier of the lesson.
+             * @return An std::optional containing the CodingTask if found; otherwise std::nullopt.
+             */
+            virtual std::optional<entities::CodingTask> getRandomDuelTaskByLessonId(uint64_t lessonId) const = 0;
         };
     } // namespace repositories
 } // namespace cppforge
