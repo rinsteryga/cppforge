@@ -37,3 +37,18 @@ set_target_properties(cppforge PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
 )
+
+install(TARGETS cppforge DESTINATION bin)
+install(FILES "src/data/migrations/schema.sql" DESTINATION "data/migrations")
+install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
+
+set(CPACK_GENERATOR "NSIS")
+set(CPACK_PACKAGE_NAME "cppforge")
+set(CPACK_PACKAGE_VENDOR "cppforge")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+
+set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+    ExecWait 'powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \\\"$INSTDIR/scripts/install_deps.ps1\\\" -InstallDir \\\"$INSTDIR\\\"'
+")
+
+include(CPack)
