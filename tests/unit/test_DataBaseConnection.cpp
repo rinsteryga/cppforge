@@ -31,7 +31,7 @@ private:
 
         cppforge::repositories::PgUserRepository repo(db_);
 
-        cppforge::entities::User newUser(0, "testuser_repo", "testuser_repo@example.com", "fakehash123",
+        cppforge::entities::User newUser(0, "testuser_repo", "testuser_repo@example.com", "fakehash123", "fakesalt123",
                                          std::chrono::system_clock::now());
 
         repo.save(newUser);
