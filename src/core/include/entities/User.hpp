@@ -32,8 +32,8 @@ namespace cppforge::entities
          * @param salt The salt used for password hashing.
          * @param createdAt The exact timestamp of account creation.
          */
-        User(uint64_t userId, QString username, QString email, QString passwordHash,
-             QString salt, const std::chrono::system_clock::time_point &createdAt);
+        User(uint64_t userId, QString username, QString email, QString passwordHash, QString salt,
+             const std::chrono::system_clock::time_point &createdAt);
 
         /**
          * @brief Constructs a new User instance without explicitly defining creation time.

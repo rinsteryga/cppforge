@@ -6,11 +6,11 @@
 
 namespace cppforge::entities
 {
-    User::User(uint64_t userId, QString username, QString email, QString passwordHash,
-               QString salt, const std::chrono::system_clock::time_point &createdAt)
+    User::User(uint64_t userId, QString username, QString email, QString passwordHash, QString salt,
+               const std::chrono::system_clock::time_point &createdAt)
         : id_(userId), username_(std::move(username)), email_(std::move(email)), passwordHash_(std::move(passwordHash)),
           salt_(std::move(salt)), currentStreakDays_(0), createdAt_(createdAt)
-    {   
+    {
     }
 
     User::User(uint64_t userId, QString username, QString email, QString passwordHash, QString salt)

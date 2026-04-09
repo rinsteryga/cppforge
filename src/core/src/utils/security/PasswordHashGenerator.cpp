@@ -20,8 +20,9 @@ namespace cppforge::utils::security
     {
         QByteArray salt;
         salt.resize(length);
-        
-        for (int i = 0; i < length; ++i) {
+
+        for (int i = 0; i < length; ++i)
+        {
             salt[i] = static_cast<char>(QRandomGenerator::securelySeeded().bounded(256));
         }
 
