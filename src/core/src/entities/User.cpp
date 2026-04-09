@@ -7,15 +7,15 @@
 namespace cppforge::entities
 {
     User::User(uint64_t userId, QString username, QString email, QString passwordHash,
-               const std::chrono::system_clock::time_point &createdAt)
+               QString salt, const std::chrono::system_clock::time_point &createdAt)
         : id_(userId), username_(std::move(username)), email_(std::move(email)), passwordHash_(std::move(passwordHash)),
-          currentStreakDays_(0), createdAt_(createdAt)
-    {
+          salt_(std::move(salt)), currentStreakDays_(0), createdAt_(createdAt)
+    {   
     }
 
-    User::User(uint64_t userId, QString username, QString email, QString passwordHash)
+    User::User(uint64_t userId, QString username, QString email, QString passwordHash, QString salt)
         : id_(userId), username_(std::move(username)), email_(std::move(email)), passwordHash_(std::move(passwordHash)),
-          currentStreakDays_(0), createdAt_(std::chrono::system_clock::now())
+          salt_(std::move(salt)), currentStreakDays_(0), createdAt_(std::chrono::system_clock::now())
     {
     }
 
@@ -37,6 +37,11 @@ namespace cppforge::entities
     const QString &User::getPasswordHash() const
     {
         return passwordHash_;
+    }
+
+    const QString &User::getSalt() const
+    {
+        return salt_;
     }
 
     const QString &User::getAvatarPath() const
