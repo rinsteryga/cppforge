@@ -23,7 +23,7 @@ namespace cppforge
             }
 
             QSqlQuery query(database_);
-            query.prepare("SELECT id, username, email, password_hash, avatar_path, bio, current_streak_days, "
+            query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, current_streak_days, "
                           "last_level_solved_at, created_at FROM users WHERE "
                           "email = :email");
             query.bindValue(":email", email);
@@ -34,13 +34,14 @@ namespace cppforge
                 QString username = query.value("username").toString();
                 QString userEmail = query.value("email").toString();
                 QString passwordHash = query.value("password_hash").toString();
+                QString salt = query.value("salt").toString();
                 QString avatarPath = query.value("avatar_path").toString();
                 QString bio = query.value("bio").toString();
 
                 auto createdAt =
                     std::chrono::system_clock::from_time_t(query.value("created_at").toDateTime().toSecsSinceEpoch());
 
-                entities::User user(userId, username, userEmail, passwordHash, createdAt);
+                entities::User user(userId, username, userEmail, passwordHash, salt, createdAt);
                 user.setAvatarPath(avatarPath);
                 user.setBio(bio);
                 user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
@@ -70,7 +71,7 @@ namespace cppforge
             }
 
             QSqlQuery query(database_);
-            query.prepare("SELECT id, username, email, password_hash, avatar_path, bio, current_streak_days, "
+            query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, current_streak_days, "
                           "last_level_solved_at, created_at FROM users WHERE "
                           "username = :username");
             query.bindValue(":username", username);
@@ -81,13 +82,14 @@ namespace cppforge
                 QString fetchedUsername = query.value("username").toString();
                 QString userEmail = query.value("email").toString();
                 QString passwordHash = query.value("password_hash").toString();
+                QString salt = query.value("salt").toString();
                 QString avatarPath = query.value("avatar_path").toString();
                 QString bio = query.value("bio").toString();
 
                 auto createdAt =
                     std::chrono::system_clock::from_time_t(query.value("created_at").toDateTime().toSecsSinceEpoch());
 
-                entities::User user(userId, fetchedUsername, userEmail, passwordHash, createdAt);
+                entities::User user(userId, fetchedUsername, userEmail, passwordHash, salt, createdAt);
                 user.setAvatarPath(avatarPath);
                 user.setBio(bio);
                 user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
@@ -119,13 +121,14 @@ namespace cppforge
             QSqlQuery query(database_);
             if (user.getId() == 0)
             {
-                query.prepare("INSERT INTO users (username, email, password_hash, avatar_path, bio, "
+                query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_path, bio, "
                               "current_streak_days, last_level_solved_at) VALUES (:username, "
                               ":email, :password_hash, :avatar_path, :bio, :current_streak_days, "
                               ":last_level_solved_at) RETURNING id");
                 query.bindValue(":username", user.getUsername());
                 query.bindValue(":email", user.getEmail());
                 query.bindValue(":password_hash", user.getPasswordHash());
+                query.bindValue(":salt", user.getSalt());
                 query.bindValue(":avatar_path", user.getAvatarPath());
                 query.bindValue(":bio", user.getBio());
                 query.bindValue(":current_streak_days", user.getCurrentStreakDays());
