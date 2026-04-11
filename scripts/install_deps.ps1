@@ -42,9 +42,15 @@ if (-not $IsInstalled) {
 if ($IsInstalled) {
     Write-Host "Found existing PostgreSQL installation at $PgBinDir."
     $env:PGPASSWORD = $PG_PASSWORD
+    
+    $OldErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warning "Default password did not work for 'postgres' user. We will try to continue, but DB setup might fail."
+    $ConnExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $OldErrorAction
+    
+    if ($ConnExitCode -ne 0) {
+        Write-Warning "Default password did not work, or server is unreachable. We will try to continue, but DB setup might fail."
         $SkipDbConfig = $true
     } else {
         Write-Host "Successfully connected to PostgreSQL."
@@ -84,9 +90,26 @@ if ($IsInstalled) {
     }
 
     $env:PGPASSWORD = $PG_PASSWORD
+    $env:PGCLIENTENCODING = "utf8"
 
-    Write-Host "Waiting for service to become responsive..."
-    Start-Sleep -Seconds 10
+    Write-Host "Waiting for service to become responsive (this might take up to a minute on new systems)..."
+    $OldErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $DbReady = $false
+    for ($i = 0; $i -lt 30; $i++) {
+        & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $DbReady = $true
+            break
+        }
+        Start-Sleep -Seconds 2
+    }
+    $ErrorActionPreference = $OldErrorAction
+
+    if (-not $DbReady) {
+        Write-Warning "PostgreSQL service took too long to start. We will skip database setup."
+        $SkipDbConfig = $true
+    }
 }
 
 if (-not $SkipDbConfig) {
