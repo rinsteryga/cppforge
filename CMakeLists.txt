@@ -45,7 +45,7 @@ install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_NAME "cppforge")
 set(CPACK_PACKAGE_VENDOR "cppforge")
-set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_VERSION "1.0.1")
 
 set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
     ExecWait 'powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \\\"$INSTDIR/scripts/install_deps.ps1\\\" -InstallDir \\\"$INSTDIR\\\"'
