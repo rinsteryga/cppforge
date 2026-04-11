@@ -34,7 +34,7 @@ target_link_libraries(cppforge
 )
 
 set_target_properties(cppforge PROPERTIES
-    WIN32_EXECUTABLE OFF
+    WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
 )
 
@@ -45,10 +45,16 @@ install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
 
 get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
 
+find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt-qt5 windeployqt-qt5.exe windeployqt windeployqt.exe HINTS ${MSYS2_BIN_DIR})
+
 install(CODE "
     execute_process(
-        COMMAND ${MSYS2_BIN_DIR}/windeployqt.exe --no-translations --no-opengl-sw \${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe
+        COMMAND \"${WINDEPLOYQT_EXECUTABLE}\" --no-translations --no-opengl-sw --no-angle --compiler-runtime \"\${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe\"
+        RESULT_VARIABLE WINDEPLOYQT_RES
     )
+    if(NOT WINDEPLOYQT_RES EQUAL 0)
+        message(FATAL_ERROR \"windeployqt failed or not found!\")
+    endif()
 ")
 
 install(FILES 
@@ -57,6 +63,23 @@ install(FILES
     "${MSYS2_BIN_DIR}/libiconv-2.dll"
     "${MSYS2_BIN_DIR}/libssl-3-x64.dll"
     "${MSYS2_BIN_DIR}/libcrypto-3-x64.dll"
+    "${MSYS2_BIN_DIR}/libicuuc77.dll"
+    "${MSYS2_BIN_DIR}/libicuin77.dll"
+    "${MSYS2_BIN_DIR}/libicudt77.dll"
+    "${MSYS2_BIN_DIR}/libdouble-conversion.dll"
+    "${MSYS2_BIN_DIR}/libpcre2-16-0.dll"
+    "${MSYS2_BIN_DIR}/libpcre2-8-0.dll"
+    "${MSYS2_BIN_DIR}/libfreetype-6.dll"
+    "${MSYS2_BIN_DIR}/libgraphite2.dll"
+    "${MSYS2_BIN_DIR}/libglib-2.0-0.dll"
+    "${MSYS2_BIN_DIR}/libzstd.dll"
+    "${MSYS2_BIN_DIR}/libbrotlidec.dll"
+    "${MSYS2_BIN_DIR}/libbrotlicommon.dll"
+    "${MSYS2_BIN_DIR}/libbz2-1.dll"
+    "${MSYS2_BIN_DIR}/libpng16-16.dll"
+    "${MSYS2_BIN_DIR}/libmd4c.dll"
+    "${MSYS2_BIN_DIR}/libharfbuzz-0.dll"
+    "${MSYS2_BIN_DIR}/zlib1.dll"
     DESTINATION bin
 )
 
