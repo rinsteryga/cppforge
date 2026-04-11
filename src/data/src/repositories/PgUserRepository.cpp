@@ -123,7 +123,7 @@ namespace cppforge
             {
                 query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_path, bio, "
                               "current_streak_days, last_level_solved_at) VALUES (:username, "
-                              ":email, :password_hash, :avatar_path, :bio, :current_streak_days, "
+                              ":email, :password_hash, :salt, :avatar_path, :bio, :current_streak_days, "
                               ":last_level_solved_at) RETURNING id");
                 query.bindValue(":username", user.getUsername());
                 query.bindValue(":email", user.getEmail());
@@ -153,12 +153,14 @@ namespace cppforge
                 return true;
             }
 
-            query.prepare("UPDATE users SET username = :username, email = :email, password_hash = :password_hash, "
-                          "avatar_path = :avatar_path, bio = :bio, current_streak_days = :current_streak_days, "
+            query.prepare("UPDATE users SET username = :username, email = :email, "
+                          "password_hash = :password_hash, salt = :salt, avatar_path = :avatar_path, "
+                          "bio = :bio, current_streak_days = :current_streak_days, "
                           "last_level_solved_at = :last_level_solved_at WHERE id = :id");
             query.bindValue(":username", user.getUsername());
             query.bindValue(":email", user.getEmail());
             query.bindValue(":password_hash", user.getPasswordHash());
+            query.bindValue(":salt", user.getSalt());
             query.bindValue(":avatar_path", user.getAvatarPath());
             query.bindValue(":bio", user.getBio());
             query.bindValue(":current_streak_days", user.getCurrentStreakDays());
