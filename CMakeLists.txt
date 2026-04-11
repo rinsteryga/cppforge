@@ -34,13 +34,31 @@ target_link_libraries(cppforge
 )
 
 set_target_properties(cppforge PROPERTIES
-    WIN32_EXECUTABLE ON
+    WIN32_EXECUTABLE OFF
     MACOSX_BUNDLE ON
 )
 
 install(TARGETS cppforge DESTINATION bin)
 install(FILES "src/data/migrations/schema.sql" DESTINATION "data/migrations")
+install(FILES "src/data/migrations/seed.sql" DESTINATION "data/migrations")
 install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
+
+# Deploy Qt libraries
+install(CODE "
+    execute_process(
+        COMMAND C:/msys64/ucrt64/bin/windeployqt.exe --no-translations --no-opengl-sw \${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe
+    )
+")
+
+# Deploy PostgreSQL driver dependencies from MSYS2
+install(FILES 
+    "C:/msys64/ucrt64/bin/libpq.dll"
+    "C:/msys64/ucrt64/bin/libintl-8.dll"
+    "C:/msys64/ucrt64/bin/libiconv-2.dll"
+    "C:/msys64/ucrt64/bin/libssl-3-x64.dll"
+    "C:/msys64/ucrt64/bin/libcrypto-3-x64.dll"
+    DESTINATION bin
+)
 
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_NAME "cppforge")
@@ -48,7 +66,7 @@ set(CPACK_PACKAGE_VENDOR "cppforge")
 set(CPACK_PACKAGE_VERSION "1.0.0")
 
 set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-    ExecWait 'powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File \\\"$INSTDIR/scripts/install_deps.ps1\\\" -InstallDir \\\"$INSTDIR\\\"'
+    ExecWait 'powershell.exe -ExecutionPolicy Bypass -File \\\"$INSTDIR/scripts/install_deps.ps1\\\" -InstallDir \\\"$INSTDIR\\\"'
 ")
 
 include(CPack)
