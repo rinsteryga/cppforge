@@ -25,13 +25,18 @@ jobs:
           mingw-w64-ucrt-x86_64-qt5-declarative
           mingw-w64-ucrt-x86_64-ninja
           mingw-w64-ucrt-x86_64-nsis
-
-    - name: Configure CMake
+          
+    - name: Ensure windeployqt exists
       shell: msys2 {0}
       run: |
-        cmake -B build -G Ninja \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH=/ucrt64
+        pacman -S --noconfirm mingw-w64-ucrt-x86_64-qt5-tools
+        ls /ucrt64/bin | grep windeploy || echo "STILL NOT FOUND"
+        - name: Configure CMake
+          shell: msys2 {0}
+          run: |
+            cmake -B build -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH=/ucrt64
 
     - name: Build
       shell: msys2 {0}
