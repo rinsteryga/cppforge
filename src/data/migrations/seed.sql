@@ -88,7 +88,7 @@ rinster (rinsterr@yandex.ru)', 1);
     INSERT INTO matching_pairs (matching_task_id, left_item, right_item) VALUES 
     (v_matching_task_id, 'pwd', 'Вывод абсолютного пути текущей рабочей директории'),
     (v_matching_task_id, 'ls -la', 'Форматированный вывод содержимого директории, включая скрытые файлы'),
-    (v_matching_task_id, 'cd ..', 'Переход в родительская директорию относительно текущей'),
+    (v_matching_task_id, 'cd ..', 'Переход в родительскую директорию относительно текущей'),
     (v_matching_task_id, 'mkdir src', 'Создание новой директории в текущем каталоге');
 
     INSERT INTO quizzes (lesson_id, title, question) VALUES (v_lesson_id, 'Создание файлов', 'Что технически делает команда touch file.txt, если файл еще не существует?') RETURNING id INTO v_quiz_id;
