@@ -43,18 +43,20 @@ install(FILES "src/data/migrations/schema.sql" DESTINATION "data/migrations")
 install(FILES "src/data/migrations/seed.sql" DESTINATION "data/migrations")
 install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
 
+get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
+
 install(CODE "
     execute_process(
-        COMMAND C:/msys64/ucrt64/bin/windeployqt.exe --no-translations --no-opengl-sw \${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe
+        COMMAND ${MSYS2_BIN_DIR}/windeployqt.exe --no-translations --no-opengl-sw \${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe
     )
 ")
 
 install(FILES 
-    "C:/msys64/ucrt64/bin/libpq.dll"
-    "C:/msys64/ucrt64/bin/libintl-8.dll"
-    "C:/msys64/ucrt64/bin/libiconv-2.dll"
-    "C:/msys64/ucrt64/bin/libssl-3-x64.dll"
-    "C:/msys64/ucrt64/bin/libcrypto-3-x64.dll"
+    "${MSYS2_BIN_DIR}/libpq.dll"
+    "${MSYS2_BIN_DIR}/libintl-8.dll"
+    "${MSYS2_BIN_DIR}/libiconv-2.dll"
+    "${MSYS2_BIN_DIR}/libssl-3-x64.dll"
+    "${MSYS2_BIN_DIR}/libcrypto-3-x64.dll"
     DESTINATION bin
 )
 
