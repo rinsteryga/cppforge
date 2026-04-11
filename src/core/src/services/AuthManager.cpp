@@ -27,7 +27,8 @@ namespace cppforge::services
             return false;
         }
 
-        if (!cppforge::utils::security::PasswordHashGenerator::verify(password, userOpt->getPasswordHash()))
+        if (!cppforge::utils::security::PasswordHashGenerator::verify(password, userOpt->getPasswordHash(),
+                                                                      userOpt->getSalt()))
         {
             return false;
         }
@@ -43,9 +44,10 @@ namespace cppforge::services
             return false;
         }
 
-        const QString hash = cppforge::utils::security::PasswordHashGenerator::generate(password);
+        const QString salt = cppforge::utils::security::PasswordHashGenerator::generateSalt();
+        const QString hash = cppforge::utils::security::PasswordHashGenerator::generate(password, salt);
 
-        cppforge::entities::User newUser(0, username, email, hash, std::chrono::system_clock::now());
+        cppforge::entities::User newUser(0, username, email, hash, salt, std::chrono::system_clock::now());
 
         return userRepository_->save(newUser);
     }
