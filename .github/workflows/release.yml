@@ -26,11 +26,6 @@ jobs:
           mingw-w64-ucrt-x86_64-ninja
           mingw-w64-ucrt-x86_64-nsis
           
-    - name: Ensure windeployqt exists
-      shell: msys2 {0}
-      run: |
-        pacman -S --noconfirm mingw-w64-ucrt-x86_64-qt5-tools
-        ls /ucrt64/bin | grep windeploy || echo "STILL NOT FOUND"
     - name: Configure CMake
       shell: msys2 {0}
       run: |          
@@ -47,7 +42,7 @@ jobs:
       run: |
         EXE=$(find build -name "cppforge.exe")
         echo "Found exe: $EXE"
-        windeployqt.exe "$EXE"
+        windeployqt-qt5.exe "$EXE"
 
     - name: Package (CPack)
       shell: msys2 {0}
