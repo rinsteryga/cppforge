@@ -10,14 +10,19 @@ $PG_DB = "app"
 $PG_SERVICE_NAME = "PostgreSQL"
 $PG_PORT = 5432
 
-$PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
-if (Test-Path "C:\Program Files\PostgreSQL\16\bin\psql.exe") {
+$PsqlWhere = where.exe psql.exe 2>$null | Select-Object -First 1
+
+if ($PsqlWhere -and (Test-Path $PsqlWhere)) {
+    $PgBinDir = Split-Path $PsqlWhere -Parent
+    $IsInstalled = $true
+} elseif (Test-Path "C:\Program Files\PostgreSQL\16\bin\psql.exe") {
     $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
     $IsInstalled = $true
 } elseif (Test-Path "C:\Program Files\PostgreSQL\bin\psql.exe") {
     $PgBinDir = "C:\Program Files\PostgreSQL\bin"
     $IsInstalled = $true
 } else {
+    $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
     $IsInstalled = $false
 }
 
