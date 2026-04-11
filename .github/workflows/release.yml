@@ -42,7 +42,7 @@ jobs:
       run: |
         EXE=$(find build -name "cppforge.exe")
         echo "Found exe: $EXE"
-        windeployqt-qt5.exe "$EXE"
+        windeployqt-qt5.exe --no-angle --no-opengl-sw --compiler-runtime "$EXE"
 
     - name: Package (CPack)
       shell: msys2 {0}
