@@ -43,14 +43,12 @@ install(FILES "src/data/migrations/schema.sql" DESTINATION "data/migrations")
 install(FILES "src/data/migrations/seed.sql" DESTINATION "data/migrations")
 install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
 
-# Deploy Qt libraries
 install(CODE "
     execute_process(
         COMMAND C:/msys64/ucrt64/bin/windeployqt.exe --no-translations --no-opengl-sw \${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe
     )
 ")
 
-# Deploy PostgreSQL driver dependencies from MSYS2
 install(FILES 
     "C:/msys64/ucrt64/bin/libpq.dll"
     "C:/msys64/ucrt64/bin/libintl-8.dll"
