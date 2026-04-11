@@ -7,28 +7,49 @@ $ErrorActionPreference = "Stop"
 $PG_USER = "app"
 $PG_PASSWORD = "secret_password_123"
 $PG_DB = "app"
-$PG_SERVICE_NAME = "PostgreSQL"
+$PG_SERVICE_NAME = "cppforge-postgres"
 $PG_PORT = 5432
 
+$SkipDbConfig = $false
+$IsInstalled = $false
 $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
-$IsInstalled = Test-Path "$PgBinDir\psql.exe"
+
+# Check standard program files paths
+$PsqlSearch = Get-ChildItem -Path "C:\Program Files\PostgreSQL\*\bin\psql.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+if ($PsqlSearch) {
+    $PgBinDir = $PsqlSearch.DirectoryName
+    $IsInstalled = $true
+}
+
+# Check if available in PATH
+if (-not $IsInstalled) {
+    $PsqlCmd = Get-Command "psql" -ErrorAction SilentlyContinue
+    if ($PsqlCmd) {
+        $PgBinDir = Split-Path $PsqlCmd.Source
+        $IsInstalled = $true
+    }
+}
+
+if (-not $IsInstalled) {
+    # Test if port is already taken by some other process
+    $portCheck = Get-NetTCPConnection -LocalPort $PG_PORT -ErrorAction SilentlyContinue
+    if ($portCheck) {
+        $PG_PORT = 5433 # fallback
+        Write-Host "Port 5432 is taken, using port 5433 for new PostgreSQL installation."
+    }
+}
 
 if ($IsInstalled) {
     Write-Host "Found existing PostgreSQL installation at $PgBinDir."
     $env:PGPASSWORD = $PG_PASSWORD
     & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
-    
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Default password did not work for 'postgres' user."
-        $PG_PASSWORD = Read-Host "Please enter the actual password for the 'postgres' user"
-        $env:PGPASSWORD = $PG_PASSWORD
-        
-        & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to connect to PostgreSQL with the provided password!"
-        }
+        Write-Warning "Default password did not work for 'postgres' user. We will try to continue, but DB setup might fail."
+        $SkipDbConfig = $true
+    } else {
+        Write-Host "Successfully connected to PostgreSQL."
+        $SkipDbConfig = $false
     }
-    Write-Host "Successfully connected to PostgreSQL."
 } else {
     $PostgresInstallerUrl = "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
     $InstallerPath = "$env:TEMP\postgresql-installer.exe"
@@ -68,27 +89,39 @@ if ($IsInstalled) {
     Start-Sleep -Seconds 10
 }
 
-Write-Host "Configuring database..."
-$CreateDbSql = @"
-CREATE USER $PG_USER WITH PASSWORD '$PG_PASSWORD';
-CREATE DATABASE $PG_DB OWNER $PG_USER;
+if (-not $SkipDbConfig) {
+    Write-Host "Configuring database..."
+    $CreateDbSql = @"
+    DO `$do` BEGIN
+      IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$PG_USER') THEN
+        CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';
+      END IF;
+    END `$do`;
 "@
-$CreateDbSql | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
-
-Write-Host "Applying database migrations..."
-$MigrationFile = "$InstallDir\data\migrations\schema.sql"
-if (Test-Path $MigrationFile) {
-    & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $MigrationFile
+    $CreateDbSql | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    
+    $DbExists = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'"
+    if ($DbExists -ne "1") {
+        "CREATE DATABASE $PG_DB OWNER $PG_USER;" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    }
+    
+    Write-Host "Applying database migrations..."
+    $MigrationFile = "$InstallDir\data\migrations\schema.sql"
+    if (Test-Path $MigrationFile) {
+        & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $MigrationFile
+    } else {
+        Write-Host "WARNING: Migration file not found at $MigrationFile"
+    }
+    
+    Write-Host "Applying database seed..."
+    $SeedFile = "$InstallDir\data\migrations\seed.sql"
+    if (Test-Path $SeedFile) {
+        & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $SeedFile
+    } else {
+        Write-Host "WARNING: Seed file not found at $SeedFile"
+    }
 } else {
-    Write-Host "WARNING: Migration file not found at $MigrationFile"
-}
-
-Write-Host "Applying database seed..."
-$SeedFile = "$InstallDir\data\migrations\seed.sql"
-if (Test-Path $SeedFile) {
-    & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $SeedFile
-} else {
-    Write-Host "WARNING: Seed file not found at $SeedFile"
+    Write-Warning "Skipped database and table creation because PostgreSQL connection failed."
 }
 
 Write-Host "Creating .env file..."
