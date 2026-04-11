@@ -11,7 +11,15 @@ $PG_SERVICE_NAME = "PostgreSQL"
 $PG_PORT = 5432
 
 $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
-$IsInstalled = Test-Path "$PgBinDir\psql.exe"
+if (Test-Path "C:\Program Files\PostgreSQL\16\bin\psql.exe") {
+    $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
+    $IsInstalled = $true
+} elseif (Test-Path "C:\Program Files\PostgreSQL\bin\psql.exe") {
+    $PgBinDir = "C:\Program Files\PostgreSQL\bin"
+    $IsInstalled = $true
+} else {
+    $IsInstalled = $false
+}
 
 if ($IsInstalled) {
     Write-Host "Found existing PostgreSQL installation at $PgBinDir."
