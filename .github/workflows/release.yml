@@ -24,6 +24,7 @@ jobs:
           mingw-w64-ucrt-x86_64-qt5-tools   
           mingw-w64-ucrt-x86_64-qt5-declarative
           mingw-w64-ucrt-x86_64-ninja
+          mingw-w64-ucrt-x86_64-nsis
 
     - name: Configure CMake
       shell: msys2 {0}
