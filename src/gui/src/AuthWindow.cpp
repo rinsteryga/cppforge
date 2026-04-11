@@ -11,6 +11,8 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QScreen>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QStyleOption>
 #include <QTimer>
 
@@ -220,10 +222,21 @@ void AuthWindow::onLoginClicked()
 {
     if (authManager_ && authManager_->login(usernameInput_->text(), passwordInput_->text()))
     {
+        int userId = -1;
+        QSqlQuery query;
+        query.prepare("SELECT id FROM users WHERE username = :username");
+        query.bindValue(":username", usernameInput_->text());
+
+        if (query.exec() && query.next())
+        {
+            userId = query.value(0).toInt();
+        }
+
         if (transitionAnimation_)
             transitionAnimation_->stop();
+
         this->hide();
-        emit switchToMainMenu(usernameInput_->text());
+        emit switchToMainMenu(usernameInput_->text(), userId);
     }
     else
     {
