@@ -39,7 +39,9 @@ jobs:
     - name: Deploy Qt
       shell: msys2 {0}
       run: |
-        /ucrt64/bin/windeployqt.exe build/cppforge.exe
+        which windeployqt || echo "NOT FOUND"
+        find / -name "windeployqt.exe" 2>/dev/null || true
+        windeployqt.exe $(find build -name "cppforge.exe")
 
     - name: Package (CPack)
       shell: msys2 {0}
