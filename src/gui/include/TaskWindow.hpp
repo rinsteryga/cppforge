@@ -13,11 +13,12 @@
 #include <QStackedWidget>
 #include <QTextEdit>
 #include <QWidget>
+#include <QtSql/QSqlError>
+#include <QtSql/QSqlQuery>
 
 #include <memory>
 
 class QFrame;
-class QListWidget;
 
 class TaskWindow : public QWidget
 {
@@ -27,13 +28,17 @@ public:
     explicit TaskWindow(QWidget *parent = nullptr);
     ~TaskWindow();
 
-    void loadModule(int moduleId);
+    void setUserId(int64_t id);
+
+    void loadModule(int lessonId);
+
     void setTask(const cppforge::entities::CodingTask &task);
+
     void fadeIn();
     void fadeOut();
 
 signals:
-    void moduleProgressUpdated(int moduleId, int progress);
+    void moduleProgressUpdated(int id, int progress);
     void windowClosed();
 
 protected:
@@ -41,42 +46,42 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
+private slots:
+    void onRunClicked();
+    void onSubmitClicked();
+    void onNextTask();
+    void onPrevTask();
+
 private:
     void setupUI();
     void setupStyles();
     void centerWindow();
 
-    void toggleNavMenu(bool open);
-
-    void onRunClicked();
-    void onSubmitClicked();
-
-    void onNextTask();
-    void onPrevTask();
+    int getModuleProgress(int moduleId);
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
 
-    QWidget *leftSidebar_{nullptr};
     QStackedWidget *contentStack_{nullptr};
-
-    std::unique_ptr<QPropertyAnimation> navAnimation_;
-    QFrame *navPanel_{nullptr};
-    QListWidget *lessonList_{nullptr};
 
     QTextEdit *codeEditor_{nullptr};
     QTextEdit *testOutput_{nullptr};
-
     QTextEdit *practiceEdit_{nullptr};
     QTextEdit *theoryEdit_{nullptr};
 
     QPushButton *btnNext_{nullptr};
     QPushButton *btnPrev_{nullptr};
     QPushButton *btnBack_{nullptr};
+    QPushButton *btnSubmit_{nullptr};
+    QPushButton *btnRun_{nullptr};
 
     std::unique_ptr<cppforge::services::CodeRunner> runner_;
     std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
+
     cppforge::entities::CodingTask currentTask_;
 
+    int currentUserId_{1};
     int currentModuleId_{-1};
+    int currentModuleParentId_{-1};
+    bool hasCodingTask_{false};
 };

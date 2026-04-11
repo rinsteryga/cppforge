@@ -22,6 +22,7 @@ CREATE TABLE users (
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL,
     avatar_path TEXT,
     bio TEXT,
     current_streak_days INT DEFAULT 0,

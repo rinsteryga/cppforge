@@ -50,9 +50,10 @@ int main(int argc, char *argv[])
     MainWindow mainWindow;
 
     QObject::connect(&authWindow, &AuthWindow::switchToMainMenu,
-                     [&](const QString &username)
+                     [&](const QString &username, int userId)
                      {
                          mainWindow.setCurrentUser(username);
+                         mainWindow.setUserId(userId); 
 
                          QScreen *screen = QGuiApplication::primaryScreen();
                          if (screen)

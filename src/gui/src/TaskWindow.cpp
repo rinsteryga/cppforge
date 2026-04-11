@@ -3,6 +3,7 @@
 #include "../include/CppHighlighter.hpp"
 #include "../include/CustomTitleBar.hpp"
 
+#include <QDebug>
 #include <QFrame>
 #include <QFutureWatcher>
 #include <QGuiApplication>
@@ -71,108 +72,137 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
 void TaskWindow::loadModule(int lessonId)
 {
     currentModuleId_ = lessonId;
-    qDebug() << "TaskWindow: Начало загрузки урока ID:" << lessonId;
 
-    testOutput_->clear();
+    if (testOutput_)
+        testOutput_->clear();
+
+    if (btnSubmit_)
+    {
+        btnSubmit_->setEnabled(true);
+        btnSubmit_->setText("Submit");
+        btnSubmit_->setStyleSheet("");
+    }
 
     QSqlQuery query;
     query.prepare(R"(
         SELECT 
             l.title, 
             l.content, 
-            t.id, 
+            l.module_id,
+            t.id AS task_id, 
             t.description, 
             t.initial_code, 
             t.whitelist, 
-            t.blacklist, 
-            t.time_limit, 
-            t.memory_limit 
+            t.blacklist,
+            (SELECT is_completed FROM user_progress WHERE user_id = :uid AND lesson_id = l.id) as is_done
         FROM lessons l 
         LEFT JOIN coding_tasks t ON l.id = t.lesson_id 
         WHERE l.id = :lessonId
     )");
     query.bindValue(":lessonId", lessonId);
+    query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
 
-    if (!query.exec())
-    {
-        qDebug() << "КРИТИЧЕСКАЯ ОШИБКА SQL:" << query.lastError().text();
+    if (!query.exec() || !query.next())
         return;
+
+    QString title = query.value("title").toString();
+    QString theory = query.value("content").toString();
+    bool isCompleted = query.value("is_done").toBool();
+    currentModuleParentId_ = query.value("module_id").toInt();
+
+    customTitleBar_->setTitle(title);
+    if (theoryEdit_)
+    {
+        theoryEdit_->setPlainText(theory);
+        applyTextFormatting(theoryEdit_);
     }
 
-    if (query.next())
+    QVariant taskIdVar = query.value("task_id");
+
+    if (!taskIdVar.isNull())
     {
-        QString title = query.value("title").toString();
-        QString theory = query.value("content").toString();
+        hasCodingTask_ = true;
+        uint64_t taskId = taskIdVar.toULongLong();
+        QString practiceDesc = query.value("description").toString();
+        QString initCode = query.value("initial_code").toString();
 
-        customTitleBar_->setTitle(title);
-
-        if (theoryEdit_)
+        if (btnRun_)
+            btnRun_->setVisible(true);
+        if (practiceEdit_)
         {
-            theoryEdit_->setPlainText(theory);
-            applyTextFormatting(theoryEdit_);
+            practiceEdit_->setPlainText(practiceDesc);
+            applyTextFormatting(practiceEdit_);
         }
 
-        QVariant taskIdVar = query.value("id");
+        QSqlQuery loadSubQuery;
+        loadSubQuery.prepare("SELECT source_code FROM submissions WHERE user_id = :uid AND coding_task_id = :tid ORDER "
+                             "BY submitted_at DESC LIMIT 1");
+        loadSubQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+        loadSubQuery.bindValue(":tid", static_cast<qulonglong>(taskId));
 
-        if (!taskIdVar.isNull())
+        if (loadSubQuery.exec() && loadSubQuery.next())
         {
-            uint64_t taskId = taskIdVar.toULongLong();
-            QString practiceDesc = query.value("description").toString();
-            QString initCode = query.value("initial_code").toString();
-            int tLimit = query.value("time_limit").isValid() ? query.value("time_limit").toInt() : 1000;
-            int mLimit = query.value("memory_limit").isValid() ? query.value("memory_limit").toInt() : 256;
-
-            auto parseTags = [](const QString &str) -> std::optional<std::set<QString>>
-            {
-                if (str.trimmed().isEmpty())
-                    return std::nullopt;
-                std::set<QString> resultSet;
-                QStringList list = str.split(',', Qt::SkipEmptyParts);
-                for (const QString &item : list)
-                    resultSet.insert(item.trimmed());
-                return resultSet;
-            };
-
-            std::optional<std::set<QString>> whitelist = parseTags(query.value("whitelist").toString());
-            std::optional<std::set<QString>> blacklist = parseTags(query.value("blacklist").toString());
-
-            std::set<cppforge::entities::TestCase> testCases;
-            QSqlQuery testQuery;
-            testQuery.prepare(
-                "SELECT id, input, expected_output, is_public FROM test_cases WHERE coding_task_id = :tid");
-            testQuery.bindValue(":tid", static_cast<qulonglong>(taskId));
-
-            if (testQuery.exec())
-            {
-                while (testQuery.next())
-                {
-                    testCases.emplace(testQuery.value("id").toULongLong(), testQuery.value("input").toString(),
-                                      testQuery.value("expected_output").toString(),
-                                      testQuery.value("is_public").toBool());
-                }
-            }
-
-            currentTask_ = cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc,
-                                                          initCode, testCases, tLimit, mLimit, whitelist, blacklist);
-
-            if (practiceEdit_)
-            {
-                practiceEdit_->setPlainText(practiceDesc);
-                applyTextFormatting(practiceEdit_);
-            }
-            codeEditor_->setPlainText(initCode);
-            codeEditor_->setReadOnly(false);
+            codeEditor_->setPlainText(loadSubQuery.value(0).toString());
         }
         else
         {
-            if (practiceEdit_)
+            codeEditor_->setPlainText(initCode);
+        }
+
+        if (isCompleted && testOutput_)
+        {
+            testOutput_->append(
+                "<span style='color:#27ae60; font-weight:bold;'>[Статус] Это задание уже было выполнено верно.</span>");
+            if (btnSubmit_)
+                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+        }
+
+        codeEditor_->setReadOnly(false);
+
+        std::set<cppforge::entities::TestCase> testCases;
+        QSqlQuery testQuery;
+        testQuery.prepare("SELECT id, input, expected_output, is_public FROM test_cases WHERE coding_task_id = :tid");
+        testQuery.bindValue(":tid", static_cast<qulonglong>(taskId));
+        if (testQuery.exec())
+        {
+            while (testQuery.next())
             {
-                practiceEdit_->setPlainText("Для этого модуля практических заданий не предусмотрено.");
-                applyTextFormatting(practiceEdit_);
+                testCases.emplace(testQuery.value("id").toULongLong(), testQuery.value("input").toString(),
+                                  testQuery.value("expected_output").toString(), testQuery.value("is_public").toBool());
             }
-            codeEditor_->setPlainText("// В этом уроке только теоретический материал.");
-            codeEditor_->setReadOnly(true);
-            currentTask_ = cppforge::entities::CodingTask();
+        }
+        currentTask_ = cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc,
+                                                      initCode, testCases, 1000, 256, std::nullopt, std::nullopt);
+    }
+    else
+    {
+        hasCodingTask_ = false;
+        if (practiceEdit_)
+        {
+            practiceEdit_->setPlainText("Для этого модуля практических заданий не предусмотрено.");
+            applyTextFormatting(practiceEdit_);
+        }
+        codeEditor_->setPlainText("// Только теоретический материал.");
+        codeEditor_->setReadOnly(true);
+        if (btnRun_)
+            btnRun_->setVisible(false);
+
+        if (btnSubmit_)
+        {
+            btnSubmit_->setText("Изучено");
+            if (isCompleted)
+            {
+                if (testOutput_)
+                    testOutput_->append(
+                        "<span style='color:#27ae60; font-weight:bold;'>[Статус] Теория изучена.</span>");
+                btnSubmit_->setEnabled(true);
+                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+            }
+            else
+            {
+                btnSubmit_->setEnabled(false);
+                btnSubmit_->setStyleSheet("background-color: #f0f0f0; color: #888;");
+            }
         }
     }
 }
@@ -187,9 +217,7 @@ void TaskWindow::onNextTask()
     )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
-    {
         loadModule(query.value(0).toInt());
-    }
 }
 
 void TaskWindow::onPrevTask()
@@ -202,15 +230,12 @@ void TaskWindow::onPrevTask()
     )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
-    {
         loadModule(query.value(0).toInt());
-    }
 }
 
 void TaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setAttribute(Qt::WA_TranslucentBackground, false);
     setFixedSize(1300, 900);
     setObjectName("TaskWindow");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
@@ -220,8 +245,8 @@ void TaskWindow::setupUI()
     rootLayout->setSpacing(0);
 
     customTitleBar_ = std::make_unique<CustomTitleBar>(this);
+    customTitleBar_->setIcon(QIcon(":/icons/main_logo.ico"));
     customTitleBar_->setTitle("Задание");
-    customTitleBar_->setIcon(windowIcon());
     rootLayout->addWidget(customTitleBar_.get());
 
     QFrame *line = new QFrame();
@@ -263,7 +288,7 @@ void TaskWindow::setupUI()
     theoryEdit_->setReadOnly(true);
     theoryEdit_->setFrameStyle(QFrame::NoFrame);
     theoryEdit_->setFont(QFont("Roboto", 13));
-    theoryEdit_->setStyleSheet("padding: 25px; line-height: 1.6;");
+    theoryEdit_->setStyleSheet("padding: 25px;");
     theoryEdit_->installEventFilter(this);
 
     practiceEdit_ = new QTextEdit();
@@ -283,10 +308,7 @@ void TaskWindow::setupUI()
     btnBack_ = new QPushButton("←");
     btnBack_->setFixedSize(55, 55);
     btnBack_->setObjectName("backButton");
-    btnBack_->setFont(QFont("Roboto", 18, QFont::Bold));
     footerLeft->addWidget(btnBack_);
-
-    footerLeft->addSpacing(15);
 
     btnPrev_ = new QPushButton("Назад");
     btnNext_ = new QPushButton("Вперед");
@@ -295,13 +317,8 @@ void TaskWindow::setupUI()
     btnPrev_->setFixedSize(130, 55);
     btnNext_->setFixedSize(130, 55);
 
-    QFont navFont("Roboto", 12, QFont::Bold);
-    btnPrev_->setFont(navFont);
-    btnNext_->setFont(navFont);
-
     footerLeft->addWidget(btnPrev_);
     footerLeft->addWidget(btnNext_);
-
     footerLeft->addStretch();
     leftLayout->addLayout(footerLeft);
 
@@ -314,43 +331,34 @@ void TaskWindow::setupUI()
     codeFrame->setObjectName("editorFrame");
     auto codeLayout = new QVBoxLayout(codeFrame);
 
-    auto codeLabel = new QLabel("<\\> Code Editor");
-    codeLabel->setFont(QFont("Roboto", 12, QFont::Bold));
-    codeLayout->addWidget(codeLabel);
+    codeLayout->addWidget(new QLabel("<\\> Code Editor"));
 
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
+    codeEditor_->setFont(QFont("Consolas", 13));
     codeEditor_->installEventFilter(this);
-
-    QFont codeFont("Consolas", 13);
-    codeEditor_->setFont(codeFont);
-    QFontMetrics metrics(codeFont);
-    codeEditor_->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
-
     codeLayout->addWidget(codeEditor_);
 
     auto codeActions = new QHBoxLayout();
-    auto btnRun = new QPushButton("Run");
-    auto btnSubmit = new QPushButton("Submit");
-    btnRun->setObjectName("runButton");
-    btnSubmit->setObjectName("submitButton");
-    btnRun->setFixedSize(120, 50);
-    btnSubmit->setFixedSize(120, 50);
-    btnRun->setFont(navFont);
-    btnSubmit->setFont(navFont);
+
+    btnRun_ = new QPushButton("Run");
+    btnSubmit_ = new QPushButton("Submit");
+
+    btnRun_->setObjectName("runButton");
+    btnSubmit_->setObjectName("submitButton");
+    btnRun_->setFixedSize(120, 50);
+    btnSubmit_->setFixedSize(120, 50);
 
     codeActions->addStretch();
-    codeActions->addWidget(btnRun);
-    codeActions->addWidget(btnSubmit);
+    codeActions->addWidget(btnRun_);
+    codeActions->addWidget(btnSubmit_);
     codeLayout->addLayout(codeActions);
 
     auto testFrame = new QFrame();
     testFrame->setObjectName("testFrame");
     auto testLayout = new QVBoxLayout(testFrame);
-    auto testLabel = new QLabel("✧ Test Result");
-    testLabel->setFont(QFont("Roboto", 12, QFont::Bold));
-    testLayout->addWidget(testLabel);
+    testLayout->addWidget(new QLabel("✧ Test Result"));
 
     testOutput_ = new QTextEdit();
     testOutput_->setReadOnly(true);
@@ -383,28 +391,24 @@ void TaskWindow::setupUI()
                 btnPractice->setChecked(true);
                 btnTheory->setChecked(false);
             });
-
     connect(btnBack_, &QPushButton::clicked, this, &TaskWindow::fadeOut);
     connect(btnNext_, &QPushButton::clicked, this, &TaskWindow::onNextTask);
     connect(btnPrev_, &QPushButton::clicked, this, &TaskWindow::onPrevTask);
-    connect(btnRun, &QPushButton::clicked, this, &TaskWindow::onRunClicked);
-    connect(btnSubmit, &QPushButton::clicked, this, &TaskWindow::onSubmitClicked);
+    connect(btnRun_, &QPushButton::clicked, this, &TaskWindow::onRunClicked);
+    connect(btnSubmit_, &QPushButton::clicked, this, &TaskWindow::onSubmitClicked);
 
     setupStyles();
 }
 
 void TaskWindow::onRunClicked()
 {
+    if (currentTask_.getId() == 0 || !testOutput_)
+        return;
+
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
+    testOutput_->append("Анализ...");
 
-    if (currentTask_.getId() == 0)
-    {
-        testOutput_->append("<span style='color:orange;'>Это теоретический модуль. Практика недоступна.</span>");
-        return;
-    }
-
-    testOutput_->append("Анализ безопасности...");
     auto violation = analyzer_->analyze(currentTask_, code);
     if (violation.has_value())
     {
@@ -412,7 +416,7 @@ void TaskWindow::onRunClicked()
         return;
     }
 
-    testOutput_->append("Компиляция...");
+    testOutput_->append("Запуск...");
     std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
                                                          currentTask_.getTestCases().end());
 
@@ -421,16 +425,16 @@ void TaskWindow::onRunClicked()
             [this, watcher]()
             {
                 auto result = watcher->result();
-                if (result.isSuccess())
+                if (testOutput_)
                 {
-                    testOutput_->append("<span style='color:green; font-weight:bold;'>[OK] Все тесты пройдены!</span>");
-                    testOutput_->append("Вывод:\n" + result.getOutput());
-                }
-                else
-                {
-                    testOutput_->append("<span style='color:red; font-weight:bold;'>[FAIL] Ошибка выполнения.</span>");
-                    if (!result.getErrors().isEmpty())
-                        testOutput_->append("<pre style='color:#ff4444;'>" + result.getErrors() + "</pre>");
+                    if (result.isSuccess())
+                    {
+                        testOutput_->append("<span style='color:green; font-weight:bold;'>[OK] Успешно!</span>");
+                    }
+                    else
+                    {
+                        testOutput_->append("<span style='color:red;'>[FAIL] " + result.getErrors() + "</span>");
+                    }
                 }
                 watcher->deleteLater();
             });
@@ -440,7 +444,117 @@ void TaskWindow::onRunClicked()
 
 void TaskWindow::onSubmitClicked()
 {
-    onRunClicked();
+    if (currentUserId_ <= 0)
+    {
+        if (testOutput_)
+        {
+            testOutput_->append(
+                "<span style='color:red;'>[Error] Не удалось сохранить прогресс: пользователь не авторизован.</span>");
+        }
+        return;
+    }
+
+    if (!testOutput_)
+        return;
+
+    auto saveProgress = [this](bool isPractice, const QString &code = "", bool success = false)
+    {
+        QSqlQuery query;
+        query.prepare(R"(
+            INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
+            VALUES (:uid, :mid, :lid, :status, NOW()) 
+            ON CONFLICT (user_id, lesson_id) 
+            DO UPDATE SET 
+                is_completed = EXCLUDED.is_completed, 
+                updated_at = NOW()
+        )");
+        query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+        query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
+        query.bindValue(":lid", static_cast<qlonglong>(currentModuleId_));
+        query.bindValue(":status", !isPractice || success);
+
+        if (query.exec())
+        {
+            if (isPractice && !code.isEmpty())
+            {
+                QSqlQuery subQuery;
+                subQuery.prepare(R"(
+                    INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
+                    VALUES (:uid, :mid, :tid, :code, :success, NOW())
+                )");
+                subQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+                subQuery.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
+                subQuery.bindValue(":tid", static_cast<qlonglong>(currentTask_.getId()));
+                subQuery.bindValue(":code", code);
+                subQuery.bindValue(":success", success);
+                subQuery.exec();
+            }
+
+            if (!isPractice || success)
+            {
+                if (btnSubmit_)
+                {
+                    btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+                }
+
+                int totalProgress = getModuleProgress(currentModuleParentId_);
+                emit moduleProgressUpdated(currentModuleParentId_, totalProgress);
+            }
+        }
+        else
+        {
+            qDebug() << "SQL Error in saveProgress:" << query.lastError().text();
+        }
+    };
+
+    if (!hasCodingTask_)
+    {
+        testOutput_->clear();
+        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>[Успех] Теория изучена!</span>");
+        saveProgress(false);
+    }
+    else
+    {
+        QString code = codeEditor_->toPlainText();
+        testOutput_->clear();
+        testOutput_->append("Проверка решения...");
+
+        auto violation = analyzer_->analyze(currentTask_, code);
+        if (violation.has_value())
+        {
+            testOutput_->append("<span style='color:#e74c3c;'>[Ошибка анализа] " + violation.value() + "</span>");
+            saveProgress(true, code, false);
+            return;
+        }
+
+        std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
+                                                             currentTask_.getTestCases().end());
+        auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
+
+        connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
+                [this, watcher, code, saveProgress]()
+                {
+                    auto result = watcher->result();
+                    if (testOutput_)
+                    {
+                        if (result.isSuccess())
+                        {
+                            testOutput_->append(
+                                "<span style='color:#27ae60; font-weight:bold;'>[Успех] Все тесты пройдены!</span>");
+                            saveProgress(true, code, true);
+                        }
+                        else
+                        {
+                            testOutput_->append("<span style='color:#e74c3c;'>[Ошибка] Тесты не пройдены:</span>");
+                            testOutput_->append("<pre>" + result.getErrors() + "</pre>");
+                            saveProgress(true, code, false);
+                        }
+                    }
+                    watcher->deleteLater();
+                });
+
+        watcher->setFuture(runner_->runAsync(code, testVector));
+    }
 }
 
 void TaskWindow::paintEvent(QPaintEvent *event)
@@ -465,38 +579,53 @@ void TaskWindow::centerWindow()
 bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 {
     QTextEdit *editor = qobject_cast<QTextEdit *>(obj);
-    if (editor)
+    if (!editor)
+        return QWidget::eventFilter(obj, event);
+
+    if (obj == theoryEdit_ && !hasCodingTask_ && btnSubmit_ && !btnSubmit_->isEnabled())
     {
-        if (event->type() == QEvent::Wheel)
+        if (event->type() == QEvent::Wheel || event->type() == QEvent::KeyPress)
         {
-            auto *wheelEvent = static_cast<QWheelEvent *>(event);
-            if (wheelEvent->modifiers() & Qt::ControlModifier)
+            QScrollBar *vBar = theoryEdit_->verticalScrollBar();
+            if (vBar->value() >= vBar->maximum() - 20)
             {
-                if (wheelEvent->angleDelta().y() > 0)
-                    editor->zoomIn(1);
-                else
-                    editor->zoomOut(1);
-                return true;
-            }
-        }
-        else if (event->type() == QEvent::KeyPress)
-        {
-            auto *keyEvent = static_cast<QKeyEvent *>(event);
-            if (keyEvent->modifiers() & Qt::ControlModifier)
-            {
-                if (keyEvent->key() == Qt::Key_Plus || keyEvent->key() == Qt::Key_Equal)
-                {
-                    editor->zoomIn(1);
-                    return true;
-                }
-                if (keyEvent->key() == Qt::Key_Minus)
-                {
-                    editor->zoomOut(1);
-                    return true;
-                }
+                btnSubmit_->setEnabled(true);
+                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
             }
         }
     }
+
+    if (event->type() == QEvent::Wheel)
+    {
+        auto *wheelEvent = static_cast<QWheelEvent *>(event);
+        if (QGuiApplication::keyboardModifiers() & Qt::ControlModifier)
+        {
+            if (wheelEvent->angleDelta().y() > 0)
+                editor->zoomIn(1);
+            else
+                editor->zoomOut(1);
+            return true;
+        }
+    }
+
+    if (event->type() == QEvent::KeyPress)
+    {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->modifiers() & Qt::ControlModifier)
+        {
+            if (keyEvent->key() == Qt::Key_Plus || keyEvent->key() == Qt::Key_Equal)
+            {
+                editor->zoomIn(1);
+                return true;
+            }
+            else if (keyEvent->key() == Qt::Key_Minus)
+            {
+                editor->zoomOut(1);
+                return true;
+            }
+        }
+    }
+
     return QWidget::eventFilter(obj, event);
 }
 
@@ -513,46 +642,30 @@ void TaskWindow::setupStyles()
             border-radius: 8px; font-weight: bold; border: 1px solid #ccc; 
         }
         QPushButton#runButton, QPushButton#navButton { background-color: #f0f0f0; }
-        QPushButton#runButton:hover { background-color: #e5e5e5; }
         QPushButton#submitButton { background-color: #b8e2c8; border: none; color: #2d5a3d; }
-        QPushButton#submitButton:hover { background-color: #a4cfb5; }
         QPushButton#backButton { background-color: #e0e0e0; border-radius: 8px; border: none; color: #444; }
-        QPushButton#backButton:hover { background-color: #d5d5d5; }
     )");
 }
 
 void TaskWindow::fadeIn()
 {
-    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
-        transitionAnimation_->stop();
-
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
     transitionAnimation_->setStartValue(0.0);
     transitionAnimation_->setEndValue(1.0);
-    transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
     transitionAnimation_->start();
 }
 
 void TaskWindow::fadeOut()
 {
-    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
-        transitionAnimation_->stop();
-
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(250);
     transitionAnimation_->setStartValue(1.0);
     transitionAnimation_->setEndValue(0.0);
-    transitionAnimation_->setEasingCurve(QEasingCurve::InOutCubic);
-
     connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
             [this]()
             {
                 this->hide();
-                if (parentWidget())
-                {
-                    parentWidget()->show();
-                }
                 emit windowClosed();
             });
     transitionAnimation_->start();
@@ -562,4 +675,48 @@ void TaskWindow::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
     fadeIn();
+}
+
+void TaskWindow::setUserId(int64_t id)
+{
+    if (id <= 0)
+    {
+        qWarning() << "Warning: TaskWindow received invalid User ID:" << id;
+    }
+    else
+    {
+        qDebug() << "TaskWindow: User ID set to" << id;
+    }
+    currentUserId_ = id;
+}
+
+int TaskWindow::getModuleProgress(int moduleId)
+{
+    if (moduleId <= 0)
+        return 0;
+
+    QSqlQuery query;
+    query.prepare(R"(
+        SELECT 
+            (SELECT COUNT(*) FROM lessons WHERE module_id = :mid) as total,
+            (SELECT COUNT(*) FROM user_progress 
+             WHERE module_id = :mid AND user_id = :uid AND is_completed = true) as completed
+    )");
+    query.bindValue(":mid", moduleId);
+    query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+
+    if (query.exec() && query.next())
+    {
+        int total = query.value("total").toInt();
+        int completed = query.value("completed").toInt();
+
+        if (total <= 0)
+            return 0;
+
+        int progress = static_cast<int>((static_cast<double>(completed) / total) * 100.0);
+        return std::clamp(progress, 0, 100);
+    }
+
+    qDebug() << "Progress SQL Error:" << query.lastError().text();
+    return 0;
 }

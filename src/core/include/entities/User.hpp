@@ -29,9 +29,10 @@ namespace cppforge::entities
          * @param username The display name of the user.
          * @param email The registered email address for login and contact.
          * @param passwordHash The securely hashed password snippet.
+         * @param salt The salt used for password hashing.
          * @param createdAt The exact timestamp of account creation.
          */
-        User(uint64_t userId, QString username, QString email, QString passwordHash,
+        User(uint64_t userId, QString username, QString email, QString passwordHash, QString salt,
              const std::chrono::system_clock::time_point &createdAt);
 
         /**
@@ -41,8 +42,9 @@ namespace cppforge::entities
          * @param username The display name of the user.
          * @param email The registered email address.
          * @param passwordHash The securely hashed password snippet.
+         * @param salt The salt used for password hashing.
          */
-        User(uint64_t userId, QString username, QString email, QString passwordHash);
+        User(uint64_t userId, QString username, QString email, QString passwordHash, QString salt);
 
         /**
          * @brief Retrieves the user's central unique identifier.
@@ -67,6 +69,12 @@ namespace cppforge::entities
          * @return A constant reference to the password hash string.
          */
         const QString &getPasswordHash() const;
+
+        /**
+         * @brief Retrieves the user's salt.
+         * @return A constant reference to the salt string.
+         */
+        const QString &getSalt() const;
 
         /**
          * @brief Retrieves the relative or absolute path to the user's graphical avatar.
@@ -204,7 +212,7 @@ namespace cppforge::entities
         QString username_;
         QString email_;
         QString passwordHash_;
-
+        QString salt_;
         QString avatarPath_;
         QString bio_;
         uint32_t currentStreakDays_;

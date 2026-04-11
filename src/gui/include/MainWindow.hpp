@@ -1,11 +1,14 @@
 #pragma once
 
 #include "ProfilePage.hpp"
+#include "TaskWindow.hpp"
 
+#include <QList>
 #include <QPropertyAnimation>
 #include <QStackedWidget>
 #include <QString>
 #include <QWidget>
+#include <QtSql/QSqlQuery>
 
 #include <memory>
 #include <vector>
@@ -18,7 +21,6 @@ class QVBoxLayout;
 class QHBoxLayout;
 class QScrollArea;
 class CustomTitleBar;
-class TaskWindow;
 
 class MainWindow : public QWidget
 {
@@ -29,6 +31,7 @@ public:
     ~MainWindow();
 
     void setCurrentUser(const QString &username) { m_currentUsername = username; }
+    void setUserId(int id);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -58,16 +61,19 @@ private:
     void centerWindow();
     void animateToTaskWindow(int moduleId);
 
+    void loadAllModulesProgress();
+
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
     std::unique_ptr<QVBoxLayout> centerPanelLayout_;
     std::unique_ptr<TaskWindow> taskWindow_;
 
     std::unique_ptr<QStackedWidget> contentStack;
-    ProfilePage *profilePage;
-    QWidget *learningPage;
+    ProfilePage *profilePage{nullptr};
+    QWidget *learningPage{nullptr};
 
     QString m_currentUsername;
+    int m_currentUserId{-1};
 
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;
@@ -77,20 +83,19 @@ private:
     std::unique_ptr<QVBoxLayout> modulesLayout;
 
     std::vector<std::unique_ptr<QFrame>> moduleCards;
-
     QList<QLabel *> moduleProgressLabels;
     QList<QProgressBar *> moduleProgressBars;
     QList<QPushButton *> moduleButtons;
 
     std::unique_ptr<QHBoxLayout> footerLinksLayout;
 
-    QPushButton *aboutBtn;
-    QPushButton *contactsBtn;
-    QPushButton *privacyBtn;
-    QPushButton *learnBtn;
-    QPushButton *profileBtn;
-    QPushButton *ratingBtn;
+    QPushButton *aboutBtn{nullptr};
+    QPushButton *contactsBtn{nullptr};
+    QPushButton *privacyBtn{nullptr};
+    QPushButton *learnBtn{nullptr};
+    QPushButton *profileBtn{nullptr};
+    QPushButton *ratingBtn{nullptr};
 
-    bool isTransitioning_;
-    int pendingModuleId_;
+    bool isTransitioning_{false};
+    int pendingModuleId_{-1};
 };
