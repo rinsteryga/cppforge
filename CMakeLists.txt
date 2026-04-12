@@ -34,7 +34,7 @@ target_link_libraries(cppforge
 )
 
 set_target_properties(cppforge PROPERTIES
-    WIN32_EXECUTABLE ON
+    WIN32_EXECUTABLE OFF
     MACOSX_BUNDLE ON
 )
 
@@ -89,7 +89,12 @@ set(CPACK_PACKAGE_VENDOR "cppforge")
 set(CPACK_PACKAGE_VERSION "1.0.0")
 
 set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
-    ExecWait 'powershell.exe -ExecutionPolicy Bypass -File \\\"$INSTDIR/scripts/install_deps.ps1\\\" -InstallDir \\\"$INSTDIR\\\"'
+    ExecWait 'powershell.exe -ExecutionPolicy Bypass -File \\\"\$INSTDIR\\\\scripts\\\\install_deps.ps1\\\" -InstallDir \\\"\$INSTDIR\\\"'
+")
+
+set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+    Delete \\\"\$INSTDIR\\\\.env\\\"
+    Delete \\\"\$INSTDIR\\\\install_deps.log\\\"
 ")
 
 include(CPack)
