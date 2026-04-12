@@ -149,7 +149,10 @@ namespace cppforge
                     return false;
                 }
 
-                uint64_t newId = query.value("id").toULongLong();
+                if (query.next())
+                {
+                    uint64_t newId = query.value("id").toULongLong();
+                }
                 return true;
             }
 
