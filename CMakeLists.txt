@@ -57,31 +57,31 @@ install(CODE "
     endif()
 ")
 
-install(FILES 
+file(GLOB MSYS2_RUNTIME_DLLS
     "${MSYS2_BIN_DIR}/libpq.dll"
-    "${MSYS2_BIN_DIR}/libintl-8.dll"
-    "${MSYS2_BIN_DIR}/libiconv-2.dll"
-    "${MSYS2_BIN_DIR}/libssl-3-x64.dll"
-    "${MSYS2_BIN_DIR}/libcrypto-3-x64.dll"
-    "${MSYS2_BIN_DIR}/libicuuc77.dll"
-    "${MSYS2_BIN_DIR}/libicuin77.dll"
-    "${MSYS2_BIN_DIR}/libicudt77.dll"
+    "${MSYS2_BIN_DIR}/libintl-*.dll"
+    "${MSYS2_BIN_DIR}/libiconv-*.dll"
+    "${MSYS2_BIN_DIR}/libssl-*-x64.dll"
+    "${MSYS2_BIN_DIR}/libcrypto-*-x64.dll"
+    "${MSYS2_BIN_DIR}/libicuuc*.dll"
+    "${MSYS2_BIN_DIR}/libicuin*.dll"
+    "${MSYS2_BIN_DIR}/libicudt*.dll"
     "${MSYS2_BIN_DIR}/libdouble-conversion.dll"
-    "${MSYS2_BIN_DIR}/libpcre2-16-0.dll"
-    "${MSYS2_BIN_DIR}/libpcre2-8-0.dll"
-    "${MSYS2_BIN_DIR}/libfreetype-6.dll"
+    "${MSYS2_BIN_DIR}/libpcre2-16-*.dll"
+    "${MSYS2_BIN_DIR}/libpcre2-8-*.dll"
+    "${MSYS2_BIN_DIR}/libfreetype-*.dll"
     "${MSYS2_BIN_DIR}/libgraphite2.dll"
-    "${MSYS2_BIN_DIR}/libglib-2.0-0.dll"
+    "${MSYS2_BIN_DIR}/libglib-2.0-*.dll"
     "${MSYS2_BIN_DIR}/libzstd.dll"
     "${MSYS2_BIN_DIR}/libbrotlidec.dll"
     "${MSYS2_BIN_DIR}/libbrotlicommon.dll"
-    "${MSYS2_BIN_DIR}/libbz2-1.dll"
-    "${MSYS2_BIN_DIR}/libpng16-16.dll"
+    "${MSYS2_BIN_DIR}/libbz2-*.dll"
+    "${MSYS2_BIN_DIR}/libpng*.dll"
     "${MSYS2_BIN_DIR}/libmd4c.dll"
-    "${MSYS2_BIN_DIR}/libharfbuzz-0.dll"
-    "${MSYS2_BIN_DIR}/zlib1.dll"
-    DESTINATION bin
+    "${MSYS2_BIN_DIR}/libharfbuzz-*.dll"
+    "${MSYS2_BIN_DIR}/zlib*.dll"
 )
+install(FILES ${MSYS2_RUNTIME_DLLS} DESTINATION bin)
 
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_NAME "cppforge")
