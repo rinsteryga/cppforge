@@ -3,7 +3,9 @@
 namespace cppforge::entities
 {
     UserProgress::UserProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted)
-        : userId_(userId), moduleId_(moduleId), lessonId_(lessonId), isCompleted_(isCompleted) {}
+        : userId_(userId), moduleId_(moduleId), lessonId_(lessonId), isCompleted_(isCompleted)
+    {
+    }
 
     uint64_t UserProgress::getUserId() const
     {
@@ -29,4 +31,4 @@ namespace cppforge::entities
     {
         isCompleted_ = completed;
     }
-}
+} // namespace cppforge::entities

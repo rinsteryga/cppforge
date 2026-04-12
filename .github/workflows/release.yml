@@ -1,0 +1,59 @@
+name: Release (Windows)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup MSYS2 (Windows)
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        cache: false
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-qt5-base
+          mingw-w64-ucrt-x86_64-qt5-tools   
+          mingw-w64-ucrt-x86_64-qt5-declarative
+          mingw-w64-ucrt-x86_64-ninja
+          mingw-w64-ucrt-x86_64-nsis
+          mingw-w64-ucrt-x86_64-postgresql
+          
+    - name: Configure CMake
+      shell: msys2 {0}
+      run: |          
+        cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_PREFIX_PATH=/ucrt64 \
+        -DCMAKE_CXX_COMPILER="$(cygpath -m /ucrt64/bin/g++.exe)" \
+        -DCMAKE_C_COMPILER="$(cygpath -m /ucrt64/bin/gcc.exe)"
+
+    - name: Build
+      shell: msys2 {0}
+      run: cmake --build build
+
+    - name: Package (CPack)
+      shell: msys2 {0}
+      run: cmake --build build --target package
+
+    - name: List files
+      run: dir build
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: build/cppforge-*.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,25 +1,37 @@
 #pragma once
 
+#include "../../core/include/services/AuthManager.hpp"
+#include "CustomTitleBar.hpp"
 #include "SignUpWindow.hpp"
 
-#include <QMainWindow>
-#include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPropertyAnimation>
 #include <QPushButton>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QVBoxLayout>
+#include <QWidget>
+
 #include <memory>
 
-
-class AuthWindow : public QMainWindow
+class AuthWindow : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit AuthWindow(QWidget *parent = nullptr);
+    explicit AuthWindow(std::shared_ptr<cppforge::services::AuthManager> authManager, QWidget *parent = nullptr);
+    ~AuthWindow();
+
+    void fadeIn();
+
+signals:
+    void loginSuccessful();
+    void switchToMainMenu(const QString &username, int userId);
 
 private:
     void setupUI();
+    void setupTitleBar();
     void setupLogo();
     void setupTitle();
     void setupInputFields();
@@ -32,25 +44,27 @@ private:
     void togglePasswordVisibility();
 
     void openSignUpWindow();
-    
     void onLoginClicked();
     void onCreateAccountClicked();
-    
-    std::unique_ptr<QWidget> centralWidget_;
-    
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
     std::unique_ptr<QLabel> iconLabel_;
     std::unique_ptr<QLabel> titleLabel_;
-    
+    std::unique_ptr<CustomTitleBar> customTitleBar_;
+
     std::unique_ptr<QLineEdit> usernameInput_;
     std::unique_ptr<QLineEdit> passwordInput_;
-    
+
     std::unique_ptr<QPushButton> loginButton_;
     std::unique_ptr<QPushButton> createAccountButton_;
     std::unique_ptr<QPushButton> passwordToggleButton_;
 
     std::unique_ptr<SignUpWindow> signUpWindow_;
-    
     std::unique_ptr<QVBoxLayout> mainLayout_;
-    
+
+    std::shared_ptr<cppforge::services::AuthManager> authManager_;
     bool passwordVisible_ = false;
+    std::unique_ptr<QPropertyAnimation> transitionAnimation_;
 };

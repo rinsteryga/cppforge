@@ -1,0 +1,43 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+
+BreakBeforeBraces: Allman
+
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+
+# Include Priorities:
+# 1. Project headers (e.g. "foo.hpp")
+# 2. Qt headers (<QString>, <QVector>)
+# 3. STL headers (<vector>, <string>)
+# 4. C System headers (<stdlib.h>)
+IncludeCategories:
+  - Regex:           '^<Q[A-Z].*'
+    Priority:        2
+    SortPriority:    2
+  - Regex:           '^<[^/.]*>'
+    Priority:        3
+    SortPriority:    3
+  - Regex:           '^<.*\.h>'
+    Priority:        4
+    SortPriority:    4
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    1
+
+PointerAlignment: Right
+SpaceBeforeParens: ControlStatements
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: All

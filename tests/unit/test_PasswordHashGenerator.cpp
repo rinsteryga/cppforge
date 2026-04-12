@@ -7,16 +7,17 @@ using namespace cppforge::utils::security;
 class TestPasswordHashGenerator : public QObject
 {
     Q_OBJECT
-    
+
 private:
     void test_GenerateAndVerify()
     {
         QString password = "cppforge_secret";
-        QString hash = PasswordHashGenerator::generate(password);
+        QString salt = PasswordHashGenerator::generateSalt();
+        QString hash = PasswordHashGenerator::generate(password, salt);
 
         QVERIFY(!hash.isEmpty());
-        QVERIFY(PasswordHashGenerator::verify(password, hash));
-        QVERIFY(!PasswordHashGenerator::verify("wrong_password", hash));
+        QVERIFY(PasswordHashGenerator::verify(password, hash, salt));
+        QVERIFY(!PasswordHashGenerator::verify("wrong_password", hash, salt));
     }
 };
 

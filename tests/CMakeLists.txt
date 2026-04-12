@@ -6,7 +6,7 @@ configure_file(
     COPYONLY
 )
 
-file(GLOB_RECURSE TEST_SOURCES
+file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/**/test_*.cpp"
 )
 
@@ -18,7 +18,10 @@ foreach(TEST_FILE ${TEST_SOURCES})
     target_link_libraries(${TEST_NAME}
         PRIVATE
             cppforge_core
+            cppforge_data
             Qt5::Test
+            Qt5::Sql
+            Qt5::Network
     )
 
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})

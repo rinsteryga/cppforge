@@ -2,6 +2,8 @@ build/
 */build/
 *.build/
 
+.cache/
+
 .env
 *.env
 !*.env.example
@@ -16,6 +18,7 @@ Makefile
 *.db
 
 .vscode/
+.antigravityrules
 .idea/
 
 *.log

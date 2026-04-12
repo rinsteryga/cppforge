@@ -1,29 +1,46 @@
 #include "../../include/entities/Achievement.hpp"
 
+#include <utility>
+
 namespace cppforge::entities
 {
-    Achievement::Achievement(int64_t id, const QString &name, const QString &description, const QString &iconPath,
+    Achievement::Achievement(int64_t achievementId, QString name, QString description, QString iconPath,
+                             ConditionType conditionType, uint32_t conditionValue,
                              const std::chrono::system_clock::time_point &dateEarned)
-        : id_(id), name_(name), description_(description), iconPath_(iconPath), dateEarned_(dateEarned) {}
+        : id_(achievementId), name_(std::move(name)), description_(std::move(description)),
+          iconPath_(std::move(iconPath)), conditionType_(conditionType), conditionValue_(conditionValue),
+          dateEarned_(dateEarned)
+    {
+    }
 
     uint64_t Achievement::getId() const
     {
         return id_;
     }
 
-    QString Achievement::getName() const
+    const QString &Achievement::getName() const
     {
         return name_;
     }
 
-    QString Achievement::getDescription() const
+    const QString &Achievement::getDescription() const
     {
         return description_;
     }
 
-    QString Achievement::getIconPath() const
+    const QString &Achievement::getIconPath() const
     {
         return iconPath_;
+    }
+
+    ConditionType Achievement::getConditionType() const
+    {
+        return conditionType_;
+    }
+
+    uint32_t Achievement::getConditionValue() const
+    {
+        return conditionValue_;
     }
 
     std::chrono::system_clock::time_point Achievement::getDateEarned() const
@@ -40,4 +57,4 @@ namespace cppforge::entities
     {
         return id_ == other.id_;
     }
-}
+} // namespace cppforge::entities

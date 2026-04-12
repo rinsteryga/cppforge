@@ -1,7 +1,7 @@
-#include "../../include/utils/EnvLoader.hpp"
+#include "utils/EnvLoader.hpp"
 
-#include <QFile>
 #include <QDebug>
+#include <QFile>
 #include <QTextStream>
 
 namespace cppforge::utils
@@ -22,11 +22,15 @@ namespace cppforge::utils
         {
             QString line = in.readLine().trimmed();
             if (line.isEmpty() || line.startsWith('#'))
+            {
                 continue;
+            }
 
             int eqPos = line.indexOf('=');
             if (eqPos == -1)
+            {
                 continue;
+            }
 
             QString key = line.left(eqPos).trimmed();
             QString value = line.mid(eqPos + 1).trimmed();
@@ -38,4 +42,4 @@ namespace cppforge::utils
         qDebug() << "Loaded" << loadedCount << "environment variables from:" << filePath;
         return loadedCount > 0;
     }
-}
+} // namespace cppforge::utils
