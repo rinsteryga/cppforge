@@ -10,37 +10,54 @@ $PG_DB = "app"
 $PG_SERVICE_NAME = "cppforge-postgres"
 $PG_PORT = 5432
 
+if (-not (Test-Path $InstallDir)) {
+    New-Item -ItemType Directory -Path $InstallDir -ErrorAction SilentlyContinue | Out-Null
+}
+Start-Transcript -Path "$InstallDir\install_deps.log" -Append
+
+$EnvPath = "$InstallDir\.env"
+if (Test-Path $EnvPath) {
+    Remove-Item $EnvPath -Force -ErrorAction SilentlyContinue
+}
+
 $SkipDbConfig = $false
 $IsInstalled = $false
 $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
 
-# Check standard program files paths
 $PsqlSearch = Get-ChildItem -Path "C:\Program Files\PostgreSQL\*\bin\psql.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
 if ($PsqlSearch) {
     $PgBinDir = $PsqlSearch.DirectoryName
     $IsInstalled = $true
-}
-
-# Check if available in PATH
-if (-not $IsInstalled) {
-    $PsqlCmd = Get-Command "psql" -ErrorAction SilentlyContinue
-    if ($PsqlCmd) {
-        $PgBinDir = Split-Path $PsqlCmd.Source
-        $IsInstalled = $true
+} else {
+    $portCheck = Get-NetTCPConnection -LocalPort $PG_PORT -ErrorAction SilentlyContinue
+    if ($portCheck) {
+        $PsqlCmd = Get-Command "psql" -ErrorAction SilentlyContinue
+        if ($PsqlCmd) {
+            $PgBinDir = Split-Path $PsqlCmd.Source
+            $IsInstalled = $true
+            Write-Host "Found custom PostgreSQL running on port $PG_PORT"
+        }
     }
 }
 
 if (-not $IsInstalled) {
-    # Test if port is already taken by some other process
     $portCheck = Get-NetTCPConnection -LocalPort $PG_PORT -ErrorAction SilentlyContinue
     if ($portCheck) {
-        $PG_PORT = 5433 # fallback
+        $PG_PORT = 5433
         Write-Host "Port 5432 is taken, using port 5433 for new PostgreSQL installation."
     }
 }
 
 if ($IsInstalled) {
     Write-Host "Found existing PostgreSQL installation at $PgBinDir."
+    
+    $Service = Get-Service -Name $PG_SERVICE_NAME -ErrorAction SilentlyContinue
+    if ($Service -and $Service.Status -ne 'Running') {
+        Write-Host "PostgreSQL service ($PG_SERVICE_NAME) is stopped. Attempting to start..."
+        Start-Service -Name $PG_SERVICE_NAME -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 5
+    }
+
     $env:PGPASSWORD = $PG_PASSWORD
     
     $OldErrorAction = $ErrorActionPreference
@@ -57,6 +74,15 @@ if ($IsInstalled) {
         $SkipDbConfig = $false
     }
 } else {
+    Write-Host "Checking for Visual C++ Redistributable..."
+    $VcRedistPath = "$env:TEMP\vc_redist.x64.exe"
+    if (!(Test-Path $VcRedistPath)) {
+        Write-Host "Downloading VC++ Redistributable (Required for PostgreSQL)..."
+        Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile $VcRedistPath -UseBasicParsing
+    }
+    Write-Host "Installing VC++ Redistributable..."
+    Start-Process -FilePath $VcRedistPath -ArgumentList "/install /quiet /norestart" -Wait -NoNewWindow
+    
     $PostgresInstallerUrl = "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
     $InstallerPath = "$env:TEMP\postgresql-installer.exe"
 
@@ -71,13 +97,14 @@ if ($IsInstalled) {
         Write-Host "Using cached PostgreSQL installer."
     }
 
-    Write-Host "Installing PostgreSQL (progress window will appear)..."
+    Write-Host "Installing PostgreSQL (progress window will be hidden, please wait 3-10 minutes)..."
     $InstallArgs = @(
         "--mode", "unattended",
-        "--unattendedmodeui", "minimal",
+        "--unattendedmodeui", "none",
         "--servicename", $PG_SERVICE_NAME,
         "--superpassword", $PG_PASSWORD,
-        "--serverport", $PG_PORT
+        "--serverport", $PG_PORT,
+        "--disable-components", "pgadmin,stackbuilder"
     )
     $process = Start-Process -FilePath $InstallerPath -ArgumentList $InstallArgs -Wait -NoNewWindow -PassThru
 
@@ -92,12 +119,13 @@ if ($IsInstalled) {
     $env:PGPASSWORD = $PG_PASSWORD
     $env:PGCLIENTENCODING = "utf8"
 
-    Write-Host "Waiting for service to become responsive (this might take up to a minute on new systems)..."
+    Write-Host "Waiting for service to become responsive (this might take up to 2 minutes on new systems)..."
     $OldErrorAction = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     $DbReady = $false
-    for ($i = 0; $i -lt 30; $i++) {
-        & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
+    $LastPsqlError = ""
+    for ($i = 0; $i -lt 45; $i++) {
+        $LastPsqlError = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1
         if ($LASTEXITCODE -eq 0) {
             $DbReady = $true
             break
@@ -107,21 +135,18 @@ if ($IsInstalled) {
     $ErrorActionPreference = $OldErrorAction
 
     if (-not $DbReady) {
-        Write-Warning "PostgreSQL service took too long to start. We will skip database setup."
+        Write-Warning "PostgreSQL service took too long to start. Last error: $LastPsqlError"
+        Write-Warning "We will skip database setup."
         $SkipDbConfig = $true
     }
 }
 
 if (-not $SkipDbConfig) {
     Write-Host "Configuring database..."
-    $CreateDbSql = @"
-    DO `$do` BEGIN
-      IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$PG_USER') THEN
-        CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';
-      END IF;
-    END `$do`;
-"@
-    $CreateDbSql | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    $RoleExists = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='$PG_USER'"
+    if ($RoleExists -ne "1") {
+        "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    }
     
     $DbExists = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'"
     if ($DbExists -ne "1") {
@@ -143,19 +168,20 @@ if (-not $SkipDbConfig) {
     } else {
         Write-Host "WARNING: Seed file not found at $SeedFile"
     }
-} else {
-    Write-Warning "Skipped database and table creation because PostgreSQL connection failed."
-}
-
-Write-Host "Creating .env file..."
-$EnvConfig = @"
-PG_HOST=localhost
+    Write-Host "Creating .env file..."
+    $EnvConfig = @"
+PG_HOST=127.0.0.1
 PG_PORT=$PG_PORT
 PG_DB=$PG_DB
 PG_USER=$PG_USER
 PG_PASSWORD=$PG_PASSWORD
 "@
 
-$EnvPath = "$InstallDir\.env"
-Set-Content -Path $EnvPath -Value $EnvConfig
+    $EnvPath = "$InstallDir\.env"
+    Set-Content -Path $EnvPath -Value $EnvConfig
+} else {
+    Write-Warning "Skipped database setup and .env creation because PostgreSQL connection failed."
+}
+
 Write-Host "PostgreSQL setup complete!"
+Stop-Transcript
