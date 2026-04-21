@@ -136,6 +136,12 @@ void MainWindow::onTaskWindowClosed()
     this->setWindowOpacity(0.0);
     this->show();
     loadAllModulesProgress();
+    
+    if (m_currentOpenModuleId != -1)
+    {
+        loadRoadmapForModule(m_currentOpenModuleId);
+    }
+    
     fadeIn();
 }
 
@@ -415,7 +421,7 @@ void MainWindow::setupUI()
     roadmapLayout->setContentsMargins(0, 0, 0, 0);
 
     QPushButton *backBtn = new QPushButton("← Назад к модулям");
-    backBtn->setFixedWidth(200);
+    backBtn->setMinimumWidth(200);
     backBtn->setCursor(Qt::PointingHandCursor);
     connect(backBtn, &QPushButton::clicked, this, &MainWindow::onBackToModulesClicked);
 
