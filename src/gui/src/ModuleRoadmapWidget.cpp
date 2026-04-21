@@ -92,9 +92,9 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
         painter.setFont(QFont("Roboto", 12, QFont::Bold));
 
         QString label = QString("№%1").arg(i + 1);
-        
+
         bool isOnRight = (node.pos.x() > width() / 2);
-        int textOffset = isOnRight ? -120 : 60; 
+        int textOffset = isOnRight ? -120 : 60;
         int alignment = isOnRight ? Qt::AlignRight : Qt::AlignLeft;
         alignment |= Qt::AlignVCenter | Qt::TextDontClip;
 
@@ -112,24 +112,23 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
     if (m_hoveredNodeIndex != -1 && m_hoveredNodeIndex < static_cast<int>(m_nodes.size()))
     {
         const auto &node = m_nodes[m_hoveredNodeIndex];
-        
+
         QFont tooltipFont("Roboto", 11, QFont::Medium);
         painter.setFont(tooltipFont);
-        
+
         QFontMetrics metrics(tooltipFont);
         int textWidth = metrics.horizontalAdvance(node.title);
         int textHeight = metrics.height();
-        
+
         int padding = 8;
         QRect tooltipRect(node.pos.x() - textWidth / 2 - padding,
-                          node.pos.y() - m_nodeRadius - textHeight - padding * 2 - 5,
-                          textWidth + padding * 2,
+                          node.pos.y() - m_nodeRadius - textHeight - padding * 2 - 5, textWidth + padding * 2,
                           textHeight + padding * 2);
-                          
+
         painter.setBrush(QColor("#333333"));
         painter.setPen(Qt::NoPen);
         painter.drawRoundedRect(tooltipRect, 6, 6);
-        
+
         painter.setPen(Qt::white);
         painter.drawText(tooltipRect, Qt::AlignCenter, node.title);
     }
@@ -168,7 +167,7 @@ void ModuleRoadmapWidget::mouseMoveEvent(QMouseEvent *event)
             break;
         }
     }
-    
+
     if (hovered != m_hoveredNodeIndex)
     {
         m_hoveredNodeIndex = hovered;

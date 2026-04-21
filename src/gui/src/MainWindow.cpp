@@ -136,12 +136,12 @@ void MainWindow::onTaskWindowClosed()
     this->setWindowOpacity(0.0);
     this->show();
     loadAllModulesProgress();
-    
+
     if (m_currentOpenModuleId != -1)
     {
         loadRoadmapForModule(m_currentOpenModuleId);
     }
-    
+
     fadeIn();
 }
 

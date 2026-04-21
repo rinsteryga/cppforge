@@ -1,7 +1,6 @@
 #include "../include/TaskWindow.hpp"
 
 #include "../include/CppHighlighter.hpp"
-
 #include "../include/CustomTitleBar.hpp"
 
 #include <QDebug>
@@ -516,7 +515,7 @@ void TaskWindow::onSubmitClicked()
                 {
                     btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
                 }
-                
+
                 if (btnNext_)
                 {
                     btnNext_->setEnabled(true);
