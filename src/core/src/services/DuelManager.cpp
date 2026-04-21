@@ -170,10 +170,12 @@ namespace cppforge::services
     {
         QJsonObject json;
         json["id"] = static_cast<qint64>(task.getId());
-        if (task.getLessonId().has_value()) {
+        if (task.getLessonId().has_value())
+        {
             json["lesson_id"] = static_cast<qint64>(task.getLessonId().value());
         }
-        if (task.getDuelTopic().has_value()) {
+        if (task.getDuelTopic().has_value())
+        {
             json["duel_topic"] = task.getDuelTopic().value();
         }
         json["title"] = task.getTitle();
@@ -201,11 +203,13 @@ namespace cppforge::services
     {
         uint64_t id = json["id"].toVariant().toULongLong();
         std::optional<uint64_t> lessonId = std::nullopt;
-        if (json.contains("lesson_id")) {
+        if (json.contains("lesson_id"))
+        {
             lessonId = json["lesson_id"].toVariant().toULongLong();
         }
         std::optional<QString> duelTopic = std::nullopt;
-        if (json.contains("duel_topic")) {
+        if (json.contains("duel_topic"))
+        {
             duelTopic = json["duel_topic"].toString();
         }
         QString title = json["title"].toString();
