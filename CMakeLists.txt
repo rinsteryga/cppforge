@@ -34,7 +34,7 @@ target_link_libraries(cppforge
 )
 
 set_target_properties(cppforge PROPERTIES
-    WIN32_EXECUTABLE OFF
+    WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
 )
 

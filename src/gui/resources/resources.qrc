@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>icons/main_logo.ico</file>
-        <file>icons/burger_grey.ico</file>
         <file>images/eye_open.png</file>
         <file>images/eye_slash.png</file>
         <file>images/default_avatar1.png</file>
