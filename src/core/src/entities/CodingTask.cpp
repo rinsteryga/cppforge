@@ -8,11 +8,10 @@ namespace cppforge::entities
 {
     CodingTask::CodingTask() = default;
 
-    CodingTask::CodingTask(uint64_t taskId, std::optional<uint64_t> lessonId, QString title, QString description, QString initialCode,
-                           const std::set<TestCase> &testCases, int32_t timeLimit, int32_t memoryLimit,
-                           const std::optional<std::set<QString>> &whitelist,
-                           const std::optional<std::set<QString>> &blacklist,
-                           const std::optional<QString> &duelTopic)
+    CodingTask::CodingTask(uint64_t taskId, std::optional<uint64_t> lessonId, QString title, QString description,
+                           QString initialCode, const std::set<TestCase> &testCases, int32_t timeLimit,
+                           int32_t memoryLimit, const std::optional<std::set<QString>> &whitelist,
+                           const std::optional<std::set<QString>> &blacklist, const std::optional<QString> &duelTopic)
         : id_(taskId), lessonId_(lessonId), title_(std::move(title)), description_(std::move(description)),
           initialCode_(std::move(initialCode)), testCases_(testCases), timeLimit_(timeLimit), memoryLimit_(memoryLimit),
           whitelist_(whitelist), blacklist_(blacklist), duelTopic_(duelTopic)
