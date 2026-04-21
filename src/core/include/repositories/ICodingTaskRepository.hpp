@@ -1,9 +1,10 @@
 #pragma once
 
+#include <QString>
+
 #include <cstdint>
 #include <optional>
 #include <vector>
-#include <QString>
 
 namespace cppforge
 {
@@ -54,7 +55,7 @@ namespace cppforge
              * @param topic The topic to filter duel tasks by.
              * @return An std::optional containing the CodingTask if found; otherwise std::nullopt.
              */
-            virtual std::optional<entities::CodingTask> getRandomDuelTaskByTopic(const QString& topic) const = 0;
+            virtual std::optional<entities::CodingTask> getRandomDuelTaskByTopic(const QString &topic) const = 0;
         };
     } // namespace repositories
 } // namespace cppforge
