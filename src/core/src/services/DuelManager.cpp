@@ -170,7 +170,12 @@ namespace cppforge::services
     {
         QJsonObject json;
         json["id"] = static_cast<qint64>(task.getId());
-        json["lesson_id"] = static_cast<qint64>(task.getLessonId());
+        if (task.getLessonId().has_value()) {
+            json["lesson_id"] = static_cast<qint64>(task.getLessonId().value());
+        }
+        if (task.getDuelTopic().has_value()) {
+            json["duel_topic"] = task.getDuelTopic().value();
+        }
         json["title"] = task.getTitle();
         json["description"] = task.getDescription();
         json["initial_code"] = task.getInitialCode();
@@ -195,7 +200,14 @@ namespace cppforge::services
     cppforge::entities::CodingTask DuelManager::deserializeTask(const QJsonObject &json) const
     {
         uint64_t id = json["id"].toVariant().toULongLong();
-        uint64_t lessonId = json["lesson_id"].toVariant().toULongLong();
+        std::optional<uint64_t> lessonId = std::nullopt;
+        if (json.contains("lesson_id")) {
+            lessonId = json["lesson_id"].toVariant().toULongLong();
+        }
+        std::optional<QString> duelTopic = std::nullopt;
+        if (json.contains("duel_topic")) {
+            duelTopic = json["duel_topic"].toString();
+        }
         QString title = json["title"].toString();
         QString description = json["description"].toString();
         QString initialCode = json["initial_code"].toString();
@@ -215,6 +227,6 @@ namespace cppforge::services
         }
 
         return cppforge::entities::CodingTask(id, lessonId, title, description, initialCode, testCases, timeLimit,
-                                              memoryLimit, std::nullopt, std::nullopt);
+                                              memoryLimit, std::nullopt, std::nullopt, duelTopic);
     }
 } // namespace cppforge::services
