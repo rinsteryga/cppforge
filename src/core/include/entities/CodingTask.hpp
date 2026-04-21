@@ -37,8 +37,8 @@ namespace cppforge::entities
          * @param blacklist An optional set of syntax tokens that must not be used in the solution.
          * @param duelTopic An optional topic for duel tasks.
          */
-        CodingTask(uint64_t taskId, std::optional<uint64_t> lessonId, QString title, QString description, QString initialCode,
-                   const std::set<TestCase> &testCases, int32_t timeLimit, int32_t memoryLimit,
+        CodingTask(uint64_t taskId, std::optional<uint64_t> lessonId, QString title, QString description,
+                   QString initialCode, const std::set<TestCase> &testCases, int32_t timeLimit, int32_t memoryLimit,
                    const std::optional<std::set<QString>> &whitelist = std::nullopt,
                    const std::optional<std::set<QString>> &blacklist = std::nullopt,
                    const std::optional<QString> &duelTopic = std::nullopt);
