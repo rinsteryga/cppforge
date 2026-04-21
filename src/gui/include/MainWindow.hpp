@@ -3,12 +3,14 @@
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
+
 #include <QList>
 #include <QPropertyAnimation>
 #include <QStackedWidget>
 #include <QString>
 #include <QWidget>
 #include <QtSql/QSqlQuery>
+
 #include <memory>
 #include <vector>
 
@@ -60,8 +62,7 @@ private:
     void setupStyles();
     void centerWindow();
     void animateToTaskWindow(int moduleId);
-    
-    // Валидация юзера в БД
+
     bool validateUserExists();
 
     void loadAllModulesProgress();
@@ -76,8 +77,7 @@ private:
     ProfilePage *profilePage{nullptr};
     QWidget *learningPage{nullptr};
     QWidget *roadmapPage{nullptr};
-    
-    // Кнопки меню (теперь они точно в scope)
+
     QPushButton *learnBtn{nullptr};
     QPushButton *ratingBtn{nullptr};
     QPushButton *profileBtn{nullptr};
