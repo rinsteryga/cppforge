@@ -46,9 +46,39 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() = default;
 
+bool MainWindow::validateUserExists()
+{
+    if (m_currentUserId <= 0)
+        return false;
+
+    QSqlQuery query;
+    query.prepare("SELECT id FROM users WHERE id = :id");
+    query.bindValue(":id", m_currentUserId);
+
+    if (!query.exec() || !query.next())
+    {
+        qDebug() << "!!! КРИТИЧЕСКАЯ ОШИБКА: Пользователь удален из БД. Сброс сессии.";
+
+        QSettings settings("CppForge", "StudyApp");
+        settings.remove("auth/user_id");
+        settings.sync();
+
+        m_currentUserId = -1;
+        return false;
+    }
+    return true;
+}
+
 void MainWindow::setUserId(int id)
 {
     m_currentUserId = id;
+
+    if (!validateUserExists())
+    {
+        this->close();
+        return;
+    }
+
     loadAllModulesProgress();
 }
 

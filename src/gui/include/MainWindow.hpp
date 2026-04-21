@@ -41,7 +41,7 @@ protected:
 public slots:
     void fadeIn();
     void fadeOut();
-    void openTaskWindow(int moduleId = 1);
+    void openTaskWindow(int lessonId);
 
 private slots:
     void onModuleButtonClicked();
@@ -50,7 +50,6 @@ private slots:
     void onTaskWindowClosed();
     void onLogoutClicked();
     void updateModuleProgress(int moduleId, int progress);
-
     void onBackToModulesClicked();
 
 private:
@@ -61,14 +60,12 @@ private:
     void setupCenterPanel();
     void setupRightPanel();
     void setupStyles();
-    void setupConnections();
     void centerWindow();
     void animateToTaskWindow(int moduleId);
 
-    int m_currentOpenModuleId = -1;
+    bool validateUserExists();
 
     void loadAllModulesProgress();
-
     void loadRoadmapForModule(int moduleId);
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
@@ -78,14 +75,19 @@ private:
 
     std::unique_ptr<QStackedWidget> contentStack;
     ProfilePage *profilePage{nullptr};
-
     QWidget *learningPage{nullptr};
     QWidget *roadmapPage{nullptr};
-    QPushButton *logoutBtn;
+
+    QPushButton *learnBtn{nullptr};
+    QPushButton *ratingBtn{nullptr};
+    QPushButton *profileBtn{nullptr};
+    QPushButton *logoutBtn{nullptr};
+
     ModuleRoadmapWidget *roadmapWidget{nullptr};
 
     QString m_currentUsername;
     int m_currentUserId{-1};
+    int m_currentOpenModuleId{-1};
 
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;
@@ -98,15 +100,6 @@ private:
     QList<QLabel *> moduleProgressLabels;
     QList<QProgressBar *> moduleProgressBars;
     QList<QPushButton *> moduleButtons;
-
-    std::unique_ptr<QHBoxLayout> footerLinksLayout;
-
-    QPushButton *aboutBtn{nullptr};
-    QPushButton *contactsBtn{nullptr};
-    QPushButton *privacyBtn{nullptr};
-    QPushButton *learnBtn{nullptr};
-    QPushButton *profileBtn{nullptr};
-    QPushButton *ratingBtn{nullptr};
 
     bool isTransitioning_{false};
     int pendingModuleId_{-1};

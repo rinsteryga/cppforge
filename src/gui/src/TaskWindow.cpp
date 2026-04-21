@@ -336,7 +336,13 @@ void TaskWindow::setupUI()
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
-    codeEditor_->setFont(QFont("Consolas", 13));
+
+    QFont codeFont("Consolas", 13);
+    codeEditor_->setFont(codeFont);
+
+    QFontMetrics metrics(codeFont);
+    codeEditor_->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
+
     codeEditor_->installEventFilter(this);
     codeLayout->addWidget(codeEditor_);
 
@@ -584,6 +590,16 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
     QTextEdit *editor = qobject_cast<QTextEdit *>(obj);
     if (!editor)
         return QWidget::eventFilter(obj, event);
+
+    if (obj == codeEditor_ && event->type() == QEvent::KeyPress)
+    {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Tab)
+        {
+            editor->insertPlainText("    ");
+            return true;
+        }
+    }
 
     if (obj == theoryEdit_ && !hasCodingTask_ && btnSubmit_ && !btnSubmit_->isEnabled())
     {
