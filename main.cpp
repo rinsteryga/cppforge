@@ -1,6 +1,7 @@
 #include "AuthWindow.hpp"
 #include "MainWindow.hpp"
 #include "src/core/include/services/AuthManager.hpp"
+#include "src/core/include/services/UserService.hpp"
 #include "src/data/include/repositories/PgUserRepository.hpp"
 
 #include <QApplication>
@@ -40,6 +41,9 @@ int main(int argc, char *argv[])
     auto userRepository = std::make_unique<cppforge::repositories::PgUserRepository>(db);
     auto authManager = std::make_shared<cppforge::services::AuthManager>(std::move(userRepository));
 
+    auto userRepoForService = std::make_unique<cppforge::repositories::PgUserRepository>(db);
+    auto userService = std::make_shared<cppforge::services::UserService>(*userRepoForService);
+
     QSettings settings("CppForge", "StudyApp");
     bool remember = settings.value("auth/remember", false).toBool();
     int savedUserId = settings.value("auth/user_id", -1).toInt();
@@ -47,6 +51,7 @@ int main(int argc, char *argv[])
 
     AuthWindow authWindow(authManager);
     MainWindow mainWindow;
+    mainWindow.setUserService(userService.get());
 
     auto showMain = [&](const QString &username, int userId)
     {
@@ -60,7 +65,7 @@ int main(int argc, char *argv[])
             mainWindow.move(geom.center() - mainWindow.rect().center());
         }
 
-        authWindow.hide(); 
+        authWindow.hide();
         mainWindow.show();
         mainWindow.fadeIn();
     };
@@ -76,12 +81,14 @@ int main(int argc, char *argv[])
         checkQuery.bindValue(":id", savedUserId);
         checkQuery.bindValue(":name", savedUsername);
 
-        if (checkQuery.exec() && checkQuery.next()) {
+        if (checkQuery.exec() && checkQuery.next())
+        {
             autoLoginValid = true;
             qDebug() << "Auto-login verified for user:" << savedUsername;
             showMain(savedUsername, savedUserId);
         }
-        else {
+        else
+        {
             qDebug() << "Auto-login failed: User no longer exists in database. Clearing settings.";
             settings.remove("auth/remember");
             settings.remove("auth/user_id");
