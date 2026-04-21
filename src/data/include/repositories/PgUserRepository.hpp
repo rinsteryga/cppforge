@@ -5,7 +5,9 @@
 #include <QString>
 #include <QtSql/QSqlDatabase>
 
+#include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace cppforge::repositories
 {
@@ -51,6 +53,13 @@ namespace cppforge::repositories
          * @return The count of unique successfully solved coding tasks.
          */
         int getSolvedTasksCount(uint64_t userId) const override;
+        int getCompletedLessonsCount(uint64_t userId) const override;
+        int getAchievementsCount(uint64_t userId) const override;
+        int getStreak(uint64_t userId) const override;
+        int getTotalSubmissionsCount(uint64_t userId) const override;
+        std::vector<Activity> getRecentActivity(uint64_t userId, int limit) const override;
+        std::vector<uint64_t> getEarnedAchievementIds(uint64_t userId) const override;
+        void updateStreak(uint64_t userId) override;
 
     private:
         QSqlDatabase &database_;
