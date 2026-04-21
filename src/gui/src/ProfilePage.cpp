@@ -1,5 +1,7 @@
 #include "ProfilePage.hpp"
 
+#include "../../core/include/services/UserService.hpp"
+
 #include <QDebug>
 #include <QFileDialog>
 #include <QFrame>
@@ -56,6 +58,20 @@ void ProfilePage::setUserData(int userId, const QString &name, const QString &av
     {
         avatarLabel->setPixmap(pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
     }
+
+    if (userService_)
+    {
+        int solvedCount = userService_->getSolvedTasksCount(userId);
+        if (solvedTasksLabel)
+        {
+            solvedTasksLabel->setText(QString::number(solvedCount));
+        }
+    }
+}
+
+void ProfilePage::setUserService(cppforge::services::UserService *service)
+{
+    userService_ = service;
 }
 
 void ProfilePage::setupUI()
@@ -118,10 +134,10 @@ void ProfilePage::setupUI()
         {
             auto *cLayout = new QVBoxLayout(card);
             auto *t = new QLabel("Заданий решено:");
-            auto *v = new QLabel("34");
-            v->setObjectName("GreenValue");
+            solvedTasksLabel = new QLabel("0");
+            solvedTasksLabel->setObjectName("GreenValue");
             cLayout->addWidget(t);
-            cLayout->addWidget(v);
+            cLayout->addWidget(solvedTasksLabel);
         }
         statsGrid->addWidget(card, i / 2, i % 2);
     }
