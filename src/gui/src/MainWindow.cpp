@@ -1,8 +1,8 @@
 #include "MainWindow.hpp"
-
 #include "CustomTitleBar.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
+#include "ModuleRoadmapWidget.hpp" 
 
 #include <QDebug>
 #include <QFont>
@@ -26,6 +26,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QVariant>
+#include <QScrollBar>
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
 
@@ -45,7 +46,6 @@ void MainWindow::setUserId(int id)
 {
     m_currentUserId = id;
     qDebug() << "MainWindow: ID пользователя установлен:" << m_currentUserId;
-
     loadAllModulesProgress();
 }
 
@@ -72,11 +72,6 @@ void MainWindow::loadAllModulesProgress()
         {
             progressValue = query.value(0).toInt();
         }
-        else
-        {
-            qDebug() << "SQL Error Module" << i << ":" << query.lastError().text();
-        }
-
         updateModuleProgress(i, progressValue);
     }
 }
@@ -84,9 +79,7 @@ void MainWindow::loadAllModulesProgress()
 void MainWindow::updateModuleProgress(int moduleId, int progress)
 {
     if (moduleId < 1 || moduleId > (int)moduleProgressBars.size())
-    {
         return;
-    }
 
     moduleProgressBars[moduleId - 1]->setValue(progress);
     moduleProgressLabels[moduleId - 1]->setText(QString("%1% выполнено").arg(progress));
@@ -99,7 +92,6 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
             nextBtn->setEnabled(true);
             nextBtn->setText("Начать обучение");
             nextBtn->setStyleSheet("");
-
             disconnect(nextBtn, &QPushButton::clicked, nullptr, nullptr);
             connect(nextBtn, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
         }
@@ -110,9 +102,7 @@ void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
     this->show();
-
     loadAllModulesProgress();
-
     fadeIn();
 }
 
@@ -129,9 +119,7 @@ void MainWindow::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
     if (!isTransitioning_)
-    {
         loadAllModulesProgress();
-    }
 }
 
 void MainWindow::centerWindow()
@@ -149,9 +137,7 @@ void MainWindow::centerWindow()
 void MainWindow::fadeIn()
 {
     if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
-    {
         transitionAnimation_->stop();
-    }
 
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
@@ -164,9 +150,7 @@ void MainWindow::fadeIn()
 void MainWindow::fadeOut()
 {
     if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
-    {
         transitionAnimation_->stop();
-    }
 
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(200);
@@ -233,14 +217,13 @@ void MainWindow::setupLeftPanel()
     logoIcon->setAlignment(Qt::AlignCenter);
     QPixmap logoPixmap(":/icons/main_logo.ico");
     if (!logoPixmap.isNull())
-    {
         logoIcon->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    }
+    
     logoIcon->setFixedSize(100, 100);
     logoLayout->addWidget(logoIcon);
 
     learnBtn = new QPushButton("Учиться");
-    ratingBtn = new QPushButton("Рейтинг");
+    ratingBtn = new QPushButton("Дуэль");
     profileBtn = new QPushButton("Профиль");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
@@ -334,13 +317,9 @@ void MainWindow::setupRightPanel()
         button->setEnabled(!isLocked);
 
         if (!isLocked)
-        {
             connect(button, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
-        }
         else
-        {
             button->setStyleSheet("background: #f0f0f0; color: #999; border: 1px solid #e0e0e0;");
-        }
 
         mLayout->addWidget(mTitle);
         mLayout->addWidget(progress);
@@ -383,6 +362,30 @@ void MainWindow::setupUI()
     profilePage = new ProfilePage(this);
     learningPage = new QWidget();
 
+    // --- ИНИЦИАЛИЗАЦИЯ РОАДМАПЫ ---
+    roadmapPage = new QWidget();
+    auto roadmapLayout = new QVBoxLayout(roadmapPage);
+    roadmapLayout->setContentsMargins(0, 0, 0, 0);
+    
+    QPushButton* backBtn = new QPushButton("← Назад к модулям");
+    backBtn->setFixedWidth(200);
+    backBtn->setCursor(Qt::PointingHandCursor);
+    connect(backBtn, &QPushButton::clicked, this, &MainWindow::onBackToModulesClicked);
+    
+    QScrollArea* roadmapScroll = new QScrollArea();
+    roadmapScroll->setWidgetResizable(true);
+    roadmapScroll->setFrameStyle(QFrame::NoFrame);
+    roadmapScroll->setStyleSheet("background: transparent;");
+    
+    roadmapWidget = new ModuleRoadmapWidget(); 
+    // Сэр, связываем сигнал клика по кружку с открытием задания
+    connect(roadmapWidget, &ModuleRoadmapWidget::lessonSelected, this, &MainWindow::openTaskWindow);
+    
+    roadmapScroll->setWidget(roadmapWidget);
+    
+    roadmapLayout->addWidget(backBtn, 0, Qt::AlignLeft | Qt::AlignTop);
+    roadmapLayout->addWidget(roadmapScroll);
+
     auto learningLayout = new QHBoxLayout(learningPage);
     learningLayout->setContentsMargins(0, 0, 0, 0);
     learningLayout->setSpacing(30);
@@ -393,8 +396,9 @@ void MainWindow::setupUI()
     learningLayout->addWidget(modulesScrollArea.get(), 2);
     learningLayout->addWidget(eventWidget, 1);
 
-    contentStack->addWidget(learningPage);
-    contentStack->addWidget(profilePage);
+    contentStack->addWidget(learningPage); // Индекс 0
+    contentStack->addWidget(profilePage);  // Индекс 1
+    contentStack->addWidget(roadmapPage);  // Индекс 2
 
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(contentStack.get(), 4);
@@ -419,13 +423,12 @@ void MainWindow::setupStyles()
     )");
 }
 
-void MainWindow::onModuleButtonClicked()
-{
+void MainWindow::onModuleButtonClicked() {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
-    if (button)
-    {
+    if (button && roadmapWidget && roadmapPage) {
         int moduleId = button->property("moduleId").toInt();
-        animateToTaskWindow(moduleId);
+        loadRoadmapForModule(moduleId); 
+        contentStack->setCurrentWidget(roadmapPage);
     }
 }
 
@@ -460,7 +463,85 @@ void MainWindow::animateToTaskWindow(int moduleId)
     fadeOut();
 }
 
-void MainWindow::openTaskWindow(int moduleId)
+void MainWindow::openTaskWindow(int lessonId)
 {
-    animateToTaskWindow(moduleId);
+    // 1. Сначала создаем или настраиваем окно, если оно еще не создано
+    if (!taskWindow_) {
+        taskWindow_ = std::make_unique<TaskWindow>();
+        taskWindow_->setUserId(m_currentUserId);
+
+        // КРИТИЧЕСКИЙ КОННЕКТ №1: Мгновенное обновление при успехе
+        connect(taskWindow_.get(), &TaskWindow::lessonCompleted, this, [this](int) {
+            if (m_currentOpenModuleId != -1) {
+                // Прямо во время работы TaskWindow обновляем карту на фоне
+                this->loadRoadmapForModule(m_currentOpenModuleId);
+            }
+        });
+
+        // КРИТИЧЕСКИЙ КОННЕКТ №2: Обновление при закрытии окна
+        connect(taskWindow_.get(), &TaskWindow::windowClosed, this, [this]() {
+            this->onTaskWindowClosed(); // Возвращаем MainWindow в нормальный вид
+            if (m_currentOpenModuleId != -1) {
+                this->loadRoadmapForModule(m_currentOpenModuleId);
+            }
+        });
+    }
+
+    // 2. Загружаем данные урока в окно
+    taskWindow_->loadModule(lessonId);
+
+    // 3. Запускаем вашу анимацию перехода
+    animateToTaskWindow(lessonId);
+}
+
+void MainWindow::loadRoadmapForModule(int moduleId) {
+    if (m_currentUserId == -1) return;
+
+    // СЭР, ВНИМАНИЕ: Запоминаем текущий модуль!
+    // Без этой строчки сигнал lessonCompleted не будет знать, что обновлять.
+    m_currentOpenModuleId = moduleId; 
+
+    std::vector<RoadmapNode> nodes;
+    QSqlQuery query;
+    query.prepare(R"(
+        SELECT l.id, l.title, COALESCE(up.is_completed, FALSE) as completed
+        FROM lessons l
+        LEFT JOIN user_progress up ON l.id = up.lesson_id AND up.user_id = :uid
+        WHERE l.module_id = :mid
+        ORDER BY l.id ASC
+    )");
+
+    query.bindValue(":uid", m_currentUserId);
+    query.bindValue(":mid", moduleId);
+
+    if (query.exec()) {
+        while (query.next()) {
+            RoadmapNode node;
+            node.lessonId = query.value("id").toInt();
+            node.title = query.value("title").toString();
+            node.isCompleted = query.value("completed").toBool();
+            
+            bool isLocked = false;
+            if (!nodes.empty()) {
+                isLocked = !nodes.back().isCompleted;
+            }
+            node.isLocked = isLocked;
+            nodes.push_back(node);
+        }
+    }
+
+    roadmapWidget->setLessons(nodes);
+
+    QTimer::singleShot(50, [this]() {
+        QScrollArea* scroll = roadmapPage->findChild<QScrollArea*>();
+        if (scroll && scroll->verticalScrollBar()) {
+            scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
+        }
+    });
+}
+
+void MainWindow::onBackToModulesClicked() {
+    if (contentStack) {
+        contentStack->setCurrentIndex(0);
+    }
 }
