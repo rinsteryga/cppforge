@@ -82,6 +82,15 @@ void MainWindow::setUserId(int id)
     loadAllModulesProgress();
 }
 
+void MainWindow::setUserService(cppforge::services::UserService *service)
+{
+    m_userService = service;
+    if (profilePage)
+    {
+        profilePage->setUserService(service);
+    }
+}
+
 void MainWindow::loadAllModulesProgress()
 {
     if (m_currentUserId == -1 || moduleProgressBars.isEmpty())
