@@ -190,6 +190,26 @@ namespace cppforge
             return true;
         }
 
+        int PgUserRepository::getSolvedTasksCount(uint64_t userId) const
+        {
+            if (!database_.isOpen())
+            {
+                return 0;
+            }
+
+            QSqlQuery query(database_);
+            query.prepare(
+                "SELECT COUNT(DISTINCT coding_task_id) FROM submissions WHERE user_id = :uid AND is_success = true");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+
+            if (query.exec() && query.next())
+            {
+                return query.value(0).toInt();
+            }
+
+            return 0;
+        }
+
         void PgUserRepository::loadUserAchievements(entities::User &user) const
         {
             if (!database_.isOpen() || user.getId() == 0)
