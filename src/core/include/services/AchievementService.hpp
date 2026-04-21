@@ -4,6 +4,8 @@
 #include "../repositories/IAchievementRepository.hpp"
 #include "../repositories/IUserRepository.hpp"
 
+#include <QObject>
+
 namespace cppforge::services
 {
     /**
@@ -13,8 +15,9 @@ namespace cppforge::services
      * has met the criteria for specific achievements based on their progress
      * and streak. It leverages repositories to persist these state changes.
      */
-    class AchievementService
+    class AchievementService : public QObject
     {
+        Q_OBJECT
     public:
         /**
          * @brief Constructs the service with required repositories.
@@ -24,6 +27,10 @@ namespace cppforge::services
         AchievementService(repositories::IUserRepository &userRepo,
                            repositories::IAchievementRepository &achievementRepo);
 
+    signals:
+        void achievementUnlocked(cppforge::entities::Achievement achievement);
+
+    public:
         /**
          * @brief Evaluates a user's progress and grants newly unlocked achievements.
          *
