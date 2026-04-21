@@ -187,7 +187,8 @@ void MainWindow::fadeOut()
 
 void MainWindow::setupWindowProperties()
 {
-    setFixedSize(1280, 900);
+    setMinimumSize(1100, 800);
+    resize(1280, 900);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
