@@ -93,7 +93,8 @@ Coding exercises linked to lessons.
 | Column        | Type      | Notes                                |
 |---------------|-----------|--------------------------------------|
 | id            | BIGSERIAL | Primary key                          |
-| lesson_id     | BIGINT    | FK → lessons(id), cascade delete     |
+| lesson_id     | BIGINT    | Optional. FK → lessons(id), cascade delete |
+| duel_topic    | TEXT      | Optional. Topic for duel pool tasks  |
 | title         | TEXT      | Required                             |
 | description   | TEXT      | Optional                             |
 | initial_code  | TEXT      | Optional                             |
@@ -101,6 +102,7 @@ Coding exercises linked to lessons.
 | blacklist     | TEXT      | Optional                             |
 | time_limit    | INT       | Default: 2000 ms                     |
 | memory_limit  | INT       | Default: 256 MB                      |
+| is_duel       | BOOLEAN   | Default: FALSE                       |
 
 Index: `lesson_id`.
 

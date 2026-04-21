@@ -29,6 +29,17 @@ COMMIT;
 \ir modules/02_basics.sql
 \ir modules/03_functions.sql
 \ir modules/04_pointers.sql
+\ir modules/05_strings.sql
+\ir modules/06_structs_heap.sql
+\ir modules/07_filesystem.sql
+\ir modules/08_cpp_basics.sql
+\ir modules/09_oop_functions.sql
+\ir modules/10_oop.sql
+\ir modules/11_modern_cpp.sql
+\ir modules/12_stl.sql
+\ir modules/13_best_practices.sql
+\ir modules/14_development.sql
+\ir modules/99_duels.sql
 
 BEGIN;
 
