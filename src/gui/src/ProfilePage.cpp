@@ -37,8 +37,8 @@ namespace
                     border: 2px solid #62639b;
                     border-radius: 15px;
                 }
-                QLabel { color: #333; font-size: 14px; }
-                #Title { font-weight: bold; font-size: 18px; color: #62639b; }
+                QLabel { color: #333; font-size: 16px; }
+                #Title { font-weight: bold; font-size: 20px; color: #62639b; }
                 QPushButton {
                     background-color: #62639b;
                     color: white;
@@ -60,7 +60,7 @@ namespace
 
             auto *contentLabel = new QLabel(text);
             contentLabel->setWordWrap(true);
-            contentLabel->setMinimumWidth(300);
+            contentLabel->setFixedWidth(450);
             cardLayout->addWidget(contentLabel);
 
             auto *closeBtn = new QPushButton("Понятно");
@@ -227,6 +227,7 @@ void ProfilePage::setupUI()
     rightSection->addWidget(createBigBox("НЕДАВНЯЯ АКТИВНОСТЬ"));
 
     auto *footerLayout = new QHBoxLayout();
+    footerLayout->setSpacing(10);
     footerLayout->addStretch();
 
     auto createFooterBtn = [this](const QString &text, auto slot)
@@ -238,20 +239,22 @@ void ProfilePage::setupUI()
         return btn;
     };
 
+    auto createSeparator = []()
+    {
+        auto *sep = new QLabel("•");
+        sep->setStyleSheet("color: #BBB; font-size: 14px;");
+        return sep;
+    };
+
     footerLayout->addWidget(createFooterBtn("О CppForge", &ProfilePage::onAboutClicked));
-    footerLayout->addWidget(new QLabel("   "));
+    footerLayout->addWidget(createSeparator());
     footerLayout->addWidget(createFooterBtn("Контакты", &ProfilePage::onContactsClicked));
+    footerLayout->addWidget(createSeparator());
+    footerLayout->addWidget(createFooterBtn("Конфиденциальность", &ProfilePage::onPrivacyClicked));
 
-    auto *footerContainer = new QVBoxLayout();
-    footerContainer->addLayout(footerLayout);
-
-    auto *privacyLayout = new QHBoxLayout();
-    privacyLayout->addStretch();
-    privacyLayout->addWidget(createFooterBtn("Конфиденциальность", &ProfilePage::onPrivacyClicked));
-    footerContainer->addLayout(privacyLayout);
-
+    rightSection->addSpacing(30);
+    rightSection->addLayout(footerLayout);
     rightSection->addStretch();
-    rightSection->addLayout(footerContainer);
 
     mainLayout->addLayout(leftSection, 3);
     mainLayout->addLayout(rightSection, 2);
@@ -274,8 +277,8 @@ void ProfilePage::applyStyles()
             background: transparent;
             border: none;
             color: #888;
-            font-size: 13px;
-            padding: 0;
+            font-size: 14px;
+            padding: 2px 5px;
             text-align: right;
         }
         #FooterBtn:hover { color: #62639b; text-decoration: underline; }
