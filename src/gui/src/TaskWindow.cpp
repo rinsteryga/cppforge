@@ -1,6 +1,7 @@
 #include "../include/TaskWindow.hpp"
 
 #include "../include/CppHighlighter.hpp"
+
 #include "../include/CustomTitleBar.hpp"
 
 #include <QDebug>
@@ -205,6 +206,15 @@ void TaskWindow::loadModule(int lessonId)
             }
         }
     }
+
+    if (btnNext_)
+    {
+        btnNext_->setEnabled(isCompleted);
+        if (!isCompleted)
+            btnNext_->setToolTip("Сначала завершите текущее задание");
+        else
+            btnNext_->setToolTip("");
+    }
 }
 
 void TaskWindow::onNextTask()
@@ -212,8 +222,10 @@ void TaskWindow::onNextTask()
     QSqlQuery query;
     query.prepare(R"(
         SELECT id FROM lessons 
-        WHERE order_index > (SELECT order_index FROM lessons WHERE id = :id) 
-        ORDER BY order_index ASC LIMIT 1
+        WHERE (module_id, order_index) > (
+            SELECT module_id, order_index FROM lessons WHERE id = :id
+        )
+        ORDER BY module_id ASC, order_index ASC LIMIT 1
     )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
@@ -225,8 +237,10 @@ void TaskWindow::onPrevTask()
     QSqlQuery query;
     query.prepare(R"(
         SELECT id FROM lessons 
-        WHERE order_index < (SELECT order_index FROM lessons WHERE id = :id) 
-        ORDER BY order_index DESC LIMIT 1
+        WHERE (module_id, order_index) < (
+            SELECT module_id, order_index FROM lessons WHERE id = :id
+        )
+        ORDER BY module_id DESC, order_index DESC LIMIT 1
     )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
@@ -501,6 +515,12 @@ void TaskWindow::onSubmitClicked()
                 if (btnSubmit_)
                 {
                     btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+                }
+                
+                if (btnNext_)
+                {
+                    btnNext_->setEnabled(true);
+                    btnNext_->setToolTip("");
                 }
 
                 emit lessonCompleted(currentModuleId_);
