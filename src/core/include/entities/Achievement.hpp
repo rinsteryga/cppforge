@@ -85,6 +85,7 @@ namespace cppforge::entities
          * @return A time_point representing the moment of unlocking.
          */
         std::chrono::system_clock::time_point getDateEarned() const;
+        void setDateEarned(const std::chrono::system_clock::time_point &date);
 
         /**
          * @brief Compares this achievement with another for ordering.

@@ -48,6 +48,11 @@ namespace cppforge::entities
         return dateEarned_;
     }
 
+    void Achievement::setDateEarned(const std::chrono::system_clock::time_point &date)
+    {
+        dateEarned_ = date;
+    }
+
     bool Achievement::operator<(const Achievement &other) const
     {
         return id_ < other.id_;

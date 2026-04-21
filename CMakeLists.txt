@@ -27,6 +27,7 @@ add_executable(cppforge main.cpp)
 target_link_libraries(cppforge
     PRIVATE 
     cppforge_core
+    cppforge_data
     cppforge_gui
     Qt5::Widgets
     Qt5::Sql
