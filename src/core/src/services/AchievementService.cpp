@@ -10,7 +10,7 @@ namespace cppforge::services
 {
     AchievementService::AchievementService(repositories::IUserRepository &userRepo,
                                            repositories::IAchievementRepository &achievementRepo)
-        : userRepo_(userRepo), achievementRepo_(achievementRepo)
+        : QObject(nullptr), userRepo_(userRepo), achievementRepo_(achievementRepo)
     {
     }
 
@@ -50,6 +50,7 @@ namespace cppforge::services
                                                      std::chrono::system_clock::now());
 
                 user.addAchievement(newAchievement);
+                emit achievementUnlocked(newAchievement);
                 userUpdated = true;
             }
         }
@@ -87,6 +88,7 @@ namespace cppforge::services
                                                      std::chrono::system_clock::now());
 
                 user.addAchievement(newAchievement);
+                emit achievementUnlocked(newAchievement);
                 userRepo_.save(user);
             }
         }

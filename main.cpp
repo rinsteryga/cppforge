@@ -1,7 +1,10 @@
 #include "AuthWindow.hpp"
 #include "MainWindow.hpp"
-#include "src/core/include/services/AuthManager.hpp"
-#include "src/data/include/repositories/PgUserRepository.hpp"
+#include "repositories/PgAchievementRepository.hpp"
+#include "repositories/PgUserRepository.hpp"
+#include "services/AchievementService.hpp"
+#include "services/AuthManager.hpp"
+#include "services/UserService.hpp"
 
 #include <QApplication>
 #include <QDebug>
@@ -9,6 +12,7 @@
 #include <QGuiApplication>
 #include <QResource>
 #include <QScreen>
+#include <QSettings>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTimer>
@@ -33,42 +37,76 @@ int main(int argc, char *argv[])
     if (db.isOpen())
     {
         QSqlQuery syncQuery(db);
-        if (syncQuery.exec("SET client_encoding TO 'UTF8';"))
-        {
-            qDebug() << "Encoding set to UTF8 successfully.";
-        }
-        else
-        {
-            qWarning() << "Failed to set encoding:" << syncQuery.lastError().text();
-        }
+        syncQuery.exec("SET client_encoding TO 'UTF8';");
     }
 
     auto userRepository = std::make_unique<cppforge::repositories::PgUserRepository>(db);
     auto authManager = std::make_shared<cppforge::services::AuthManager>(std::move(userRepository));
 
+    auto userRepoForService = std::make_unique<cppforge::repositories::PgUserRepository>(db);
+    auto achievementRepo = std::make_unique<cppforge::repositories::PgAchievementRepository>(db);
+    auto userService = std::make_shared<cppforge::services::UserService>(*userRepoForService, *achievementRepo);
+    auto achievementService =
+        std::make_shared<cppforge::services::AchievementService>(*userRepoForService, *achievementRepo);
+
+    QSettings settings("CppForge", "StudyApp");
+    bool remember = settings.value("auth/remember", false).toBool();
+    int savedUserId = settings.value("auth/user_id", -1).toInt();
+    QString savedUsername = settings.value("auth/username", "").toString();
+
     AuthWindow authWindow(authManager);
     MainWindow mainWindow;
+    mainWindow.setUserService(userService.get());
+    mainWindow.setAchievementService(achievementService.get());
 
-    QObject::connect(&authWindow, &AuthWindow::switchToMainMenu,
-                     [&](const QString &username, int userId)
-                     {
-                         mainWindow.setCurrentUser(username);
-                         mainWindow.setUserId(userId); 
+    auto showMain = [&](const QString &username, int userId)
+    {
+        mainWindow.setCurrentUser(username);
+        mainWindow.setUserId(userId);
 
-                         QScreen *screen = QGuiApplication::primaryScreen();
-                         if (screen)
-                         {
-                             QRect geom = screen->availableGeometry();
-                             mainWindow.move(geom.center() - mainWindow.rect().center());
-                         }
+        QScreen *screen = QGuiApplication::primaryScreen();
+        if (screen)
+        {
+            QRect geom = screen->availableGeometry();
+            mainWindow.move(geom.center() - mainWindow.rect().center());
+        }
 
-                         mainWindow.show();
-                         mainWindow.fadeIn();
-                         authWindow.hide();
-                     });
+        authWindow.hide();
+        mainWindow.show();
+        mainWindow.fadeIn();
+    };
 
+    QObject::connect(&authWindow, &AuthWindow::switchToMainMenu, showMain);
     QObject::connect(&app, &QApplication::lastWindowClosed, &app, &QApplication::quit);
 
-    authWindow.show();
+    bool autoLoginValid = false;
+    if (remember && savedUserId != -1 && !savedUsername.isEmpty())
+    {
+        QSqlQuery checkQuery;
+        checkQuery.prepare("SELECT id FROM users WHERE id = :id AND username = :name");
+        checkQuery.bindValue(":id", savedUserId);
+        checkQuery.bindValue(":name", savedUsername);
+
+        if (checkQuery.exec() && checkQuery.next())
+        {
+            autoLoginValid = true;
+            qDebug() << "Auto-login verified for user:" << savedUsername;
+            showMain(savedUsername, savedUserId);
+        }
+        else
+        {
+            qDebug() << "Auto-login failed: User no longer exists in database. Clearing settings.";
+            settings.remove("auth/remember");
+            settings.remove("auth/user_id");
+            settings.remove("auth/username");
+            settings.sync();
+        }
+    }
+
+    if (!autoLoginValid)
+    {
+        authWindow.show();
+    }
+
     return app.exec();
 }

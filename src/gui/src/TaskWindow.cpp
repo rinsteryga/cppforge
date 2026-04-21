@@ -205,6 +205,15 @@ void TaskWindow::loadModule(int lessonId)
             }
         }
     }
+
+    if (btnNext_)
+    {
+        btnNext_->setEnabled(isCompleted);
+        if (!isCompleted)
+            btnNext_->setToolTip("Сначала завершите текущее задание");
+        else
+            btnNext_->setToolTip("");
+    }
 }
 
 void TaskWindow::onNextTask()
@@ -212,8 +221,10 @@ void TaskWindow::onNextTask()
     QSqlQuery query;
     query.prepare(R"(
         SELECT id FROM lessons 
-        WHERE order_index > (SELECT order_index FROM lessons WHERE id = :id) 
-        ORDER BY order_index ASC LIMIT 1
+        WHERE (module_id, order_index) > (
+            SELECT module_id, order_index FROM lessons WHERE id = :id
+        )
+        ORDER BY module_id ASC, order_index ASC LIMIT 1
     )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
@@ -225,8 +236,10 @@ void TaskWindow::onPrevTask()
     QSqlQuery query;
     query.prepare(R"(
         SELECT id FROM lessons 
-        WHERE order_index < (SELECT order_index FROM lessons WHERE id = :id) 
-        ORDER BY order_index DESC LIMIT 1
+        WHERE (module_id, order_index) < (
+            SELECT module_id, order_index FROM lessons WHERE id = :id
+        )
+        ORDER BY module_id DESC, order_index DESC LIMIT 1
     )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
@@ -336,7 +349,13 @@ void TaskWindow::setupUI()
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
-    codeEditor_->setFont(QFont("Consolas", 13));
+
+    QFont codeFont("Consolas", 13);
+    codeEditor_->setFont(codeFont);
+
+    QFontMetrics metrics(codeFont);
+    codeEditor_->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
+
     codeEditor_->installEventFilter(this);
     codeLayout->addWidget(codeEditor_);
 
@@ -462,11 +481,11 @@ void TaskWindow::onSubmitClicked()
         QSqlQuery query;
         query.prepare(R"(
             INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
-            VALUES (:uid, :mid, :lid, :status, NOW()) 
+            VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
             ON CONFLICT (user_id, lesson_id) 
             DO UPDATE SET 
                 is_completed = EXCLUDED.is_completed, 
-                updated_at = NOW()
+                updated_at = CURRENT_TIMESTAMP
         )");
         query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
         query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
@@ -480,7 +499,7 @@ void TaskWindow::onSubmitClicked()
                 QSqlQuery subQuery;
                 subQuery.prepare(R"(
                     INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
-                    VALUES (:uid, :mid, :tid, :code, :success, NOW())
+                    VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
                 )");
                 subQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
                 subQuery.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
@@ -496,6 +515,28 @@ void TaskWindow::onSubmitClicked()
                 {
                     btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
                 }
+
+                if (btnNext_)
+                {
+                    btnNext_->setEnabled(true);
+                    btnNext_->setToolTip("");
+                }
+
+                QSqlQuery streakQuery;
+                streakQuery.prepare(R"(
+                    UPDATE users 
+                    SET current_streak_days = CASE 
+                        WHEN last_level_solved_at IS NULL OR last_level_solved_at < CURRENT_DATE - INTERVAL '1 day' THEN 1
+                        WHEN last_level_solved_at >= CURRENT_DATE - INTERVAL '1 day' AND last_level_solved_at < CURRENT_DATE THEN current_streak_days + 1
+                        ELSE current_streak_days
+                    END,
+                    last_level_solved_at = CURRENT_TIMESTAMP
+                    WHERE id = :uid AND (last_level_solved_at IS NULL OR last_level_solved_at < CURRENT_DATE)
+                )");
+                streakQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+                streakQuery.exec();
+
+                emit lessonCompleted(currentModuleId_);
 
                 int totalProgress = getModuleProgress(currentModuleParentId_);
                 emit moduleProgressUpdated(currentModuleParentId_, totalProgress);
@@ -529,6 +570,7 @@ void TaskWindow::onSubmitClicked()
 
         std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
                                                              currentTask_.getTestCases().end());
+
         auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
 
         connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
@@ -581,6 +623,16 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
     QTextEdit *editor = qobject_cast<QTextEdit *>(obj);
     if (!editor)
         return QWidget::eventFilter(obj, event);
+
+    if (obj == codeEditor_ && event->type() == QEvent::KeyPress)
+    {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Tab)
+        {
+            editor->insertPlainText("    ");
+            return true;
+        }
+    }
 
     if (obj == theoryEdit_ && !hasCodingTask_ && btnSubmit_ && !btnSubmit_->isEnabled())
     {

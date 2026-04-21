@@ -8,13 +8,13 @@ namespace cppforge::entities
 {
     CodingTask::CodingTask() = default;
 
-    CodingTask::CodingTask(uint64_t taskId, uint64_t lessonId, QString title, QString description, QString initialCode,
-                           const std::set<TestCase> &testCases, int32_t timeLimit, int32_t memoryLimit,
-                           const std::optional<std::set<QString>> &whitelist,
-                           const std::optional<std::set<QString>> &blacklist)
+    CodingTask::CodingTask(uint64_t taskId, std::optional<uint64_t> lessonId, QString title, QString description,
+                           QString initialCode, const std::set<TestCase> &testCases, int32_t timeLimit,
+                           int32_t memoryLimit, const std::optional<std::set<QString>> &whitelist,
+                           const std::optional<std::set<QString>> &blacklist, const std::optional<QString> &duelTopic)
         : id_(taskId), lessonId_(lessonId), title_(std::move(title)), description_(std::move(description)),
           initialCode_(std::move(initialCode)), testCases_(testCases), timeLimit_(timeLimit), memoryLimit_(memoryLimit),
-          whitelist_(whitelist), blacklist_(blacklist)
+          whitelist_(whitelist), blacklist_(blacklist), duelTopic_(duelTopic)
     {
     }
 
@@ -23,7 +23,7 @@ namespace cppforge::entities
         return id_;
     }
 
-    uint64_t CodingTask::getLessonId() const
+    std::optional<uint64_t> CodingTask::getLessonId() const
     {
         return lessonId_;
     }
@@ -66,5 +66,10 @@ namespace cppforge::entities
     const std::optional<std::set<QString>> &CodingTask::getBlacklist() const
     {
         return blacklist_;
+    }
+
+    const std::optional<QString> &CodingTask::getDuelTopic() const
+    {
+        return duelTopic_;
     }
 } // namespace cppforge::entities

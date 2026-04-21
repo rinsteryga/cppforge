@@ -2,7 +2,9 @@
 
 #include <QString>
 
+#include <cstdint>
 #include <optional>
+#include <vector>
 
 namespace cppforge
 {
@@ -53,6 +55,76 @@ namespace cppforge
              * @return True if the operation succeeded; otherwise false.
              */
             virtual bool save(const entities::User &user) = 0;
+
+            /**
+             * @brief Retrieves the count of unique coding tasks a user has solved.
+             *
+             * @param userId The ID of the user.
+             * @return The count of unique successfully solved coding tasks.
+             */
+            virtual int getSolvedTasksCount(uint64_t userId) const = 0;
+
+            /**
+             * @brief Retrieves the count of lessons a user has completed.
+             *
+             * @param userId The ID of the user.
+             * @return The count of completed lessons.
+             */
+            virtual int getCompletedLessonsCount(uint64_t userId) const = 0;
+
+            /**
+             * @brief Retrieves the count of achievements a user has earned.
+             *
+             * @param userId The ID of the user.
+             * @return The count of earned achievements.
+             */
+            virtual int getAchievementsCount(uint64_t userId) const = 0;
+
+            /**
+             * @brief Retrieves the current streak of a user.
+             *
+             * @param userId The ID of the user.
+             * @return The current streak in days.
+             */
+            virtual int getStreak(uint64_t userId) const = 0;
+
+            /**
+             * @brief Retrieves the total number of submissions made by a user.
+             *
+             * @param userId The ID of the user.
+             * @return The total submission count.
+             */
+            virtual int getTotalSubmissionsCount(uint64_t userId) const = 0;
+
+            struct Activity
+            {
+                QString title;
+                QString type;
+                QString date;
+            };
+
+            /**
+             * @brief Retrieves the last N activities of a user.
+             *
+             * @param userId The ID of the user.
+             * @param limit Maximum number of activities to return.
+             * @return A vector of Activity objects.
+             */
+            virtual std::vector<Activity> getRecentActivity(uint64_t userId, int limit) const = 0;
+
+            /**
+             * @brief Retrieves the IDs of all achievements earned by a user.
+             *
+             * @param userId The ID of the user.
+             * @return A vector of achievement IDs.
+             */
+            virtual std::vector<uint64_t> getEarnedAchievementIds(uint64_t userId) const = 0;
+
+            /**
+             * @brief Updates the user's streak and last solved timestamp.
+             * @param userId The ID of the user.
+             */
+            virtual void updateStreak(uint64_t userId) = 0;
         };
     } // namespace repositories
 } // namespace cppforge

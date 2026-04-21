@@ -190,6 +190,131 @@ namespace cppforge
             return true;
         }
 
+        int PgUserRepository::getSolvedTasksCount(uint64_t userId) const
+        {
+            if (!database_.isOpen())
+            {
+                return 0;
+            }
+
+            QSqlQuery query(database_);
+            query.prepare(
+                "SELECT COUNT(DISTINCT coding_task_id) FROM submissions WHERE user_id = :uid AND is_success = true");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+
+            if (query.exec() && query.next())
+            {
+                return query.value(0).toInt();
+            }
+
+            return 0;
+        }
+
+        int PgUserRepository::getCompletedLessonsCount(uint64_t userId) const
+        {
+            if (!database_.isOpen())
+                return 0;
+            QSqlQuery query(database_);
+            query.prepare("SELECT COUNT(*) FROM user_progress WHERE user_id = :uid AND is_completed = true");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+            if (query.exec() && query.next())
+                return query.value(0).toInt();
+            return 0;
+        }
+
+        int PgUserRepository::getAchievementsCount(uint64_t userId) const
+        {
+            if (!database_.isOpen())
+                return 0;
+            QSqlQuery query(database_);
+            query.prepare("SELECT COUNT(*) FROM user_achievements WHERE user_id = :uid");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+            if (query.exec() && query.next())
+                return query.value(0).toInt();
+            return 0;
+        }
+
+        int PgUserRepository::getStreak(uint64_t userId) const
+        {
+            if (!database_.isOpen())
+                return 0;
+            QSqlQuery query(database_);
+            query.prepare("SELECT current_streak_days FROM users WHERE id = :uid");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+            if (query.exec() && query.next())
+                return query.value(0).toInt();
+            return 0;
+        }
+
+        int PgUserRepository::getTotalSubmissionsCount(uint64_t userId) const
+        {
+            if (!database_.isOpen())
+                return 0;
+            QSqlQuery query(database_);
+            query.prepare("SELECT COUNT(*) FROM submissions WHERE user_id = :uid");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+            if (query.exec() && query.next())
+                return query.value(0).toInt();
+            return 0;
+        }
+
+        std::vector<IUserRepository::Activity> PgUserRepository::getRecentActivity(uint64_t userId, int limit) const
+        {
+            std::vector<IUserRepository::Activity> activities;
+            if (!database_.isOpen())
+                return activities;
+
+            QSqlQuery query(database_);
+            query.prepare(R"(
+                (SELECT l.title as title, 'Урок' as type, up.updated_at as date
+                 FROM user_progress up
+                 JOIN lessons l ON up.lesson_id = l.id
+                 WHERE up.user_id = :uid AND up.is_completed = true)
+                UNION ALL
+                (SELECT t.title as title, 'Задача' as type, s.submitted_at as date
+                 FROM submissions s
+                 JOIN coding_tasks t ON s.coding_task_id = t.id
+                 WHERE s.user_id = :uid AND s.is_success = true)
+                ORDER BY date DESC
+                LIMIT :limit
+            )");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+            query.bindValue(":limit", limit);
+
+            if (query.exec())
+            {
+                while (query.next())
+                {
+                    IUserRepository::Activity act;
+                    act.title = query.value("title").toString();
+                    act.type = query.value("type").toString();
+                    act.date = query.value("date").toDateTime().toString("dd.MM.yyyy HH:mm");
+                    activities.push_back(act);
+                }
+            }
+            return activities;
+        }
+
+        std::vector<uint64_t> PgUserRepository::getEarnedAchievementIds(uint64_t userId) const
+        {
+            std::vector<uint64_t> ids;
+            if (!database_.isOpen())
+                return ids;
+
+            QSqlQuery query(database_);
+            query.prepare("SELECT achievement_id FROM user_achievements WHERE user_id = :uid");
+            query.bindValue(":uid", QVariant::fromValue(userId));
+
+            if (query.exec())
+            {
+                while (query.next())
+                {
+                    ids.push_back(query.value(0).toULongLong());
+                }
+            }
+            return ids;
+        }
+
         void PgUserRepository::loadUserAchievements(entities::User &user) const
         {
             if (!database_.isOpen() || user.getId() == 0)
@@ -278,6 +403,51 @@ namespace cppforge
                 insertQuery.bindValue(":earned_at", QDateTime::fromSecsSinceEpoch(std::chrono::system_clock::to_time_t(
                                                         achievement.getDateEarned())));
                 insertQuery.exec();
+            }
+        }
+
+        void PgUserRepository::updateStreak(uint64_t userId)
+        {
+            if (!database_.isOpen() || userId == 0)
+                return;
+
+            QSqlQuery query(database_);
+            query.prepare("SELECT current_streak_days, last_level_solved_at FROM users WHERE id = :id");
+            query.bindValue(":id", QVariant::fromValue(userId));
+
+            if (query.exec() && query.next())
+            {
+                int currentStreak = query.value("current_streak_days").toInt();
+                QDateTime lastSolved = query.value("last_level_solved_at").toDateTime();
+                QDate today = QDate::currentDate();
+
+                if (lastSolved.isValid())
+                {
+                    QDate lastDate = lastSolved.date();
+                    if (lastDate == today)
+                    {
+                        return;
+                    }
+                    else if (lastDate == today.addDays(-1))
+                    {
+                        currentStreak++;
+                    }
+                    else
+                    {
+                        currentStreak = 1;
+                    }
+                }
+                else
+                {
+                    currentStreak = 1;
+                }
+
+                QSqlQuery update(database_);
+                update.prepare("UPDATE users SET current_streak_days = :streak, last_level_solved_at = "
+                               "CURRENT_TIMESTAMP WHERE id = :id");
+                update.bindValue(":streak", currentStreak);
+                update.bindValue(":id", QVariant::fromValue(userId));
+                update.exec();
             }
         }
     } // namespace repositories

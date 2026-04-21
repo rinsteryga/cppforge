@@ -27,6 +27,7 @@ add_executable(cppforge main.cpp)
 target_link_libraries(cppforge
     PRIVATE 
     cppforge_core
+    cppforge_data
     cppforge_gui
     Qt5::Widgets
     Qt5::Sql
@@ -34,7 +35,7 @@ target_link_libraries(cppforge
 )
 
 set_target_properties(cppforge PROPERTIES
-    WIN32_EXECUTABLE OFF
+    WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
 )
 
@@ -86,7 +87,7 @@ install(FILES ${MSYS2_RUNTIME_DLLS} DESTINATION bin)
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_NAME "cppforge")
 set(CPACK_PACKAGE_VENDOR "cppforge")
-set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_VERSION "1.0.1")
 
 set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
     ExecWait 'powershell.exe -ExecutionPolicy Bypass -File \\\"\$INSTDIR\\\\scripts\\\\install_deps.ps1\\\" -InstallDir \\\"\$INSTDIR\\\"'

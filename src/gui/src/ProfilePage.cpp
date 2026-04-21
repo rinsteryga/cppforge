@@ -1,10 +1,14 @@
 #include "ProfilePage.hpp"
 
+#include "../../core/include/services/UserService.hpp"
+
 #include <QDebug>
+#include <QDialog>
 #include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -14,13 +18,68 @@
 
 #include <random>
 
+namespace
+{
+    class InfoDialog : public QDialog
+    {
+    public:
+        InfoDialog(const QString &title, const QString &text, QWidget *parent = nullptr) : QDialog(parent)
+        {
+            setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+            setAttribute(Qt::WA_TranslucentBackground);
+
+            auto *layout = new QVBoxLayout(this);
+            auto *card = new QFrame();
+            card->setObjectName("DialogCard");
+            card->setStyleSheet(R"(
+                #DialogCard {
+                    background-color: white;
+                    border: 2px solid #62639b;
+                    border-radius: 15px;
+                }
+                QLabel { color: #333; font-size: 16px; }
+                #Title { font-weight: bold; font-size: 20px; color: #62639b; }
+                QPushButton {
+                    background-color: #62639b;
+                    color: white;
+                    border-radius: 8px;
+                    padding: 8px 20px;
+                    font-weight: bold;
+                    border: none;
+                }
+                QPushButton:hover { background-color: #51528a; }
+            )");
+
+            auto *cardLayout = new QVBoxLayout(card);
+            cardLayout->setContentsMargins(25, 25, 25, 25);
+            cardLayout->setSpacing(15);
+
+            auto *titleLabel = new QLabel(title);
+            titleLabel->setObjectName("Title");
+            cardLayout->addWidget(titleLabel);
+
+            auto *contentLabel = new QLabel(text);
+            contentLabel->setWordWrap(true);
+            contentLabel->setFixedWidth(450);
+            cardLayout->addWidget(contentLabel);
+
+            auto *closeBtn = new QPushButton("Понятно");
+            closeBtn->setCursor(Qt::PointingHandCursor);
+            connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
+            cardLayout->addWidget(closeBtn, 0, Qt::AlignRight);
+
+            layout->addWidget(card);
+        }
+    };
+} // namespace
+
 ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
 {
     setupUI();
     applyStyles();
 }
 
-void ProfilePage::setUserData(int userId, const QString &name, const QString &avatarPath)
+void ProfilePage::setUserData(uint64_t userId, const QString &name, const QString &avatarPath)
 {
     currentUserId = userId;
 
@@ -43,7 +102,7 @@ void ProfilePage::setUserData(int userId, const QString &name, const QString &av
         QSqlQuery query;
         query.prepare("UPDATE users SET avatar_path = :path WHERE id = :id");
         query.bindValue(":path", finalPath);
-        query.bindValue(":id", userId);
+        query.bindValue(":id", static_cast<qulonglong>(userId));
 
         if (!query.exec())
         {
@@ -55,6 +114,122 @@ void ProfilePage::setUserData(int userId, const QString &name, const QString &av
     if (!pix.isNull())
     {
         avatarLabel->setPixmap(pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
+    }
+
+    if (userService_)
+    {
+        solvedTasksLabel->setText(QString::number(userService_->getSolvedTasksCount(userId)));
+        completedLessonsLabel->setText(QString::number(userService_->getCompletedLessonsCount(userId)));
+        achievementsLabel->setText(QString::number(userService_->getAchievementsCount(userId)));
+        totalSubmissionsLabel->setText(QString::number(userService_->getTotalSubmissionsCount(userId)));
+        streakLabel->setText(QString("🔥 %1").arg(userService_->getStreak(userId)));
+
+        auto clearLayout = [](QLayout *layout)
+        {
+            if (!layout)
+                return;
+            while (auto item = layout->takeAt(0))
+            {
+                if (item->widget())
+                    delete item->widget();
+                delete item;
+            }
+        };
+
+        clearLayout(achievementsContainer->layout());
+        clearLayout(activityContainer->layout());
+
+        auto achievements = userService_->getAllAchievementsStatus(userId);
+        auto *achGrid = qobject_cast<QGridLayout *>(achievementsContainer->layout());
+
+        int row = 0, col = 0;
+        for (const auto &ach : achievements)
+        {
+            auto *achWidget = new QWidget();
+            auto *v = new QVBoxLayout(achWidget);
+            v->setContentsMargins(5, 5, 5, 5);
+            v->setSpacing(5);
+
+            auto *icon = new QLabel();
+            icon->setFixedSize(65, 65);
+            icon->setAlignment(Qt::AlignCenter);
+
+            bool earned = ach.getDateEarned().time_since_epoch().count() > 0;
+            QPixmap pix(ach.getIconPath());
+
+            if (pix.isNull())
+            {
+                icon->setText("🏆");
+                icon->setStyleSheet(earned ? "background: #eee; border-radius: 8px; font-size: 24px;"
+                                           : "background: #f9f9f9; border-radius: 8px; font-size: 24px; color: "
+                                             "#ccc; border: 1px dashed #ddd;");
+            }
+            else
+            {
+                if (!earned)
+                {
+                    QImage img = pix.toImage().convertToFormat(QImage::Format_Grayscale8);
+                    icon->setPixmap(
+                        QPixmap::fromImage(img).scaled(65, 65, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                }
+                else
+                {
+                    icon->setPixmap(pix.scaled(65, 65, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                }
+            }
+
+            v->addWidget(icon, 0, Qt::AlignCenter);
+            auto *name = new QLabel(ach.getName());
+            name->setAlignment(Qt::AlignCenter);
+            name->setStyleSheet(earned ? "font-size: 10px; font-weight: bold; color: #333;"
+                                       : "font-size: 10px; color: #999;");
+            name->setWordWrap(true);
+            name->setFixedWidth(80);
+            v->addWidget(name);
+
+            achWidget->setToolTip(ach.getName() + (earned ? "" : " (Заблокировано)") + ": " + ach.getDescription());
+
+            if (achGrid)
+            {
+                achGrid->addWidget(achWidget, row, col);
+                col++;
+                if (col >= 4)
+                {
+                    col = 0;
+                    row++;
+                }
+            }
+        }
+
+        auto activities = userService_->getRecentActivity(userId, 3);
+        auto *actLayout = activityContainer->layout();
+        for (const auto &act : activities)
+        {
+            auto *rowWidget = new QWidget();
+            auto *h = new QHBoxLayout(rowWidget);
+            h->setContentsMargins(0, 5, 0, 5);
+
+            auto *typeTag = new QLabel(act.type);
+            typeTag->setStyleSheet(
+                act.type == "Урок"
+                    ? "background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 10px; font-size: 11px;"
+                    : "background: #e8f5e9; color: #388e3c; padding: 2px 8px; border-radius: 10px; font-size: 11px;");
+
+            auto *title = new QLabel(act.title);
+            title->setStyleSheet("font-weight: 500;");
+
+            auto *date = new QLabel(act.date);
+            date->setStyleSheet("color: #888; font-size: 12px;");
+
+            h->addWidget(typeTag);
+            h->addWidget(title, 1);
+            h->addWidget(date);
+            actLayout->addWidget(rowWidget);
+        }
+        if (activities.empty())
+        {
+            actLayout->addWidget(new QLabel("Пока нет активности..."));
+        }
     }
 }
 
@@ -81,7 +256,7 @@ void ProfilePage::setupUI()
     userNameLabel->setObjectName("UserNameLabel");
 
     auto *changeAvatarBtn = new QPushButton("Изменить фото");
-    changeAvatarBtn->setFixedWidth(150);
+    changeAvatarBtn->setMinimumWidth(150);
     changeAvatarBtn->setCursor(Qt::PointingHandCursor);
     changeAvatarBtn->setObjectName("ChangeAvatarBtn");
 
@@ -108,23 +283,26 @@ void ProfilePage::setupUI()
 
     auto *statsGrid = new QGridLayout();
     statsGrid->setSpacing(20);
-    for (int i = 0; i < 4; ++i)
+
+    auto createStatCard = [this, statsGrid](int index, const QString &title, QLabel **valueLabel)
     {
         auto *card = new QFrame();
         card->setObjectName("StatCard");
         card->setMinimumSize(220, 110);
+        auto *cLayout = new QVBoxLayout(card);
+        auto *t = new QLabel(title);
+        *valueLabel = new QLabel("0");
+        (*valueLabel)->setObjectName("GreenValue");
+        cLayout->addWidget(t);
+        cLayout->addWidget(*valueLabel);
+        statsGrid->addWidget(card, index / 2, index % 2);
+    };
 
-        if (i == 0)
-        {
-            auto *cLayout = new QVBoxLayout(card);
-            auto *t = new QLabel("Заданий решено:");
-            auto *v = new QLabel("34");
-            v->setObjectName("GreenValue");
-            cLayout->addWidget(t);
-            cLayout->addWidget(v);
-        }
-        statsGrid->addWidget(card, i / 2, i % 2);
-    }
+    createStatCard(0, "Заданий решено:", &solvedTasksLabel);
+    createStatCard(1, "Уроков пройдено:", &completedLessonsLabel);
+    createStatCard(2, "Достижений:", &achievementsLabel);
+    createStatCard(3, "Всего попыток:", &totalSubmissionsLabel);
+
     leftSection->addLayout(statsGrid);
     leftSection->addStretch();
 
@@ -132,31 +310,71 @@ void ProfilePage::setupUI()
 
     auto *streakLayout = new QHBoxLayout();
     streakLayout->addStretch();
-    auto *streakIcon = new QLabel("🔥 14");
-    streakIcon->setObjectName("StreakLabel");
-    streakLayout->addWidget(streakIcon);
+    streakLabel = new QLabel("🔥 0");
+    streakLabel->setObjectName("StreakLabel");
+    streakLayout->addWidget(streakLabel);
     rightSection->addLayout(streakLayout);
 
-    auto createBigBox = [this](const QString &titleText)
+    auto createBigBox = [this](const QString &titleText, QWidget **container)
     {
         auto *box = new QFrame();
         box->setObjectName("BigBlock");
-        box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        auto *l = new QVBoxLayout(box);
-        auto *title = new QLabel(titleText);
-        title->setProperty("class", QString("box-header"));
-        l->addWidget(title, 0, Qt::AlignTop);
+        auto *v = new QVBoxLayout(box);
+        v->setContentsMargins(0, 0, 0, 0);
+        auto *h = new QLabel(" " + titleText);
+        h->setProperty("class", "box-header");
+        v->addWidget(h);
+
+        auto *content = new QWidget();
+        QLayout *contentLayout = nullptr;
+        if (titleText == "ДОСТИЖЕНИЯ")
+        {
+            contentLayout = new QGridLayout(content);
+        }
+        else
+        {
+            contentLayout = new QVBoxLayout(content);
+        }
+        contentLayout->setContentsMargins(15, 10, 15, 10);
+        v->addWidget(content);
+        *container = content;
+
         return box;
     };
 
-    rightSection->addWidget(createBigBox("НАДПИСЬ"));
+    rightSection->addWidget(createBigBox("ДОСТИЖЕНИЯ", &achievementsContainer));
     rightSection->addSpacing(20);
-    rightSection->addWidget(createBigBox("НАДПИСЬ"));
+    rightSection->addWidget(createBigBox("НЕДАВНЯЯ АКТИВНОСТЬ", &activityContainer));
 
-    auto *footer = new QLabel("О CppForge    Контакты\nКонфиденциальность");
-    footer->setObjectName("FooterLinks");
-    footer->setAlignment(Qt::AlignRight);
-    rightSection->addWidget(footer);
+    auto *footerLayout = new QHBoxLayout();
+    footerLayout->setSpacing(10);
+    footerLayout->addStretch();
+
+    auto createFooterBtn = [this](const QString &text, auto slot)
+    {
+        auto *btn = new QPushButton(text);
+        btn->setObjectName("FooterBtn");
+        btn->setCursor(Qt::PointingHandCursor);
+        connect(btn, &QPushButton::clicked, this, slot);
+        return btn;
+    };
+
+    auto createSeparator = []()
+    {
+        auto *sep = new QLabel("•");
+        sep->setStyleSheet("color: #BBB; font-size: 14px;");
+        return sep;
+    };
+
+    footerLayout->addWidget(createFooterBtn("О cppforge", &ProfilePage::onAboutClicked));
+    footerLayout->addWidget(createSeparator());
+    footerLayout->addWidget(createFooterBtn("Контакты", &ProfilePage::onContactsClicked));
+    footerLayout->addWidget(createSeparator());
+    footerLayout->addWidget(createFooterBtn("Конфиденциальность", &ProfilePage::onPrivacyClicked));
+
+    rightSection->addSpacing(30);
+    rightSection->addLayout(footerLayout);
+    rightSection->addStretch();
 
     mainLayout->addLayout(leftSection, 3);
     mainLayout->addLayout(rightSection, 2);
@@ -175,6 +393,15 @@ void ProfilePage::applyStyles()
         #GreenValue { color: #4CAF50; font-size: 24px; font-weight: bold; }
         #StreakLabel { font-size: 26px; font-weight: bold; }
         #FooterLinks { color: #888; font-size: 13px; line-height: 1.5; }
+        #FooterBtn {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 14px;
+            padding: 2px 5px;
+            text-align: right;
+        }
+        #FooterBtn:hover { color: #62639b; text-decoration: underline; }
         #ChangeAvatarBtn {
             background-color: #f8f9ff; color: #62639b; border: 1px solid #62639b;
             border-radius: 5px; padding: 8px; font-weight: 500;
@@ -196,8 +423,36 @@ void ProfilePage::onChangeAvatarClicked()
             QSqlQuery query;
             query.prepare("UPDATE users SET avatar_path = :path WHERE id = :id");
             query.bindValue(":path", fileName);
-            query.bindValue(":id", currentUserId);
+            query.bindValue(":id", static_cast<qulonglong>(currentUserId));
             query.exec();
         }
     }
+}
+
+void ProfilePage::onAboutClicked()
+{
+    QString aboutText =
+        "cppforge — это образовательная платформа для изучения языков программирования C и C++. "
+        "Наш курс ведет от основ операционных систем к системному программированию и современным стандартам C++, "
+        "включая PvP-режим и практические задачи.\n\n"
+        "Команда разработчиков проекта состоит из выпускников КМПО РАНХиГС, которые воплотили идею по-настоящему "
+        "крутой платформы для обучения.";
+    InfoDialog dlg("О cppforge", aboutText, this);
+    dlg.exec();
+}
+
+void ProfilePage::onContactsClicked()
+{
+    InfoDialog dlg("Контакты", "rinsterr@yandex.ru — по всем вопросам и предложениям", this);
+    dlg.exec();
+}
+
+void ProfilePage::onPrivacyClicked()
+{
+    QString privacyText =
+        "Мы ценим Вашу конфиденциальность. Приложение хранит Ваши данные исключительно локально на Вашем устройстве "
+        "и не передает их третьим лицам.\n\n"
+        "Используя cppforge, Вы соглашаетесь с локальным хранением прогресса обучения и настроек профиля.";
+    InfoDialog dlg("Конфиденциальность", privacyText, this);
+    dlg.exec();
 }

@@ -3,11 +3,13 @@
 #include <QApplication>
 #include <QEvent>
 #include <QFont>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPushButton>
+#include <QScreen>
 
 CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
 {
@@ -85,6 +87,7 @@ void CustomTitleBar::setIcon(const QIcon &icon)
 
 void CustomTitleBar::onMinimizeClicked()
 {
+    window()->setWindowState(window()->windowState() & ~Qt::WindowMaximized);
     window()->showMinimized();
 }
 
@@ -118,11 +121,25 @@ void CustomTitleBar::mouseMoveEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton)
     {
-        window()->move(event->globalPos() - dragPosition_);
+        if (window()->isMaximized())
+        {
+            double relativeX = (double)event->pos().x() / width();
+
+            window()->showNormal();
+
+            int newX = event->globalPos().x() - (window()->width() * relativeX);
+            int newY = event->globalPos().y() - event->pos().y();
+
+            dragPosition_ = event->globalPos() - QPoint(newX, newY);
+            window()->move(newX, newY);
+        }
+        else
+        {
+            window()->move(event->globalPos() - dragPosition_);
+        }
         event->accept();
     }
 }
-
 void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)

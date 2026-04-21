@@ -26,7 +26,7 @@ namespace cppforge::entities
          * @brief Constructs a new CodingTask instance.
          *
          * @param taskId The unique identifier of the coding task.
-         * @param lessonId The ID of the lesson to which this task belongs.
+         * @param lessonId The optional ID of the lesson to which this task belongs.
          * @param title The concise title of the coding problem.
          * @param description The detailed problem statement and instructions.
          * @param initialCode The starting code snippet provided to the user.
@@ -35,11 +35,13 @@ namespace cppforge::entities
          * @param memoryLimit The maximum allowed memory usage in kilobytes.
          * @param whitelist An optional set of syntax tokens that must be present in the solution.
          * @param blacklist An optional set of syntax tokens that must not be used in the solution.
+         * @param duelTopic An optional topic for duel tasks.
          */
-        CodingTask(uint64_t taskId, uint64_t lessonId, QString title, QString description, QString initialCode,
-                   const std::set<TestCase> &testCases, int32_t timeLimit, int32_t memoryLimit,
+        CodingTask(uint64_t taskId, std::optional<uint64_t> lessonId, QString title, QString description,
+                   QString initialCode, const std::set<TestCase> &testCases, int32_t timeLimit, int32_t memoryLimit,
                    const std::optional<std::set<QString>> &whitelist = std::nullopt,
-                   const std::optional<std::set<QString>> &blacklist = std::nullopt);
+                   const std::optional<std::set<QString>> &blacklist = std::nullopt,
+                   const std::optional<QString> &duelTopic = std::nullopt);
 
         /**
          * @brief Retrieves the unique identifier of the coding task.
@@ -49,9 +51,9 @@ namespace cppforge::entities
 
         /**
          * @brief Retrieves the parent lesson's identifier.
-         * @return The lesson ID as a 64-bit unsigned integer.
+         * @return An optional containing the lesson ID as a 64-bit unsigned integer.
          */
-        uint64_t getLessonId() const;
+        std::optional<uint64_t> getLessonId() const;
 
         /**
          * @brief Retrieves the title of the coding task.
@@ -101,9 +103,15 @@ namespace cppforge::entities
          */
         const std::optional<std::set<QString>> &getBlacklist() const;
 
+        /**
+         * @brief Retrieves the optional duel topic for this task.
+         * @return An optional string representing the duel topic.
+         */
+        const std::optional<QString> &getDuelTopic() const;
+
     private:
         uint64_t id_;
-        uint64_t lessonId_;
+        std::optional<uint64_t> lessonId_;
         QString title_;
         QString description_;
         QString initialCode_;
@@ -112,6 +120,7 @@ namespace cppforge::entities
         int32_t memoryLimit_;
         std::optional<std::set<QString>> whitelist_;
         std::optional<std::set<QString>> blacklist_;
+        std::optional<QString> duelTopic_;
     };
 } // namespace cppforge::entities
 
