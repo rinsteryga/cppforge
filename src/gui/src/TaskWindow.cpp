@@ -522,6 +522,20 @@ void TaskWindow::onSubmitClicked()
                     btnNext_->setToolTip("");
                 }
 
+                QSqlQuery streakQuery;
+                streakQuery.prepare(R"(
+                    UPDATE users 
+                    SET current_streak_days = CASE 
+                        WHEN last_level_solved_at IS NULL OR last_level_solved_at < CURRENT_DATE - INTERVAL '1 day' THEN 1
+                        WHEN last_level_solved_at >= CURRENT_DATE - INTERVAL '1 day' AND last_level_solved_at < CURRENT_DATE THEN current_streak_days + 1
+                        ELSE current_streak_days
+                    END,
+                    last_level_solved_at = CURRENT_TIMESTAMP
+                    WHERE id = :uid AND (last_level_solved_at IS NULL OR last_level_solved_at < CURRENT_DATE)
+                )");
+                streakQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+                streakQuery.exec();
+
                 emit lessonCompleted(currentModuleId_);
 
                 int totalProgress = getModuleProgress(currentModuleParentId_);
