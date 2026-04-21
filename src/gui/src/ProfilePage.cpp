@@ -102,7 +102,7 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         QSqlQuery query;
         query.prepare("UPDATE users SET avatar_path = :path WHERE id = :id");
         query.bindValue(":path", finalPath);
-        query.bindValue(":id", userId);
+        query.bindValue(":id", static_cast<qulonglong>(userId));
 
         if (!query.exec())
         {
@@ -423,7 +423,7 @@ void ProfilePage::onChangeAvatarClicked()
             QSqlQuery query;
             query.prepare("UPDATE users SET avatar_path = :path WHERE id = :id");
             query.bindValue(":path", fileName);
-            query.bindValue(":id", currentUserId);
+            query.bindValue(":id", static_cast<qulonglong>(currentUserId));
             query.exec();
         }
     }
