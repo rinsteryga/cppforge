@@ -1,114 +1,111 @@
-    #pragma once
+#pragma once
 
-    #include "ProfilePage.hpp"
-    #include "TaskWindow.hpp"
-    #include "ModuleRoadmapWidget.hpp" // Обязательно подключаем новый виджет
+#include "ModuleRoadmapWidget.hpp"
+#include "ProfilePage.hpp"
+#include "TaskWindow.hpp"
 
-    #include <QList>
-    #include <QPropertyAnimation>
-    #include <QStackedWidget>
-    #include <QString>
-    #include <QWidget>
-    #include <QtSql/QSqlQuery>
+#include <QList>
+#include <QPropertyAnimation>
+#include <QStackedWidget>
+#include <QString>
+#include <QWidget>
+#include <QtSql/QSqlQuery>
 
-    #include <memory>
-    #include <vector>
+#include <memory>
+#include <vector>
 
-    class QFrame;
-    class QLabel;
-    class QPushButton;
-    class QProgressBar;
-    class QVBoxLayout;
-    class QHBoxLayout;
-    class QScrollArea;
-    class CustomTitleBar;
+class QFrame;
+class QLabel;
+class QPushButton;
+class QProgressBar;
+class QVBoxLayout;
+class QHBoxLayout;
+class QScrollArea;
+class CustomTitleBar;
 
-    class MainWindow : public QWidget
-    {
-        Q_OBJECT
+class MainWindow : public QWidget
+{
+    Q_OBJECT
 
-    public:
-        explicit MainWindow(QWidget *parent = nullptr);
-        ~MainWindow();
+public:
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 
-        void setCurrentUser(const QString &username) { m_currentUsername = username; }
-        void setUserId(int id);
+    void setCurrentUser(const QString &username) { m_currentUsername = username; }
+    void setUserId(int id);
 
-    protected:
-        void paintEvent(QPaintEvent *event) override;
-        void showEvent(QShowEvent *event) override;
+protected:
+    void paintEvent(QPaintEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
-    public slots:
-        void fadeIn();
-        void fadeOut();
-        void openTaskWindow(int moduleId = 1);
+public slots:
+    void fadeIn();
+    void fadeOut();
+    void openTaskWindow(int moduleId = 1);
 
-    private slots:
-        void onModuleButtonClicked();
-        void onLearnButtonClicked();
-        void onProfileButtonClicked();
-        void onTaskWindowClosed();
-        void updateModuleProgress(int moduleId, int progress);
-        
-        // Слот для возврата из роадмапы к списку модулей
-        void onBackToModulesClicked();
+private slots:
+    void onModuleButtonClicked();
+    void onLearnButtonClicked();
+    void onProfileButtonClicked();
+    void onTaskWindowClosed();
+    void updateModuleProgress(int moduleId, int progress);
 
-    private:
-        void setupUI();
-        void setupWindowProperties();
-        void setupTitleBar();
-        void setupLeftPanel();
-        void setupCenterPanel();
-        void setupRightPanel();
-        void setupStyles();
-        void setupConnections();
-        void centerWindow();
-        void animateToTaskWindow(int moduleId);
+    void onBackToModulesClicked();
 
-        int m_currentOpenModuleId = -1;
+private:
+    void setupUI();
+    void setupWindowProperties();
+    void setupTitleBar();
+    void setupLeftPanel();
+    void setupCenterPanel();
+    void setupRightPanel();
+    void setupStyles();
+    void setupConnections();
+    void centerWindow();
+    void animateToTaskWindow(int moduleId);
 
-        void loadAllModulesProgress();
-        
-        // Новый метод для загрузки данных роадмапы из БД
-        void loadRoadmapForModule(int moduleId);
+    int m_currentOpenModuleId = -1;
 
-        std::unique_ptr<CustomTitleBar> customTitleBar_;
-        std::unique_ptr<QPropertyAnimation> transitionAnimation_;
-        std::unique_ptr<QVBoxLayout> centerPanelLayout_;
-        std::unique_ptr<TaskWindow> taskWindow_;
+    void loadAllModulesProgress();
 
-        std::unique_ptr<QStackedWidget> contentStack;
-        ProfilePage *profilePage{nullptr};
-        
-        // Страницы для StackedWidget
-        QWidget *learningPage{nullptr};
-        QWidget *roadmapPage{nullptr};           // Новая страница роадмапы
-        ModuleRoadmapWidget *roadmapWidget{nullptr}; // Сам виджет "змейки"
+    void loadRoadmapForModule(int moduleId);
 
-        QString m_currentUsername;
-        int m_currentUserId{-1};
+    std::unique_ptr<CustomTitleBar> customTitleBar_;
+    std::unique_ptr<QPropertyAnimation> transitionAnimation_;
+    std::unique_ptr<QVBoxLayout> centerPanelLayout_;
+    std::unique_ptr<TaskWindow> taskWindow_;
 
-        std::unique_ptr<QFrame> sideBar;
-        std::unique_ptr<QFrame> eventCard;
-        std::unique_ptr<QFrame> dailyTaskCard;
-        std::unique_ptr<QScrollArea> modulesScrollArea;
-        std::unique_ptr<QWidget> modulesContainer;
-        std::unique_ptr<QVBoxLayout> modulesLayout;
+    std::unique_ptr<QStackedWidget> contentStack;
+    ProfilePage *profilePage{nullptr};
 
-        std::vector<std::unique_ptr<QFrame>> moduleCards;
-        QList<QLabel *> moduleProgressLabels;
-        QList<QProgressBar *> moduleProgressBars;
-        QList<QPushButton *> moduleButtons;
+    QWidget *learningPage{nullptr};
+    QWidget *roadmapPage{nullptr};
+    ModuleRoadmapWidget *roadmapWidget{nullptr};
 
-        std::unique_ptr<QHBoxLayout> footerLinksLayout;
+    QString m_currentUsername;
+    int m_currentUserId{-1};
 
-        QPushButton *aboutBtn{nullptr};
-        QPushButton *contactsBtn{nullptr};
-        QPushButton *privacyBtn{nullptr};
-        QPushButton *learnBtn{nullptr};
-        QPushButton *profileBtn{nullptr};
-        QPushButton *ratingBtn{nullptr};
+    std::unique_ptr<QFrame> sideBar;
+    std::unique_ptr<QFrame> eventCard;
+    std::unique_ptr<QFrame> dailyTaskCard;
+    std::unique_ptr<QScrollArea> modulesScrollArea;
+    std::unique_ptr<QWidget> modulesContainer;
+    std::unique_ptr<QVBoxLayout> modulesLayout;
 
-        bool isTransitioning_{false};
-        int pendingModuleId_{-1};
-    };
+    std::vector<std::unique_ptr<QFrame>> moduleCards;
+    QList<QLabel *> moduleProgressLabels;
+    QList<QProgressBar *> moduleProgressBars;
+    QList<QPushButton *> moduleButtons;
+
+    std::unique_ptr<QHBoxLayout> footerLinksLayout;
+
+    QPushButton *aboutBtn{nullptr};
+    QPushButton *contactsBtn{nullptr};
+    QPushButton *privacyBtn{nullptr};
+    QPushButton *learnBtn{nullptr};
+    QPushButton *profileBtn{nullptr};
+    QPushButton *ratingBtn{nullptr};
+
+    bool isTransitioning_{false};
+    int pendingModuleId_{-1};
+};
