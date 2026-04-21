@@ -45,6 +45,13 @@ namespace cppforge::repositories
          */
         bool save(const entities::User &user) override;
 
+        /**
+         * @brief Retrieves the count of unique coding tasks a user has solved.
+         * @param userId The ID of the user.
+         * @return The count of unique successfully solved coding tasks.
+         */
+        int getSolvedTasksCount(uint64_t userId) const override;
+
     private:
         QSqlDatabase &database_;
 
