@@ -53,6 +53,14 @@ namespace cppforge
              * @return True if the operation succeeded; otherwise false.
              */
             virtual bool save(const entities::User &user) = 0;
+
+            /**
+             * @brief Retrieves the count of unique coding tasks a user has solved.
+             *
+             * @param userId The ID of the user.
+             * @return The count of unique successfully solved coding tasks.
+             */
+            virtual int getSolvedTasksCount(uint64_t userId) const = 0;
         };
     } // namespace repositories
 } // namespace cppforge
