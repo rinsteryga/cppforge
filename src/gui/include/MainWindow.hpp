@@ -14,6 +14,11 @@
 #include <memory>
 #include <vector>
 
+namespace cppforge::services
+{
+    class UserService;
+}
+
 class QFrame;
 class QLabel;
 class QPushButton;
@@ -33,6 +38,7 @@ public:
 
     void setCurrentUser(const QString &username) { m_currentUsername = username; }
     void setUserId(int id);
+    void setUserService(cppforge::services::UserService *service);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -88,6 +94,8 @@ private:
     QString m_currentUsername;
     int m_currentUserId{-1};
     int m_currentOpenModuleId{-1};
+
+    cppforge::services::UserService *m_userService{nullptr};
 
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;
