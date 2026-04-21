@@ -333,10 +333,18 @@ void TaskWindow::setupUI()
 
     codeLayout->addWidget(new QLabel("<\\> Code Editor"));
 
+    // --- НАСТРОЙКА РЕДАКТОРА (ТАБЫ И ШРИФТ) ---
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
-    codeEditor_->setFont(QFont("Consolas", 13));
+    
+    QFont codeFont("Consolas", 13);
+    codeEditor_->setFont(codeFont);
+
+    // Установка визуальной ширины таба в 4 пробела
+    QFontMetrics metrics(codeFont);
+    codeEditor_->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
+
     codeEditor_->installEventFilter(this);
     codeLayout->addWidget(codeEditor_);
 
@@ -585,11 +593,25 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
     if (!editor)
         return QWidget::eventFilter(obj, event);
 
+    // 1. Обработка клавиши Tab для редактора кода
+    if (obj == codeEditor_ && event->type() == QEvent::KeyPress)
+    {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Tab)
+        {
+            // Вставляем ровно 4 пробела вместо символа табуляции
+            editor->insertPlainText("    ");
+            return true; // Прерываем событие, чтобы Qt не вставил \t
+        }
+    }
+
+    // 2. Логика разблокировки кнопки "Изучено" при прокрутке теории до конца
     if (obj == theoryEdit_ && !hasCodingTask_ && btnSubmit_ && !btnSubmit_->isEnabled())
     {
         if (event->type() == QEvent::Wheel || event->type() == QEvent::KeyPress)
         {
             QScrollBar *vBar = theoryEdit_->verticalScrollBar();
+            // Если прокрутили почти до самого низа (с запасом 20 пикселей)
             if (vBar->value() >= vBar->maximum() - 20)
             {
                 btnSubmit_->setEnabled(true);
@@ -598,6 +620,7 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
         }
     }
 
+    // 3. Масштабирование текста (Zoom) через Ctrl + Колесо мыши
     if (event->type() == QEvent::Wheel)
     {
         auto *wheelEvent = static_cast<QWheelEvent *>(event);
@@ -607,10 +630,11 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
                 editor->zoomIn(1);
             else
                 editor->zoomOut(1);
-            return true;
+            return true; // Событие обработано
         }
     }
 
+    // 4. Масштабирование текста (Zoom) через Ctrl + Плюс/Минус
     if (event->type() == QEvent::KeyPress)
     {
         auto *keyEvent = static_cast<QKeyEvent *>(event);
@@ -629,6 +653,7 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
         }
     }
 
+    // Передаем остальные события базовому классу
     return QWidget::eventFilter(obj, event);
 }
 

@@ -81,7 +81,7 @@ private:
 
     cppforge::entities::CodingTask currentTask_;
 
-    int currentUserId_{1};
+    int currentUserId_{-1};
     int currentModuleId_{-1};
     int currentModuleParentId_{-1};
     bool hasCodingTask_{false};
