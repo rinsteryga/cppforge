@@ -462,11 +462,11 @@ void TaskWindow::onSubmitClicked()
         QSqlQuery query;
         query.prepare(R"(
             INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
-            VALUES (:uid, :mid, :lid, :status, NOW()) 
+            VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
             ON CONFLICT (user_id, lesson_id) 
             DO UPDATE SET 
                 is_completed = EXCLUDED.is_completed, 
-                updated_at = NOW()
+                updated_at = CURRENT_TIMESTAMP
         )");
         query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
         query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
@@ -480,7 +480,7 @@ void TaskWindow::onSubmitClicked()
                 QSqlQuery subQuery;
                 subQuery.prepare(R"(
                     INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
-                    VALUES (:uid, :mid, :tid, :code, :success, NOW())
+                    VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
                 )");
                 subQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
                 subQuery.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
@@ -496,6 +496,8 @@ void TaskWindow::onSubmitClicked()
                 {
                     btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
                 }
+
+                emit lessonCompleted(currentModuleId_);
 
                 int totalProgress = getModuleProgress(currentModuleParentId_);
                 emit moduleProgressUpdated(currentModuleParentId_, totalProgress);
@@ -529,6 +531,7 @@ void TaskWindow::onSubmitClicked()
 
         std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
                                                              currentTask_.getTestCases().end());
+
         auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
 
         connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
