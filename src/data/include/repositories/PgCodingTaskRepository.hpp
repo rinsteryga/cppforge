@@ -39,7 +39,7 @@ namespace cppforge::repositories
          * @param topic The topic to filter duel tasks by.
          * @return CodingTask if found, std::nullopt otherwise.
          */
-        std::optional<entities::CodingTask> getRandomDuelTaskByTopic(const QString& topic) const override;
+        std::optional<entities::CodingTask> getRandomDuelTaskByTopic(const QString &topic) const override;
 
     private:
         QSqlDatabase &database_;
