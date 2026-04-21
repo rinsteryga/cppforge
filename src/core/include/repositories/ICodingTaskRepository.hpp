@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include <QString>
 
 namespace cppforge
 {
@@ -48,12 +49,12 @@ namespace cppforge
             virtual std::optional<entities::CodingTask> getTaskById(uint64_t taskId) const = 0;
 
             /**
-             * @brief Fetches a random duel coding task.
+             * @brief Fetches a random duel coding task by topic.
              *
-             * @param lessonId The unique identifier of the lesson.
+             * @param topic The topic to filter duel tasks by.
              * @return An std::optional containing the CodingTask if found; otherwise std::nullopt.
              */
-            virtual std::optional<entities::CodingTask> getRandomDuelTaskByLessonId(uint64_t lessonId) const = 0;
+            virtual std::optional<entities::CodingTask> getRandomDuelTaskByTopic(const QString& topic) const = 0;
         };
     } // namespace repositories
 } // namespace cppforge
