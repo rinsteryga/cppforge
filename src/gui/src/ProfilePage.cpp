@@ -79,7 +79,7 @@ ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
     applyStyles();
 }
 
-void ProfilePage::setUserData(int userId, const QString &name, const QString &avatarPath)
+void ProfilePage::setUserData(uint64_t userId, const QString &name, const QString &avatarPath)
 {
     currentUserId = userId;
 
@@ -118,17 +118,119 @@ void ProfilePage::setUserData(int userId, const QString &name, const QString &av
 
     if (userService_)
     {
-        int solvedCount = userService_->getSolvedTasksCount(userId);
-        if (solvedTasksLabel)
+        solvedTasksLabel->setText(QString::number(userService_->getSolvedTasksCount(userId)));
+        completedLessonsLabel->setText(QString::number(userService_->getCompletedLessonsCount(userId)));
+        achievementsLabel->setText(QString::number(userService_->getAchievementsCount(userId)));
+        totalSubmissionsLabel->setText(QString::number(userService_->getTotalSubmissionsCount(userId)));
+        streakLabel->setText(QString("🔥 %1").arg(userService_->getStreak(userId)));
+
+        auto clearLayout = [](QLayout *layout)
         {
-            solvedTasksLabel->setText(QString::number(solvedCount));
+            if (!layout)
+                return;
+            while (auto item = layout->takeAt(0))
+            {
+                if (item->widget())
+                    delete item->widget();
+                delete item;
+            }
+        };
+
+        clearLayout(achievementsContainer->layout());
+        clearLayout(activityContainer->layout());
+
+        auto achievements = userService_->getAllAchievementsStatus(userId);
+        auto *achGrid = qobject_cast<QGridLayout *>(achievementsContainer->layout());
+
+        int row = 0, col = 0;
+        for (const auto &ach : achievements)
+        {
+            auto *achWidget = new QWidget();
+            auto *v = new QVBoxLayout(achWidget);
+            v->setContentsMargins(5, 5, 5, 5);
+            v->setSpacing(5);
+
+            auto *icon = new QLabel();
+            icon->setFixedSize(65, 65);
+            icon->setAlignment(Qt::AlignCenter);
+
+            bool earned = ach.getDateEarned().time_since_epoch().count() > 0;
+            QPixmap pix(ach.getIconPath());
+
+            if (pix.isNull())
+            {
+                icon->setText("🏆");
+                icon->setStyleSheet(earned ? "background: #eee; border-radius: 8px; font-size: 24px;"
+                                           : "background: #f9f9f9; border-radius: 8px; font-size: 24px; color: "
+                                             "#ccc; border: 1px dashed #ddd;");
+            }
+            else
+            {
+                if (!earned)
+                {
+                    QImage img = pix.toImage().convertToFormat(QImage::Format_Grayscale8);
+                    icon->setPixmap(
+                        QPixmap::fromImage(img).scaled(65, 65, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                }
+                else
+                {
+                    icon->setPixmap(pix.scaled(65, 65, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                }
+            }
+
+            v->addWidget(icon, 0, Qt::AlignCenter);
+            auto *name = new QLabel(ach.getName());
+            name->setAlignment(Qt::AlignCenter);
+            name->setStyleSheet(earned ? "font-size: 10px; font-weight: bold; color: #333;"
+                                       : "font-size: 10px; color: #999;");
+            name->setWordWrap(true);
+            name->setFixedWidth(80);
+            v->addWidget(name);
+
+            achWidget->setToolTip(ach.getName() + (earned ? "" : " (Заблокировано)") + ": " + ach.getDescription());
+
+            if (achGrid)
+            {
+                achGrid->addWidget(achWidget, row, col);
+                col++;
+                if (col >= 4)
+                {
+                    col = 0;
+                    row++;
+                }
+            }
+        }
+
+        auto activities = userService_->getRecentActivity(userId, 3);
+        auto *actLayout = activityContainer->layout();
+        for (const auto &act : activities)
+        {
+            auto *rowWidget = new QWidget();
+            auto *h = new QHBoxLayout(rowWidget);
+            h->setContentsMargins(0, 5, 0, 5);
+
+            auto *typeTag = new QLabel(act.type);
+            typeTag->setStyleSheet(
+                act.type == "Урок"
+                    ? "background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 10px; font-size: 11px;"
+                    : "background: #e8f5e9; color: #388e3c; padding: 2px 8px; border-radius: 10px; font-size: 11px;");
+
+            auto *title = new QLabel(act.title);
+            title->setStyleSheet("font-weight: 500;");
+
+            auto *date = new QLabel(act.date);
+            date->setStyleSheet("color: #888; font-size: 12px;");
+
+            h->addWidget(typeTag);
+            h->addWidget(title, 1);
+            h->addWidget(date);
+            actLayout->addWidget(rowWidget);
+        }
+        if (activities.empty())
+        {
+            actLayout->addWidget(new QLabel("Пока нет активности..."));
         }
     }
-}
-
-void ProfilePage::setUserService(cppforge::services::UserService *service)
-{
-    userService_ = service;
 }
 
 void ProfilePage::setupUI()
@@ -181,23 +283,26 @@ void ProfilePage::setupUI()
 
     auto *statsGrid = new QGridLayout();
     statsGrid->setSpacing(20);
-    for (int i = 0; i < 4; ++i)
+
+    auto createStatCard = [this, statsGrid](int index, const QString &title, QLabel **valueLabel)
     {
         auto *card = new QFrame();
         card->setObjectName("StatCard");
         card->setMinimumSize(220, 110);
+        auto *cLayout = new QVBoxLayout(card);
+        auto *t = new QLabel(title);
+        *valueLabel = new QLabel("0");
+        (*valueLabel)->setObjectName("GreenValue");
+        cLayout->addWidget(t);
+        cLayout->addWidget(*valueLabel);
+        statsGrid->addWidget(card, index / 2, index % 2);
+    };
 
-        if (i == 0)
-        {
-            auto *cLayout = new QVBoxLayout(card);
-            auto *t = new QLabel("Заданий решено:");
-            solvedTasksLabel = new QLabel("0");
-            solvedTasksLabel->setObjectName("GreenValue");
-            cLayout->addWidget(t);
-            cLayout->addWidget(solvedTasksLabel);
-        }
-        statsGrid->addWidget(card, i / 2, i % 2);
-    }
+    createStatCard(0, "Заданий решено:", &solvedTasksLabel);
+    createStatCard(1, "Уроков пройдено:", &completedLessonsLabel);
+    createStatCard(2, "Достижений:", &achievementsLabel);
+    createStatCard(3, "Всего попыток:", &totalSubmissionsLabel);
+
     leftSection->addLayout(statsGrid);
     leftSection->addStretch();
 
@@ -205,26 +310,41 @@ void ProfilePage::setupUI()
 
     auto *streakLayout = new QHBoxLayout();
     streakLayout->addStretch();
-    auto *streakIcon = new QLabel("🔥 14");
-    streakIcon->setObjectName("StreakLabel");
-    streakLayout->addWidget(streakIcon);
+    streakLabel = new QLabel("🔥 0");
+    streakLabel->setObjectName("StreakLabel");
+    streakLayout->addWidget(streakLabel);
     rightSection->addLayout(streakLayout);
 
-    auto createBigBox = [this](const QString &titleText)
+    auto createBigBox = [this](const QString &titleText, QWidget **container)
     {
         auto *box = new QFrame();
         box->setObjectName("BigBlock");
-        box->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        auto *l = new QVBoxLayout(box);
-        auto *title = new QLabel(titleText);
-        title->setProperty("class", QString("box-header"));
-        l->addWidget(title, 0, Qt::AlignTop);
+        auto *v = new QVBoxLayout(box);
+        v->setContentsMargins(0, 0, 0, 0);
+        auto *h = new QLabel(" " + titleText);
+        h->setProperty("class", "box-header");
+        v->addWidget(h);
+
+        auto *content = new QWidget();
+        QLayout *contentLayout = nullptr;
+        if (titleText == "ДОСТИЖЕНИЯ")
+        {
+            contentLayout = new QGridLayout(content);
+        }
+        else
+        {
+            contentLayout = new QVBoxLayout(content);
+        }
+        contentLayout->setContentsMargins(15, 10, 15, 10);
+        v->addWidget(content);
+        *container = content;
+
         return box;
     };
 
-    rightSection->addWidget(createBigBox("ДОСТИЖЕНИЯ"));
+    rightSection->addWidget(createBigBox("ДОСТИЖЕНИЯ", &achievementsContainer));
     rightSection->addSpacing(20);
-    rightSection->addWidget(createBigBox("НЕДАВНЯЯ АКТИВНОСТЬ"));
+    rightSection->addWidget(createBigBox("НЕДАВНЯЯ АКТИВНОСТЬ", &activityContainer));
 
     auto *footerLayout = new QHBoxLayout();
     footerLayout->setSpacing(10);
