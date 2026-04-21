@@ -17,7 +17,8 @@
 namespace cppforge::services
 {
     class UserService;
-}
+    class AchievementService;
+} // namespace cppforge::services
 
 class QFrame;
 class QLabel;
@@ -39,6 +40,7 @@ public:
     void setCurrentUser(const QString &username) { m_currentUsername = username; }
     void setUserId(int id);
     void setUserService(cppforge::services::UserService *service);
+    void setAchievementService(cppforge::services::AchievementService *service);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -57,6 +59,7 @@ private slots:
     void onLogoutClicked();
     void updateModuleProgress(int moduleId, int progress);
     void onBackToModulesClicked();
+    void onAchievementUnlocked(cppforge::entities::Achievement achievement);
 
 private:
     void setupUI();
@@ -96,6 +99,7 @@ private:
     int m_currentOpenModuleId{-1};
 
     cppforge::services::UserService *m_userService{nullptr};
+    cppforge::services::AchievementService *m_achievementService{nullptr};
 
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;

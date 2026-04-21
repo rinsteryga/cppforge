@@ -1,9 +1,11 @@
 #include "MainWindow.hpp"
 
+#include "AchievementNotification.hpp"
 #include "CustomTitleBar.hpp"
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
+#include "services/AchievementService.hpp"
 
 #include <QDebug>
 #include <QFont>
@@ -91,6 +93,16 @@ void MainWindow::setUserService(cppforge::services::UserService *service)
     }
 }
 
+void MainWindow::setAchievementService(cppforge::services::AchievementService *service)
+{
+    m_achievementService = service;
+    if (m_achievementService)
+    {
+        connect(m_achievementService, &cppforge::services::AchievementService::achievementUnlocked, this,
+                &MainWindow::onAchievementUnlocked);
+    }
+}
+
 void MainWindow::loadAllModulesProgress()
 {
     if (m_currentUserId == -1 || moduleProgressBars.isEmpty())
@@ -149,6 +161,15 @@ void MainWindow::onTaskWindowClosed()
     if (m_currentOpenModuleId != -1)
     {
         loadRoadmapForModule(m_currentOpenModuleId);
+    }
+
+    if (m_achievementService && m_userService && !m_currentUsername.isEmpty())
+    {
+        auto userOpt = m_userService->getUser(m_currentUsername);
+        if (userOpt)
+        {
+            m_achievementService->checkAndAwardAchievements(*userOpt);
+        }
     }
 
     fadeIn();
@@ -610,4 +631,18 @@ void MainWindow::onLogoutClicked()
 
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
+}
+
+void MainWindow::onAchievementUnlocked(cppforge::entities::Achievement achievement)
+{
+    qDebug() << "[MainWindow] Slot achievementUnlocked triggered for:" << achievement.getName();
+    auto *notif = new cppforge::gui::AchievementNotification(achievement.getName(), achievement.getDescription(),
+                                                             achievement.getIconPath());
+    notif->showAnimated();
+
+    if (contentStack->currentWidget() == profilePage)
+    {
+        qDebug() << "[MainWindow] Refreshing profile page...";
+        onProfileButtonClicked();
+    }
 }
