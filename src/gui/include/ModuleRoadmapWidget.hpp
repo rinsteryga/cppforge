@@ -33,12 +33,15 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void leaveEvent(QEvent *event) override;
 
 private:
     std::vector<RoadmapNode> m_nodes;
 
     const int m_nodeRadius = 40;
     const int m_spacing = 140;
+    int m_hoveredNodeIndex = -1;
 
     void updateLayout();
 };

@@ -10,6 +10,7 @@
 ModuleRoadmapWidget::ModuleRoadmapWidget(QWidget *parent) : QWidget(parent)
 {
     setMinimumWidth(450);
+    setMouseTracking(true);
 }
 
 void ModuleRoadmapWidget::updateLayout()
@@ -91,17 +92,46 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
         painter.setFont(QFont("Roboto", 12, QFont::Bold));
 
         QString label = QString("№%1").arg(i + 1);
-        int textOffset = (node.pos.x() > width() / 2) ? -85 : 55;
+        
+        bool isOnRight = (node.pos.x() > width() / 2);
+        int textOffset = isOnRight ? -120 : 60; 
+        int alignment = isOnRight ? Qt::AlignRight : Qt::AlignLeft;
+        alignment |= Qt::AlignVCenter | Qt::TextDontClip;
 
-        QRect textRect(node.pos.x() + textOffset, node.pos.y() - 15, 50, 30);
-        painter.drawText(textRect, Qt::AlignCenter, label);
+        QRect textRect(node.pos.x() + textOffset, node.pos.y() - 15, 60, 30);
+        painter.drawText(textRect, alignment, label);
 
         if (!node.isCompleted && !node.isLocked)
         {
             painter.setPen(QColor("#1CB0F6"));
             painter.setFont(QFont("Roboto", 9, QFont::Black));
-            painter.drawText(node.pos.x() + textOffset, node.pos.y() + 15, 50, 20, Qt::AlignCenter, "START");
+            painter.drawText(QRect(node.pos.x() + textOffset, node.pos.y() + 15, 60, 20), alignment, "START");
         }
+    }
+
+    if (m_hoveredNodeIndex != -1 && m_hoveredNodeIndex < static_cast<int>(m_nodes.size()))
+    {
+        const auto &node = m_nodes[m_hoveredNodeIndex];
+        
+        QFont tooltipFont("Roboto", 11, QFont::Medium);
+        painter.setFont(tooltipFont);
+        
+        QFontMetrics metrics(tooltipFont);
+        int textWidth = metrics.horizontalAdvance(node.title);
+        int textHeight = metrics.height();
+        
+        int padding = 8;
+        QRect tooltipRect(node.pos.x() - textWidth / 2 - padding,
+                          node.pos.y() - m_nodeRadius - textHeight - padding * 2 - 5,
+                          textWidth + padding * 2,
+                          textHeight + padding * 2);
+                          
+        painter.setBrush(QColor("#333333"));
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(tooltipRect, 6, 6);
+        
+        painter.setPen(Qt::white);
+        painter.drawText(tooltipRect, Qt::AlignCenter, node.title);
     }
 }
 
@@ -122,5 +152,36 @@ void ModuleRoadmapWidget::mousePressEvent(QMouseEvent *event)
                 return;
             }
         }
+    }
+}
+
+void ModuleRoadmapWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    int hovered = -1;
+    for (size_t i = 0; i < m_nodes.size(); ++i)
+    {
+        int dx = event->pos().x() - m_nodes[i].pos.x();
+        int dy = event->pos().y() - m_nodes[i].pos.y();
+        if ((dx * dx + dy * dy) <= (m_nodeRadius * m_nodeRadius))
+        {
+            hovered = static_cast<int>(i);
+            break;
+        }
+    }
+    
+    if (hovered != m_hoveredNodeIndex)
+    {
+        m_hoveredNodeIndex = hovered;
+        update();
+    }
+}
+
+void ModuleRoadmapWidget::leaveEvent(QEvent *event)
+{
+    QWidget::leaveEvent(event);
+    if (m_hoveredNodeIndex != -1)
+    {
+        m_hoveredNodeIndex = -1;
+        update();
     }
 }
