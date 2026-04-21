@@ -24,9 +24,10 @@ namespace cppforge::repositories
         }
 
         QSqlQuery query(database_);
-        query.prepare("SELECT id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, duel_topic "
-                      "FROM coding_tasks WHERE "
-                      "lesson_id = :lesson_id ORDER BY id ASC");
+        query.prepare(
+            "SELECT id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, duel_topic "
+            "FROM coding_tasks WHERE "
+            "lesson_id = :lesson_id ORDER BY id ASC");
         query.bindValue(":lesson_id", QVariant::fromValue(lessonId));
 
         if (query.exec())
@@ -42,7 +43,8 @@ namespace cppforge::repositories
                 int32_t timeLimit = query.value("time_limit").toInt();
                 int32_t memoryLimit = query.value("memory_limit").toInt();
                 QVariant duelTopicVar = query.value("duel_topic");
-                std::optional<QString> duelTopic = duelTopicVar.isNull() ? std::nullopt : std::make_optional(duelTopicVar.toString());
+                std::optional<QString> duelTopic =
+                    duelTopicVar.isNull() ? std::nullopt : std::make_optional(duelTopicVar.toString());
 
                 std::set<entities::TestCase> testCases;
                 QSqlQuery testQuery(database_);
@@ -116,7 +118,8 @@ namespace cppforge::repositories
         if (query.exec() && query.next())
         {
             QVariant lessonIdVar = query.value("lesson_id");
-            std::optional<uint64_t> lessonId = lessonIdVar.isNull() ? std::nullopt : std::make_optional(lessonIdVar.toULongLong());
+            std::optional<uint64_t> lessonId =
+                lessonIdVar.isNull() ? std::nullopt : std::make_optional(lessonIdVar.toULongLong());
             QString title = query.value("title").toString();
             QString description = query.value("description").toString();
             QString initialCode = query.value("initial_code").toString();
@@ -125,7 +128,8 @@ namespace cppforge::repositories
             int32_t timeLimit = query.value("time_limit").toInt();
             int32_t memoryLimit = query.value("memory_limit").toInt();
             QVariant duelTopicVar = query.value("duel_topic");
-            std::optional<QString> duelTopic = duelTopicVar.isNull() ? std::nullopt : std::make_optional(duelTopicVar.toString());
+            std::optional<QString> duelTopic =
+                duelTopicVar.isNull() ? std::nullopt : std::make_optional(duelTopicVar.toString());
 
             std::set<entities::TestCase> testCases;
             QSqlQuery testQuery(database_);
@@ -180,7 +184,7 @@ namespace cppforge::repositories
         return std::nullopt;
     }
 
-    std::optional<entities::CodingTask> PgCodingTaskRepository::getRandomDuelTaskByTopic(const QString& topic) const
+    std::optional<entities::CodingTask> PgCodingTaskRepository::getRandomDuelTaskByTopic(const QString &topic) const
     {
         if (!database_.isOpen())
         {
@@ -198,7 +202,8 @@ namespace cppforge::repositories
         {
             uint64_t id = query.value("id").toULongLong();
             QVariant lessonIdVar = query.value("lesson_id");
-            std::optional<uint64_t> lessonId = lessonIdVar.isNull() ? std::nullopt : std::make_optional(lessonIdVar.toULongLong());
+            std::optional<uint64_t> lessonId =
+                lessonIdVar.isNull() ? std::nullopt : std::make_optional(lessonIdVar.toULongLong());
             QString title = query.value("title").toString();
             QString description = query.value("description").toString();
             QString initialCode = query.value("initial_code").toString();
