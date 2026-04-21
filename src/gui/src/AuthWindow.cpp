@@ -11,6 +11,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QScreen>
+#include <QSettings>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStyleOption>
@@ -231,6 +232,11 @@ void AuthWindow::onLoginClicked()
         {
             userId = query.value(0).toInt();
         }
+
+        QSettings settings("CppForge", "StudyApp");
+        settings.setValue("auth/remember", true);
+        settings.setValue("auth/user_id", userId);
+        settings.setValue("auth/username", usernameInput_->text());
 
         if (transitionAnimation_)
             transitionAnimation_->stop();

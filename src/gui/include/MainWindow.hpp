@@ -48,6 +48,7 @@ private slots:
     void onLearnButtonClicked();
     void onProfileButtonClicked();
     void onTaskWindowClosed();
+    void onLogoutClicked();
     void updateModuleProgress(int moduleId, int progress);
 
     void onBackToModulesClicked();
@@ -80,6 +81,7 @@ private:
 
     QWidget *learningPage{nullptr};
     QWidget *roadmapPage{nullptr};
+    QPushButton *logoutBtn;
     ModuleRoadmapWidget *roadmapWidget{nullptr};
 
     QString m_currentUsername;

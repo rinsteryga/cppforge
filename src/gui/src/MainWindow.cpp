@@ -16,12 +16,14 @@
 #include <QLabel>
 #include <QPainter>
 #include <QParallelAnimationGroup>
+#include <QProcess>
 #include <QProgressBar>
 #include <QPropertyAnimation>
 #include <QPushButton>
 #include <QScreen>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSettings>
 #include <QSpacerItem>
 #include <QStackedWidget>
 #include <QStyleOption>
@@ -32,7 +34,8 @@
 #include <QtSql/QSqlQuery>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1), m_currentUsername(""), m_currentUserId(-1)
+    : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1), m_currentUsername(""), m_currentUserId(-1),
+      m_currentOpenModuleId(-1)
 {
     setupUI();
     setWindowOpacity(0.0);
@@ -46,7 +49,6 @@ MainWindow::~MainWindow() = default;
 void MainWindow::setUserId(int id)
 {
     m_currentUserId = id;
-    qDebug() << "MainWindow: ID пользователя установлен:" << m_currentUserId;
     loadAllModulesProgress();
 }
 
@@ -212,36 +214,50 @@ void MainWindow::setupLeftPanel()
 
     auto logoContainer = new QFrame();
     logoContainer->setObjectName("logoContainer");
+    logoContainer->setStyleSheet("background: transparent;");
     auto logoLayout = new QVBoxLayout(logoContainer);
 
     auto logoIcon = new QLabel();
     logoIcon->setAlignment(Qt::AlignCenter);
+    logoIcon->setStyleSheet("background: transparent;");
+
     QPixmap logoPixmap(":/icons/main_logo.ico");
     if (!logoPixmap.isNull())
         logoIcon->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     logoIcon->setFixedSize(100, 100);
     logoLayout->addWidget(logoIcon);
+    layout->addWidget(logoContainer, 0, Qt::AlignCenter);
+    layout->addSpacing(20);
 
     learnBtn = new QPushButton("Учиться");
     ratingBtn = new QPushButton("Дуэль");
     profileBtn = new QPushButton("Профиль");
+    logoutBtn = new QPushButton("Выйти");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
-    for (auto btn : {learnBtn, ratingBtn, profileBtn})
+    for (auto btn : {learnBtn, ratingBtn, profileBtn, logoutBtn})
     {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setFixedHeight(48);
         btn->setObjectName("navButton");
-        layout->addWidget(btn);
     }
+
+    logoutBtn->setStyleSheet("QPushButton#navButton { color: #d9534f; } "
+                             "QPushButton#navButton:hover { background-color: #fff1f0; color: #d9534f; }");
+
+    layout->addWidget(learnBtn);
+    layout->addWidget(ratingBtn);
+    layout->addWidget(profileBtn);
+
+    layout->addStretch();
+
+    layout->addWidget(logoutBtn);
 
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
-
-    layout->insertWidget(0, logoContainer, 0, Qt::AlignCenter);
-    layout->addStretch();
+    connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
 }
 
 void MainWindow::setupCenterPanel()
@@ -410,12 +426,20 @@ void MainWindow::setupStyles()
     setStyleSheet(R"(
         QWidget { background-color: #f5f7fb; font-family: 'Roboto'; }
         #MainWindow { background-color: white; border: 1px solid #d0d0d0; }
+        
         QFrame#sideBar { background-color: white; border: 1px solid #e0e0e0; }
+        
+        /* Фикс разводов для всех лейблов */
+        QLabel { background-color: transparent; border: none; }
+
         QPushButton#navButton { background-color: transparent; border: none; color: #555; text-align: left; padding-left: 20px; }
         QPushButton#navButton:hover { background-color: #f0f2ff; color: #62639b; }
+        
         QFrame[class="card"] { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; }
+        
         QProgressBar { background: #eef0f5; border: 1px solid #ddd; text-align: center; color: #333; border-radius: 4px; }
         QProgressBar::chunk { background: #62639b; border-radius: 4px; }
+        
         QPushButton { background: #62639b; color: white; border-radius: 4px; padding: 5px 15px; font-weight: bold; }
         QPushButton:hover { background: #51528a; }
         QPushButton:disabled { background: #f0f0f0; color: #999; }
@@ -466,33 +490,6 @@ void MainWindow::animateToTaskWindow(int moduleId)
 
 void MainWindow::openTaskWindow(int lessonId)
 {
-    if (!taskWindow_)
-    {
-        taskWindow_ = std::make_unique<TaskWindow>();
-        taskWindow_->setUserId(m_currentUserId);
-
-        connect(taskWindow_.get(), &TaskWindow::lessonCompleted, this,
-                [this](int)
-                {
-                    if (m_currentOpenModuleId != -1)
-                    {
-                        this->loadRoadmapForModule(m_currentOpenModuleId);
-                    }
-                });
-
-        connect(taskWindow_.get(), &TaskWindow::windowClosed, this,
-                [this]()
-                {
-                    this->onTaskWindowClosed();
-                    if (m_currentOpenModuleId != -1)
-                    {
-                        this->loadRoadmapForModule(m_currentOpenModuleId);
-                    }
-                });
-    }
-
-    taskWindow_->loadModule(lessonId);
-
     animateToTaskWindow(lessonId);
 }
 
@@ -554,4 +551,17 @@ void MainWindow::onBackToModulesClicked()
     {
         contentStack->setCurrentIndex(0);
     }
+}
+
+void MainWindow::onLogoutClicked()
+{
+    QSettings settings("CppForge", "StudyApp");
+    settings.remove("auth/remember");
+    settings.remove("auth/user_id");
+    settings.remove("auth/username");
+
+    settings.sync();
+
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }
