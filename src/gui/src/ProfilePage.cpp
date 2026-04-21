@@ -246,7 +246,7 @@ void ProfilePage::setupUI()
         return sep;
     };
 
-    footerLayout->addWidget(createFooterBtn("О CppForge", &ProfilePage::onAboutClicked));
+    footerLayout->addWidget(createFooterBtn("О cppforge", &ProfilePage::onAboutClicked));
     footerLayout->addWidget(createSeparator());
     footerLayout->addWidget(createFooterBtn("Контакты", &ProfilePage::onContactsClicked));
     footerLayout->addWidget(createSeparator());
@@ -317,7 +317,7 @@ void ProfilePage::onAboutClicked()
         "включая PvP-режим и практические задачи.\n\n"
         "Команда разработчиков проекта состоит из выпускников КМПО РАНХиГС, которые воплотили идею по-настоящему "
         "крутой платформы для обучения.";
-    InfoDialog dlg("О CppForge", aboutText, this);
+    InfoDialog dlg("О cppforge", aboutText, this);
     dlg.exec();
 }
 
@@ -330,9 +330,9 @@ void ProfilePage::onContactsClicked()
 void ProfilePage::onPrivacyClicked()
 {
     QString privacyText =
-        "Мы ценим вашу конфиденциальность. Приложение хранит ваши данные исключительно локально на вашем устройстве "
+        "Мы ценим Вашу конфиденциальность. Приложение хранит Ваши данные исключительно локально на Вашем устройстве "
         "и не передает их третьим лицам.\n\n"
-        "Используя cppforge, вы соглашаетесь с локальным хранением прогресса обучения и настроек профиля.";
+        "Используя cppforge, Вы соглашаетесь с локальным хранением прогресса обучения и настроек профиля.";
     InfoDialog dlg("Конфиденциальность", privacyText, this);
     dlg.exec();
 }
