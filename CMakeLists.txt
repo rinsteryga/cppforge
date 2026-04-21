@@ -87,7 +87,7 @@ install(FILES ${MSYS2_RUNTIME_DLLS} DESTINATION bin)
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_NAME "cppforge")
 set(CPACK_PACKAGE_VENDOR "cppforge")
-set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_VERSION "1.0.1")
 
 set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
     ExecWait 'powershell.exe -ExecutionPolicy Bypass -File \\\"\$INSTDIR\\\\scripts\\\\install_deps.ps1\\\" -InstallDir \\\"\$INSTDIR\\\"'
