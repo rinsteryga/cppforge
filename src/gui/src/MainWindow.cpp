@@ -1,6 +1,7 @@
 #include "MainWindow.hpp"
 
 #include "CustomTitleBar.hpp"
+#include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
 
@@ -15,11 +16,14 @@
 #include <QLabel>
 #include <QPainter>
 #include <QParallelAnimationGroup>
+#include <QProcess>
 #include <QProgressBar>
 #include <QPropertyAnimation>
 #include <QPushButton>
 #include <QScreen>
 #include <QScrollArea>
+#include <QScrollBar>
+#include <QSettings>
 #include <QSpacerItem>
 #include <QStackedWidget>
 #include <QStyleOption>
@@ -30,7 +34,8 @@
 #include <QtSql/QSqlQuery>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1), m_currentUsername(""), m_currentUserId(-1)
+    : QWidget(parent), isTransitioning_(false), pendingModuleId_(-1), m_currentUsername(""), m_currentUserId(-1),
+      m_currentOpenModuleId(-1)
 {
     setupUI();
     setWindowOpacity(0.0);
@@ -44,8 +49,6 @@ MainWindow::~MainWindow() = default;
 void MainWindow::setUserId(int id)
 {
     m_currentUserId = id;
-    qDebug() << "MainWindow: ID пользователя установлен:" << m_currentUserId;
-
     loadAllModulesProgress();
 }
 
@@ -72,11 +75,6 @@ void MainWindow::loadAllModulesProgress()
         {
             progressValue = query.value(0).toInt();
         }
-        else
-        {
-            qDebug() << "SQL Error Module" << i << ":" << query.lastError().text();
-        }
-
         updateModuleProgress(i, progressValue);
     }
 }
@@ -84,9 +82,7 @@ void MainWindow::loadAllModulesProgress()
 void MainWindow::updateModuleProgress(int moduleId, int progress)
 {
     if (moduleId < 1 || moduleId > (int)moduleProgressBars.size())
-    {
         return;
-    }
 
     moduleProgressBars[moduleId - 1]->setValue(progress);
     moduleProgressLabels[moduleId - 1]->setText(QString("%1% выполнено").arg(progress));
@@ -99,7 +95,6 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
             nextBtn->setEnabled(true);
             nextBtn->setText("Начать обучение");
             nextBtn->setStyleSheet("");
-
             disconnect(nextBtn, &QPushButton::clicked, nullptr, nullptr);
             connect(nextBtn, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
         }
@@ -110,9 +105,7 @@ void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
     this->show();
-
     loadAllModulesProgress();
-
     fadeIn();
 }
 
@@ -129,9 +122,7 @@ void MainWindow::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
     if (!isTransitioning_)
-    {
         loadAllModulesProgress();
-    }
 }
 
 void MainWindow::centerWindow()
@@ -149,9 +140,7 @@ void MainWindow::centerWindow()
 void MainWindow::fadeIn()
 {
     if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
-    {
         transitionAnimation_->stop();
-    }
 
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
@@ -164,9 +153,7 @@ void MainWindow::fadeIn()
 void MainWindow::fadeOut()
 {
     if (transitionAnimation_ && transitionAnimation_->state() == QPropertyAnimation::Running)
-    {
         transitionAnimation_->stop();
-    }
 
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(200);
@@ -200,7 +187,8 @@ void MainWindow::fadeOut()
 
 void MainWindow::setupWindowProperties()
 {
-    setFixedSize(1280, 900);
+    setMinimumSize(1100, 800);
+    resize(1280, 900);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
@@ -227,37 +215,50 @@ void MainWindow::setupLeftPanel()
 
     auto logoContainer = new QFrame();
     logoContainer->setObjectName("logoContainer");
+    logoContainer->setStyleSheet("background: transparent;");
     auto logoLayout = new QVBoxLayout(logoContainer);
 
     auto logoIcon = new QLabel();
     logoIcon->setAlignment(Qt::AlignCenter);
+    logoIcon->setStyleSheet("background: transparent;");
+
     QPixmap logoPixmap(":/icons/main_logo.ico");
     if (!logoPixmap.isNull())
-    {
         logoIcon->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    }
+
     logoIcon->setFixedSize(100, 100);
     logoLayout->addWidget(logoIcon);
+    layout->addWidget(logoContainer, 0, Qt::AlignCenter);
+    layout->addSpacing(20);
 
     learnBtn = new QPushButton("Учиться");
-    ratingBtn = new QPushButton("Рейтинг");
+    ratingBtn = new QPushButton("Дуэль");
     profileBtn = new QPushButton("Профиль");
+    logoutBtn = new QPushButton("Выйти");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
-    for (auto btn : {learnBtn, ratingBtn, profileBtn})
+    for (auto btn : {learnBtn, ratingBtn, profileBtn, logoutBtn})
     {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
         btn->setFixedHeight(48);
         btn->setObjectName("navButton");
-        layout->addWidget(btn);
     }
+
+    logoutBtn->setStyleSheet("QPushButton#navButton { color: #d9534f; } "
+                             "QPushButton#navButton:hover { background-color: #fff1f0; color: #d9534f; }");
+
+    layout->addWidget(learnBtn);
+    layout->addWidget(ratingBtn);
+    layout->addWidget(profileBtn);
+
+    layout->addStretch();
+
+    layout->addWidget(logoutBtn);
 
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
-
-    layout->insertWidget(0, logoContainer, 0, Qt::AlignCenter);
-    layout->addStretch();
+    connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
 }
 
 void MainWindow::setupCenterPanel()
@@ -334,13 +335,9 @@ void MainWindow::setupRightPanel()
         button->setEnabled(!isLocked);
 
         if (!isLocked)
-        {
             connect(button, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
-        }
         else
-        {
             button->setStyleSheet("background: #f0f0f0; color: #999; border: 1px solid #e0e0e0;");
-        }
 
         mLayout->addWidget(mTitle);
         mLayout->addWidget(progress);
@@ -383,6 +380,28 @@ void MainWindow::setupUI()
     profilePage = new ProfilePage(this);
     learningPage = new QWidget();
 
+    roadmapPage = new QWidget();
+    auto roadmapLayout = new QVBoxLayout(roadmapPage);
+    roadmapLayout->setContentsMargins(0, 0, 0, 0);
+
+    QPushButton *backBtn = new QPushButton("← Назад к модулям");
+    backBtn->setFixedWidth(200);
+    backBtn->setCursor(Qt::PointingHandCursor);
+    connect(backBtn, &QPushButton::clicked, this, &MainWindow::onBackToModulesClicked);
+
+    QScrollArea *roadmapScroll = new QScrollArea();
+    roadmapScroll->setWidgetResizable(true);
+    roadmapScroll->setFrameStyle(QFrame::NoFrame);
+    roadmapScroll->setStyleSheet("background: transparent;");
+
+    roadmapWidget = new ModuleRoadmapWidget();
+    connect(roadmapWidget, &ModuleRoadmapWidget::lessonSelected, this, &MainWindow::openTaskWindow);
+
+    roadmapScroll->setWidget(roadmapWidget);
+
+    roadmapLayout->addWidget(backBtn, 0, Qt::AlignLeft | Qt::AlignTop);
+    roadmapLayout->addWidget(roadmapScroll);
+
     auto learningLayout = new QHBoxLayout(learningPage);
     learningLayout->setContentsMargins(0, 0, 0, 0);
     learningLayout->setSpacing(30);
@@ -395,6 +414,7 @@ void MainWindow::setupUI()
 
     contentStack->addWidget(learningPage);
     contentStack->addWidget(profilePage);
+    contentStack->addWidget(roadmapPage);
 
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(contentStack.get(), 4);
@@ -407,12 +427,20 @@ void MainWindow::setupStyles()
     setStyleSheet(R"(
         QWidget { background-color: #f5f7fb; font-family: 'Roboto'; }
         #MainWindow { background-color: white; border: 1px solid #d0d0d0; }
+        
         QFrame#sideBar { background-color: white; border: 1px solid #e0e0e0; }
+        
+        /* Фикс разводов для всех лейблов */
+        QLabel { background-color: transparent; border: none; }
+
         QPushButton#navButton { background-color: transparent; border: none; color: #555; text-align: left; padding-left: 20px; }
         QPushButton#navButton:hover { background-color: #f0f2ff; color: #62639b; }
+        
         QFrame[class="card"] { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; }
+        
         QProgressBar { background: #eef0f5; border: 1px solid #ddd; text-align: center; color: #333; border-radius: 4px; }
         QProgressBar::chunk { background: #62639b; border-radius: 4px; }
+        
         QPushButton { background: #62639b; color: white; border-radius: 4px; padding: 5px 15px; font-weight: bold; }
         QPushButton:hover { background: #51528a; }
         QPushButton:disabled { background: #f0f0f0; color: #999; }
@@ -422,10 +450,11 @@ void MainWindow::setupStyles()
 void MainWindow::onModuleButtonClicked()
 {
     QPushButton *button = qobject_cast<QPushButton *>(sender());
-    if (button)
+    if (button && roadmapWidget && roadmapPage)
     {
         int moduleId = button->property("moduleId").toInt();
-        animateToTaskWindow(moduleId);
+        loadRoadmapForModule(moduleId);
+        contentStack->setCurrentWidget(roadmapPage);
     }
 }
 
@@ -460,7 +489,80 @@ void MainWindow::animateToTaskWindow(int moduleId)
     fadeOut();
 }
 
-void MainWindow::openTaskWindow(int moduleId)
+void MainWindow::openTaskWindow(int lessonId)
 {
-    animateToTaskWindow(moduleId);
+    animateToTaskWindow(lessonId);
+}
+
+void MainWindow::loadRoadmapForModule(int moduleId)
+{
+    if (m_currentUserId == -1)
+        return;
+
+    m_currentOpenModuleId = moduleId;
+
+    std::vector<RoadmapNode> nodes;
+    QSqlQuery query;
+    query.prepare(R"(
+        SELECT l.id, l.title, COALESCE(up.is_completed, FALSE) as completed
+        FROM lessons l
+        LEFT JOIN user_progress up ON l.id = up.lesson_id AND up.user_id = :uid
+        WHERE l.module_id = :mid
+        ORDER BY l.id ASC
+    )");
+
+    query.bindValue(":uid", m_currentUserId);
+    query.bindValue(":mid", moduleId);
+
+    if (query.exec())
+    {
+        while (query.next())
+        {
+            RoadmapNode node;
+            node.lessonId = query.value("id").toInt();
+            node.title = query.value("title").toString();
+            node.isCompleted = query.value("completed").toBool();
+
+            bool isLocked = false;
+            if (!nodes.empty())
+            {
+                isLocked = !nodes.back().isCompleted;
+            }
+            node.isLocked = isLocked;
+            nodes.push_back(node);
+        }
+    }
+
+    roadmapWidget->setLessons(nodes);
+
+    QTimer::singleShot(50,
+                       [this]()
+                       {
+                           QScrollArea *scroll = roadmapPage->findChild<QScrollArea *>();
+                           if (scroll && scroll->verticalScrollBar())
+                           {
+                               scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
+                           }
+                       });
+}
+
+void MainWindow::onBackToModulesClicked()
+{
+    if (contentStack)
+    {
+        contentStack->setCurrentIndex(0);
+    }
+}
+
+void MainWindow::onLogoutClicked()
+{
+    QSettings settings("CppForge", "StudyApp");
+    settings.remove("auth/remember");
+    settings.remove("auth/user_id");
+    settings.remove("auth/username");
+
+    settings.sync();
+
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }

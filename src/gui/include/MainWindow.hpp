@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
 
@@ -47,7 +48,10 @@ private slots:
     void onLearnButtonClicked();
     void onProfileButtonClicked();
     void onTaskWindowClosed();
+    void onLogoutClicked();
     void updateModuleProgress(int moduleId, int progress);
+
+    void onBackToModulesClicked();
 
 private:
     void setupUI();
@@ -61,7 +65,11 @@ private:
     void centerWindow();
     void animateToTaskWindow(int moduleId);
 
+    int m_currentOpenModuleId = -1;
+
     void loadAllModulesProgress();
+
+    void loadRoadmapForModule(int moduleId);
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;
@@ -70,7 +78,11 @@ private:
 
     std::unique_ptr<QStackedWidget> contentStack;
     ProfilePage *profilePage{nullptr};
+
     QWidget *learningPage{nullptr};
+    QWidget *roadmapPage{nullptr};
+    QPushButton *logoutBtn;
+    ModuleRoadmapWidget *roadmapWidget{nullptr};
 
     QString m_currentUsername;
     int m_currentUserId{-1};

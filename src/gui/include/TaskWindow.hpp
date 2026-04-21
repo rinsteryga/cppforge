@@ -39,6 +39,7 @@ public:
 
 signals:
     void moduleProgressUpdated(int id, int progress);
+    void lessonCompleted(int lessonId);
     void windowClosed();
 
 protected:
