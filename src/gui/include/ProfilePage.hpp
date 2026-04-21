@@ -21,6 +21,9 @@ public:
 
 private slots:
     void onChangeAvatarClicked();
+    void onAboutClicked();
+    void onContactsClicked();
+    void onPrivacyClicked();
 
 private:
     void setupUI();

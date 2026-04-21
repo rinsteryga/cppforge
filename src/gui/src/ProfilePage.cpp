@@ -3,10 +3,12 @@
 #include "../../core/include/services/UserService.hpp"
 
 #include <QDebug>
+#include <QDialog>
 #include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -15,6 +17,61 @@
 #include <QtSql/QSqlQuery>
 
 #include <random>
+
+namespace
+{
+    class InfoDialog : public QDialog
+    {
+    public:
+        InfoDialog(const QString &title, const QString &text, QWidget *parent = nullptr) : QDialog(parent)
+        {
+            setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+            setAttribute(Qt::WA_TranslucentBackground);
+
+            auto *layout = new QVBoxLayout(this);
+            auto *card = new QFrame();
+            card->setObjectName("DialogCard");
+            card->setStyleSheet(R"(
+                #DialogCard {
+                    background-color: white;
+                    border: 2px solid #62639b;
+                    border-radius: 15px;
+                }
+                QLabel { color: #333; font-size: 14px; }
+                #Title { font-weight: bold; font-size: 18px; color: #62639b; }
+                QPushButton {
+                    background-color: #62639b;
+                    color: white;
+                    border-radius: 8px;
+                    padding: 8px 20px;
+                    font-weight: bold;
+                    border: none;
+                }
+                QPushButton:hover { background-color: #51528a; }
+            )");
+
+            auto *cardLayout = new QVBoxLayout(card);
+            cardLayout->setContentsMargins(25, 25, 25, 25);
+            cardLayout->setSpacing(15);
+
+            auto *titleLabel = new QLabel(title);
+            titleLabel->setObjectName("Title");
+            cardLayout->addWidget(titleLabel);
+
+            auto *contentLabel = new QLabel(text);
+            contentLabel->setWordWrap(true);
+            contentLabel->setMinimumWidth(300);
+            cardLayout->addWidget(contentLabel);
+
+            auto *closeBtn = new QPushButton("Понятно");
+            closeBtn->setCursor(Qt::PointingHandCursor);
+            connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
+            cardLayout->addWidget(closeBtn, 0, Qt::AlignRight);
+
+            layout->addWidget(card);
+        }
+    };
+} // namespace
 
 ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
 {
@@ -165,14 +222,36 @@ void ProfilePage::setupUI()
         return box;
     };
 
-    rightSection->addWidget(createBigBox("НАДПИСЬ"));
+    rightSection->addWidget(createBigBox("ДОСТИЖЕНИЯ"));
     rightSection->addSpacing(20);
-    rightSection->addWidget(createBigBox("НАДПИСЬ"));
+    rightSection->addWidget(createBigBox("НЕДАВНЯЯ АКТИВНОСТЬ"));
 
-    auto *footer = new QLabel("О CppForge    Контакты\nКонфиденциальность");
-    footer->setObjectName("FooterLinks");
-    footer->setAlignment(Qt::AlignRight);
-    rightSection->addWidget(footer);
+    auto *footerLayout = new QHBoxLayout();
+    footerLayout->addStretch();
+
+    auto createFooterBtn = [this](const QString &text, auto slot)
+    {
+        auto *btn = new QPushButton(text);
+        btn->setObjectName("FooterBtn");
+        btn->setCursor(Qt::PointingHandCursor);
+        connect(btn, &QPushButton::clicked, this, slot);
+        return btn;
+    };
+
+    footerLayout->addWidget(createFooterBtn("О CppForge", &ProfilePage::onAboutClicked));
+    footerLayout->addWidget(new QLabel("   "));
+    footerLayout->addWidget(createFooterBtn("Контакты", &ProfilePage::onContactsClicked));
+
+    auto *footerContainer = new QVBoxLayout();
+    footerContainer->addLayout(footerLayout);
+
+    auto *privacyLayout = new QHBoxLayout();
+    privacyLayout->addStretch();
+    privacyLayout->addWidget(createFooterBtn("Конфиденциальность", &ProfilePage::onPrivacyClicked));
+    footerContainer->addLayout(privacyLayout);
+
+    rightSection->addStretch();
+    rightSection->addLayout(footerContainer);
 
     mainLayout->addLayout(leftSection, 3);
     mainLayout->addLayout(rightSection, 2);
@@ -191,6 +270,15 @@ void ProfilePage::applyStyles()
         #GreenValue { color: #4CAF50; font-size: 24px; font-weight: bold; }
         #StreakLabel { font-size: 26px; font-weight: bold; }
         #FooterLinks { color: #888; font-size: 13px; line-height: 1.5; }
+        #FooterBtn {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 13px;
+            padding: 0;
+            text-align: right;
+        }
+        #FooterBtn:hover { color: #62639b; text-decoration: underline; }
         #ChangeAvatarBtn {
             background-color: #f8f9ff; color: #62639b; border: 1px solid #62639b;
             border-radius: 5px; padding: 8px; font-weight: 500;
@@ -216,4 +304,32 @@ void ProfilePage::onChangeAvatarClicked()
             query.exec();
         }
     }
+}
+
+void ProfilePage::onAboutClicked()
+{
+    QString aboutText =
+        "cppforge — это образовательная платформа для изучения языков программирования C и C++. "
+        "Наш курс ведет от основ операционных систем к системному программированию и современным стандартам C++, "
+        "включая PvP-режим и практические задачи.\n\n"
+        "Команда разработчиков проекта состоит из выпускников КМПО РАНХиГС, которые воплотили идею по-настоящему "
+        "крутой платформы для обучения.";
+    InfoDialog dlg("О CppForge", aboutText, this);
+    dlg.exec();
+}
+
+void ProfilePage::onContactsClicked()
+{
+    InfoDialog dlg("Контакты", "rinsterr@yandex.ru — по всем вопросам и предложениям", this);
+    dlg.exec();
+}
+
+void ProfilePage::onPrivacyClicked()
+{
+    QString privacyText =
+        "Мы ценим вашу конфиденциальность. Приложение хранит ваши данные исключительно локально на вашем устройстве "
+        "и не передает их третьим лицам.\n\n"
+        "Используя CppForge, вы соглашаетесь с локальным хранением прогресса обучения и настроек профиля.";
+    InfoDialog dlg("Конфиденциальность", privacyText, this);
+    dlg.exec();
 }
