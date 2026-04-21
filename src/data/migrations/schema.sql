@@ -63,7 +63,8 @@ CREATE INDEX idx_lessons_module_id ON lessons(module_id);
 
 CREATE TABLE coding_tasks (
     id BIGSERIAL PRIMARY KEY,
-    lesson_id BIGINT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+    lesson_id BIGINT REFERENCES lessons(id) ON DELETE CASCADE,
+    duel_topic TEXT,
     title TEXT NOT NULL,
     description TEXT,
     initial_code TEXT,
