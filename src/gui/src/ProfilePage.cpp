@@ -81,7 +81,7 @@ void ProfilePage::setupUI()
     userNameLabel->setObjectName("UserNameLabel");
 
     auto *changeAvatarBtn = new QPushButton("Изменить фото");
-    changeAvatarBtn->setFixedWidth(150);
+    changeAvatarBtn->setMinimumWidth(150);
     changeAvatarBtn->setCursor(Qt::PointingHandCursor);
     changeAvatarBtn->setObjectName("ChangeAvatarBtn");
 
