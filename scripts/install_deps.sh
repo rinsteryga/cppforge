@@ -6,13 +6,14 @@ PG_PASSWORD="secret_password_123"
 PG_DB="app"
 PG_PORT=5432
 
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
   echo "Please run as root (sudo)"
   exit 1
 fi
 
 mkdir -p "$INSTALL_DIR"
-exec > >(tee -a "$INSTALL_DIR/install_deps.log") 2>&1
+LOG_FILE="$INSTALL_DIR/install_deps.log"
+echo "Starting installation..." > "$LOG_FILE"
 
 echo "Checking for PostgreSQL..."
 if ! command -v psql &> /dev/null; then
