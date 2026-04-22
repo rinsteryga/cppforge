@@ -122,7 +122,7 @@ endif()
 
 set(CPACK_PACKAGE_NAME "cppforge")
 set(CPACK_PACKAGE_VENDOR "cppforge")
-set(CPACK_PACKAGE_VERSION "1.0.1")
+set(CPACK_PACKAGE_VERSION "1.0.0")
 
 if(WIN32)
     set(CPACK_GENERATOR "NSIS")
