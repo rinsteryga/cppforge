@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+
+/usr/share/cppforge/scripts/install_deps.sh /usr
