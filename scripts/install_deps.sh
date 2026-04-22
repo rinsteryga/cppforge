@@ -70,6 +70,7 @@ fi
 
 echo "Creating .env file..."
 mkdir -p /etc/cppforge
+chmod 755 /etc/cppforge
 cat <<EOF > "/etc/cppforge/.env"
 PG_HOST=127.0.0.1
 PG_PORT=$PG_PORT
