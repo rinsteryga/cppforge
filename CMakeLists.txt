@@ -62,6 +62,7 @@ endif()
 
 install(FILES "src/data/migrations/schema.sql" DESTINATION "${DATA_DESTINATION}")
 install(FILES "src/data/migrations/seed.sql" DESTINATION "${DATA_DESTINATION}")
+install(DIRECTORY "src/data/migrations/modules" DESTINATION "${DATA_DESTINATION}")
 
 if(WIN32)
     install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
