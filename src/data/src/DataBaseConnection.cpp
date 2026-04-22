@@ -1,12 +1,12 @@
 #include "../../core/include/utils/EnvLoader.hpp"
 
+#include <QCoreApplication>
 #include <QDebug>
+#include <QDir>
 #include <QProcessEnvironment>
+#include <QStandardPaths>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
-#include <QCoreApplication>
-#include <QDir>
-#include <QStandardPaths>
 
 namespace cppforge
 {
@@ -14,20 +14,19 @@ namespace cppforge
     {
         QSqlDatabase connectDatabase()
         {
-            QStringList envPaths = {
-                QCoreApplication::applicationDirPath() + "/.env",
-                QCoreApplication::applicationDirPath() + "/../.env",
-                QDir::currentPath() + "/.env",
-                QDir::currentPath() + "/../.env",
-                QDir::currentPath() + "/../../.env",
+            QStringList envPaths = {QCoreApplication::applicationDirPath() + "/.env",
+                                    QCoreApplication::applicationDirPath() + "/../.env",
+                                    QDir::currentPath() + "/.env",
+                                    QDir::currentPath() + "/../.env",
+                                    QDir::currentPath() + "/../../.env",
 #ifdef Q_OS_LINUX
-                "/etc/cppforge/.env",
-                QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/.env"
+                                    "/etc/cppforge/.env",
+                                    QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/.env"
 #endif
             };
 
             bool loaded = false;
-            for (const QString& path : envPaths)
+            for (const QString &path : envPaths)
             {
                 if (cppforge::utils::loadEnvFile(path))
                 {
