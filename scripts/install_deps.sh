@@ -22,8 +22,20 @@ if [ -z "$PSQL_CMD" ]; then
 fi
 
 if [ -z "$PSQL_CMD" ] && ! id -u postgres > /dev/null 2>&1; then
-    echo "ERROR: PostgreSQL not found!"
-    exit 0
+    if command -v apt-get > /dev/null 2>&1; then
+        echo "Installing PostgreSQL and required Qt drivers..."
+        apt-get update
+        apt-get install -y postgresql postgresql-contrib libqt5sql5-psql
+        PSQL_CMD=$(command -v psql)
+    else
+        echo "ERROR: PostgreSQL not found and cannot be automatically installed."
+        exit 1
+    fi
+else
+    if command -v apt-get > /dev/null 2>&1; then
+        echo "Ensuring Qt PostgreSQL driver is installed..."
+        apt-get install -y libqt5sql5-psql
+    fi
 fi
 
 if command -v systemctl > /dev/null 2>&1; then
@@ -32,19 +44,25 @@ if command -v systemctl > /dev/null 2>&1; then
 fi
 
 echo "Waiting for PostgreSQL to start..."
-for i in {1..30}; do
+i=1
+while [ "$i" -le 30 ]; do
     if su - postgres -c "psql -c 'SELECT 1;'" > /dev/null 2>&1; then
         break
     fi
     sleep 1
+    i=$((i + 1))
 done
 
 echo "Configuring database..."
-if [ "$(su - postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'\"")" != "1" ]; then
+if su - postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'\"" | grep -q 1; then
+    echo "Role $PG_USER already exists"
+else
     su - postgres -c "psql -c \"CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';\""
 fi
 
-if [ "$(su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='$PG_DB'\"")" != "1" ]; then
+if su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='$PG_DB'\"" | grep -q 1; then
+    echo "Database $PG_DB already exists"
+else
     su - postgres -c "psql -c \"CREATE DATABASE $PG_DB OWNER $PG_USER;\""
 fi
 
