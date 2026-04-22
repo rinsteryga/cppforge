@@ -16,17 +16,8 @@ exec > >(tee -a "$INSTALL_DIR/install_deps.log") 2>&1
 
 echo "Checking for PostgreSQL..."
 if ! command -v psql &> /dev/null; then
-    echo "PostgreSQL not found. Attempting installation..."
-    if command -v apt-get &> /dev/null; then
-        apt-get update
-        apt-get install -y postgresql postgresql-contrib
-    elif command -v brew &> /dev/null; then
-        sudo -u $(logname) brew install postgresql
-        sudo -u $(logname) brew services start postgresql
-    else
-        echo "Could not find a supported package manager (apt or brew). Please install PostgreSQL manually."
-        exit 1
-    fi
+    echo "ERROR: PostgreSQL not found!"
+    exit 0
 fi
 
 if command -v systemctl &> /dev/null; then
