@@ -78,5 +78,5 @@ PG_USER=$PG_USER
 PG_PASSWORD=$PG_PASSWORD
 EOF
 
-chmod 600 "/etc/cppforge/.env"
+chmod 644 "/etc/cppforge/.env"
 echo "PostgreSQL setup complete!"
