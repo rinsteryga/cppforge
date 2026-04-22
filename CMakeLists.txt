@@ -139,7 +139,7 @@ elseif(APPLE)
 else()
     set(CPACK_GENERATOR "DEB;TGZ")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "cppforge")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5widgets5, libqt5sql5, libqt5network5, libqt5core5a, postgresql")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5widgets5, libqt5sql5, libqt5sql5-psql, libqt5network5, libqt5core5a, postgresql")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
 endif()
 
