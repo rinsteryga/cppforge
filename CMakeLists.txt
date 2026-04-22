@@ -22,7 +22,13 @@ enable_testing()
 add_subdirectory(src)
 add_subdirectory(tests)
 
-add_executable(cppforge main.cpp)
+if(WIN32)
+    set(APP_ICON_RESOURCE "src/gui/resources/windows_icon.rc")
+else()
+    set(APP_ICON_RESOURCE "")
+endif()
+
+add_executable(cppforge main.cpp ${APP_ICON_RESOURCE})
 
 target_link_libraries(cppforge
     PRIVATE 
@@ -46,8 +52,16 @@ install(TARGETS cppforge
     RUNTIME DESTINATION bin
 )
 
-install(FILES "src/data/migrations/schema.sql" DESTINATION "data/migrations")
-install(FILES "src/data/migrations/seed.sql" DESTINATION "data/migrations")
+if(WIN32)
+    set(DATA_DESTINATION "data/migrations")
+    set(SCRIPT_DESTINATION "scripts")
+else()
+    set(DATA_DESTINATION "share/cppforge/data/migrations")
+    set(SCRIPT_DESTINATION "share/cppforge/scripts")
+endif()
+
+install(FILES "src/data/migrations/schema.sql" DESTINATION "${DATA_DESTINATION}")
+install(FILES "src/data/migrations/seed.sql" DESTINATION "${DATA_DESTINATION}")
 
 if(WIN32)
     install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
@@ -103,7 +117,7 @@ elseif(APPLE)
         )
     ")
 else()
-    install(FILES "scripts/install_deps.sh" DESTINATION "scripts" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+    install(FILES "scripts/install_deps.sh" DESTINATION "${SCRIPT_DESTINATION}" PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 endif()
 
 set(CPACK_PACKAGE_NAME "cppforge")
@@ -125,6 +139,7 @@ else()
     set(CPACK_GENERATOR "DEB;TGZ")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "cppforge")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5widgets5, libqt5sql5, libqt5network5, libqt5core5a, postgresql")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
 endif()
 
 include(CPack)
