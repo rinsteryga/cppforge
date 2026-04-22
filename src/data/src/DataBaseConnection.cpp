@@ -4,6 +4,9 @@
 #include <QProcessEnvironment>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
+#include <QCoreApplication>
+#include <QDir>
+#include <QStandardPaths>
 
 namespace cppforge
 {
@@ -11,12 +14,31 @@ namespace cppforge
     {
         QSqlDatabase connectDatabase()
         {
-            if (!cppforge::utils::loadEnvFile(".env"))
+            QStringList envPaths = {
+                QCoreApplication::applicationDirPath() + "/.env",
+                QCoreApplication::applicationDirPath() + "/../.env",
+                QDir::currentPath() + "/.env",
+                QDir::currentPath() + "/../.env",
+                QDir::currentPath() + "/../../.env",
+#ifdef Q_OS_LINUX
+                "/etc/cppforge/.env",
+                QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/.env"
+#endif
+            };
+
+            bool loaded = false;
+            for (const QString& path : envPaths)
             {
-                if (!cppforge::utils::loadEnvFile("../.env"))
+                if (cppforge::utils::loadEnvFile(path))
                 {
-                    cppforge::utils::loadEnvFile("../../.env");
+                    loaded = true;
+                    break;
                 }
+            }
+
+            if (!loaded)
+            {
+                qWarning() << "Could not load .env file from standard locations. Defaulting to environment variables.";
             }
 
             QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
