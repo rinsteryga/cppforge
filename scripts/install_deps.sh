@@ -16,7 +16,12 @@ LOG_FILE="$INSTALL_DIR/install_deps.log"
 echo "Starting installation..." > "$LOG_FILE"
 
 echo "Checking for PostgreSQL..."
-if ! command -v psql > /dev/null 2>&1; then
+PSQL_CMD=$(command -v psql)
+if [ -z "$PSQL_CMD" ]; then
+    PSQL_CMD=$(find /usr/bin /usr/lib/postgresql /opt /usr/local -name psql -type f -executable 2>/dev/null | head -n 1)
+fi
+
+if [ -z "$PSQL_CMD" ] && ! id -u postgres > /dev/null 2>&1; then
     echo "ERROR: PostgreSQL not found!"
     exit 0
 fi
@@ -26,12 +31,22 @@ if command -v systemctl > /dev/null 2>&1; then
     systemctl enable postgresql
 fi
 
-echo "Configuring database..."
-sudo -u postgres psql -c "SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'" | grep -q 1 || \
-sudo -u postgres psql -c "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';"
+echo "Waiting for PostgreSQL to start..."
+for i in {1..30}; do
+    if su - postgres -c "psql -c 'SELECT 1;'" > /dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
 
-sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | grep -q 1 || \
-sudo -u postgres psql -c "CREATE DATABASE $PG_DB OWNER $PG_USER;"
+echo "Configuring database..."
+if [ "$(su - postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'\"")" != "1" ]; then
+    su - postgres -c "psql -c \"CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';\""
+fi
+
+if [ "$(su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='$PG_DB'\"")" != "1" ]; then
+    su - postgres -c "psql -c \"CREATE DATABASE $PG_DB OWNER $PG_USER;\""
+fi
 
 echo "Applying migrations..."
 MIGRATION_FILE="$INSTALL_DIR/share/cppforge/data/migrations/schema.sql"
@@ -42,6 +57,15 @@ fi
 SEED_FILE="$INSTALL_DIR/share/cppforge/data/migrations/seed.sql"
 if [ -f "$SEED_FILE" ]; then
     PGPASSWORD=$PG_PASSWORD psql -h localhost -U $PG_USER -d $PG_DB -p $PG_PORT -f "$SEED_FILE"
+fi
+
+MODULES_DIR="$INSTALL_DIR/share/cppforge/data/migrations/modules"
+if [ -d "$MODULES_DIR" ]; then
+    for f in "$MODULES_DIR"/*.sql; do
+        if [ -f "$f" ]; then
+            PGPASSWORD=$PG_PASSWORD psql -h localhost -U $PG_USER -d $PG_DB -p $PG_PORT -f "$f"
+        fi
+    done
 fi
 
 echo "Creating .env file..."
