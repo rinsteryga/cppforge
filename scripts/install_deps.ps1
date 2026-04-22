@@ -60,13 +60,22 @@ if ($IsInstalled) {
 
     $env:PGPASSWORD = $PG_PASSWORD
     
+    $env:PGPASSWORD = $PG_PASSWORD
+    
     $OldErrorAction = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
-    $ConnExitCode = $LASTEXITCODE
+    $DbReady = $false
+    for ($i = 0; $i -lt 15; $i++) {
+        & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $DbReady = $true
+            break
+        }
+        Start-Sleep -Seconds 2
+    }
     $ErrorActionPreference = $OldErrorAction
     
-    if ($ConnExitCode -ne 0) {
+    if (-not $DbReady) {
         Write-Warning "Default password did not work, or server is unreachable. We will try to continue, but DB setup might fail."
         $SkipDbConfig = $true
     } else {
@@ -143,12 +152,14 @@ if ($IsInstalled) {
 
 if (-not $SkipDbConfig) {
     Write-Host "Configuring database..."
-    $RoleExists = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='$PG_USER'"
+    $RoleExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='$PG_USER'"
+    $RoleExists = ($RoleExistsRaw -join "").Trim()
     if ($RoleExists -ne "1") {
         "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
     }
     
-    $DbExists = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'"
+    $DbExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'"
+    $DbExists = ($DbExistsRaw -join "").Trim()
     if ($DbExists -ne "1") {
         "CREATE DATABASE $PG_DB OWNER $PG_USER;" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
     }
@@ -167,6 +178,14 @@ if (-not $SkipDbConfig) {
         & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $SeedFile
     } else {
         Write-Host "WARNING: Seed file not found at $SeedFile"
+    }
+
+    $ModulesDir = "$InstallDir\data\migrations\modules"
+    if (Test-Path $ModulesDir) {
+        $ModuleFiles = Get-ChildItem -Path $ModulesDir -Filter "*.sql" | Sort-Object Name
+        foreach ($ModFile in $ModuleFiles) {
+            & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $ModFile.FullName
+        }
     }
     Write-Host "Creating .env file..."
     $EnvConfig = @"
