@@ -152,16 +152,22 @@ if ($IsInstalled) {
 
 if (-not $SkipDbConfig) {
     Write-Host "Configuring database..."
-    $RoleExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='$PG_USER'"
+    $RoleExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='$PG_USER'" 2>&1
     $RoleExists = ($RoleExistsRaw -join "").Trim()
-    if ($RoleExists -ne "1") {
-        "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    if (-not $RoleExists.Contains("1")) {
+        Write-Host "Creating role $PG_USER..."
+        "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT 2>&1 | Out-Null
+    } else {
+        Write-Host "Role $PG_USER already exists."
     }
     
-    $DbExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'"
+    $DbExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" 2>&1
     $DbExists = ($DbExistsRaw -join "").Trim()
-    if ($DbExists -ne "1") {
-        "CREATE DATABASE $PG_DB OWNER $PG_USER;" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    if (-not $DbExists.Contains("1")) {
+        Write-Host "Creating database $PG_DB..."
+        "CREATE DATABASE $PG_DB OWNER $PG_USER;" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT 2>&1 | Out-Null
+    } else {
+        Write-Host "Database $PG_DB already exists."
     }
     
     Write-Host "Applying database migrations..."
@@ -187,8 +193,12 @@ if (-not $SkipDbConfig) {
             & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $ModFile.FullName
         }
     }
-    Write-Host "Creating .env file..."
-    $EnvConfig = @"
+} else {
+    Write-Warning "Skipped database setup because PostgreSQL connection failed."
+}
+
+Write-Host "Creating .env file..."
+$EnvConfig = @"
 PG_HOST=127.0.0.1
 PG_PORT=$PG_PORT
 PG_DB=$PG_DB
@@ -196,11 +206,8 @@ PG_USER=$PG_USER
 PG_PASSWORD=$PG_PASSWORD
 "@
 
-    $EnvPath = "$InstallDir\.env"
-    Set-Content -Path $EnvPath -Value $EnvConfig
-} else {
-    Write-Warning "Skipped database setup and .env creation because PostgreSQL connection failed."
-}
+$EnvPath = "$InstallDir\.env"
+Set-Content -Path $EnvPath -Value $EnvConfig
 
 Write-Host "PostgreSQL setup complete!"
 Stop-Transcript
