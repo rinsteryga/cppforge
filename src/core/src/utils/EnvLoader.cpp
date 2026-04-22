@@ -11,7 +11,7 @@ namespace cppforge::utils
         QFile file(filePath);
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         {
-            qCritical() << "Failed to open the .env file:" << filePath;
+            qDebug() << "Failed to open the .env file:" << filePath;
             return false;
         }
 
