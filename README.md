@@ -52,3 +52,41 @@ Devs: @rinsteryga, @Sernock
    ```bash
    ./cppforge
    ```
+
+## Installation (Release Packages)
+
+If you prefer not to build from source, you can install the pre-compiled packages.
+
+### Windows (.exe installer)
+1. Download the `cppforge-*-win64.exe` installer from the releases page.
+2. Run the installer. It will automatically download, install, and configure PostgreSQL if it's not already set up.
+3. Launch `cppforge` from the Start menu.
+
+### Linux (.deb package for Ubuntu/Debian)
+1. Download the `cppforge-*-Linux.deb` package.
+2. Install it using `apt` so that dependencies (like `libqt5sql5-psql` and PostgreSQL) are automatically resolved and installed:
+   ```bash
+   sudo apt install ./cppforge-1.0.0-Linux.deb
+   ```
+3. The installation script will configure the PostgreSQL database and environment automatically.
+
+### Linux (.tar.gz archive)
+1. Download the `cppforge-*-Linux.tar.gz` archive.
+2. Extract the archive:
+   ```bash
+   tar -xzf cppforge-1.0.0-Linux.tar.gz
+   cd cppforge-1.0.0-Linux
+   ```
+3. Run the installation script with root privileges to install dependencies and set up the database:
+   ```bash
+   sudo sh ./share/cppforge/scripts/install_deps.sh
+   ```
+4. Run the application:
+   ```bash
+   ./bin/cppforge
+   ```
+
+### macOS (.dmg)
+1. Download the `cppforge-*-Darwin.dmg` image.
+2. Open the `.dmg` file and drag `cppforge` to your Applications folder.
+3. *(Note: You may need to manually configure the PostgreSQL database or .env file for macOS at this time)*
