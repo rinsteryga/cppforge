@@ -1,14 +1,15 @@
 #include "CustomTitleBar.hpp"
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QMouseEvent>
+
 #include <QApplication>
-#include <QScreen>
-#include <QIcon>
-#include <QFont>
 #include <QDebug>
-#include <QTimer> // Добавили для гарантированного срабатывания
+#include <QFont>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QPushButton>
+#include <QScreen>
+#include <QTimer>
 
 CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
 {
@@ -73,39 +74,40 @@ void CustomTitleBar::setupUI()
 
 void CustomTitleBar::setTitle(const QString &title)
 {
-    if (titleLabel_) titleLabel_->setText(title);
+    if (titleLabel_)
+        titleLabel_->setText(title);
 }
 
 void CustomTitleBar::setIcon(const QIcon &icon)
 {
-    if (iconLabel_) iconLabel_->setPixmap(icon.pixmap(24, 24));
+    if (iconLabel_)
+        iconLabel_->setPixmap(icon.pixmap(24, 24));
 }
 
 void CustomTitleBar::onMinimizeClicked()
 {
-    QWidget* win = window();
-    if (!win) return;
+    QWidget *win = window();
+    if (!win)
+        return;
 
     minimizeButton_->clearFocus();
-    
-    // Используем прямой метод Qt для сворачивания. 
-    // Если простое win->showMinimized() не подхватывается, 
-    // QTimer::singleShot гарантирует, что команда выполнится сразу после обработки клика.
+
     QTimer::singleShot(0, win, &QWidget::showMinimized);
 }
 
 void CustomTitleBar::onMaximizeRestoreClicked()
 {
-    QWidget* win = window();
-    if (!win) return;
+    QWidget *win = window();
+    if (!win)
+        return;
 
-    if (win->isMaximized()) 
+    if (win->isMaximized())
     {
-        win->showNormal(); // Это вернет окно в нормальное состояние корректно
-    } 
-    else 
+        win->showNormal();
+    }
+    else
     {
-        win->showMaximized(); // Это вызовет WindowStateChange, который подхватит MainWindow
+        win->showMaximized();
     }
 }
 
@@ -118,10 +120,10 @@ void CustomTitleBar::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
     {
-        isResizing_ = false; // Сброс при каждом новом нажатии
-        
-        // Запоминаем позицию только если окно в нормальном состоянии
-        if (!window()->isMaximized()) {
+        isResizing_ = false;
+
+        if (!window()->isMaximized())
+        {
             dragPosition_ = event->globalPos() - window()->frameGeometry().topLeft();
         }
         event->accept();
@@ -130,40 +132,38 @@ void CustomTitleBar::mousePressEvent(QMouseEvent *event)
 
 void CustomTitleBar::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton) {
-        isResizing_ = false; // Гарантированный сброс блокировки
+    if (event->button() == Qt::LeftButton)
+    {
+        isResizing_ = false;
     }
     QWidget::mouseReleaseEvent(event);
 }
 
 void CustomTitleBar::mouseMoveEvent(QMouseEvent *event)
 {
-    // Если произошел даблклик и кнопка еще зажата — ничего не делаем
-    if (isResizing_) {
+    if (isResizing_)
+    {
         event->accept();
         return;
     }
 
     if (event->buttons() & Qt::LeftButton)
     {
-        QWidget* win = window();
-        if (!win) return;
+        QWidget *win = window();
+        if (!win)
+            return;
 
-        if (win->isMaximized()) 
+        if (win->isMaximized())
         {
-            // Механика "отрыва" окна от верхнего края
             double relativeX = (double)event->pos().x() / win->width();
-            
-            // Важно: блокируем сигналы или флаг на мгновение, чтобы смена состояния не вызвала скачок
+
             win->showNormal();
 
             int newX = event->globalPos().x() - (win->width() * relativeX);
             int newY = event->globalPos().y() - event->pos().y();
-            
-            // qMax(0, newY) не дает окну улететь под заголовок экрана
-            win->move(newX, qMax(0, newY)); 
-            
-            // Пересчитываем dragPosition_, чтобы движение продолжалось плавно
+
+            win->move(newX, qMax(0, newY));
+
             dragPosition_ = event->globalPos() - win->frameGeometry().topLeft();
         }
         else
@@ -178,7 +178,7 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
     {
-        isResizing_ = true; // Блокируем MouseMove до отпускания кнопки
+        isResizing_ = true;
         onMaximizeRestoreClicked();
         event->accept();
     }

@@ -209,9 +209,11 @@ void MainWindow::showEvent(QShowEvent *event)
 void MainWindow::centerWindow()
 {
     QScreen *screen = QGuiApplication::screenAt(QCursor::pos());
-    if (!screen) screen = QGuiApplication::primaryScreen();
-    
-    if (screen) {
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+
+    if (screen)
+    {
         QRect adjRect = screen->availableGeometry();
         move(adjRect.center() - rect().center());
     }
@@ -647,19 +649,19 @@ void MainWindow::onBackToModulesClicked()
 
 void MainWindow::changeEvent(QEvent *event)
 {
-    if (event->type() == QEvent::WindowStateChange) {
-        if (this->isMinimized()) {
+    if (event->type() == QEvent::WindowStateChange)
+    {
+        if (this->isMinimized())
+        {
             event->accept();
             return;
         }
 
-        if (this->isMaximized()) {
-            // Вместо ручного setGeometry, просто убедимся, что поля (margins) корректны.
-            // На Windows безрамочные окна при showMaximized() часто вылезают на 8 пикселей за экран.
-            // Если это происходит, добавьте: 
-            // this->setContentsMargins(8, 8, 8, 8); 
-            // Но обычно достаточно позволить Qt самой обработать showMaximized().
-        } else {
+        if (this->isMaximized())
+        {
+        }
+        else
+        {
             this->setContentsMargins(0, 0, 0, 0);
         }
     }
