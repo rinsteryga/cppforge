@@ -42,18 +42,19 @@ sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | gr
 sudo -u postgres psql -c "CREATE DATABASE $PG_DB OWNER $PG_USER;"
 
 echo "Applying migrations..."
-MIGRATION_FILE="$INSTALL_DIR/data/migrations/schema.sql"
+MIGRATION_FILE="$INSTALL_DIR/share/cppforge/data/migrations/schema.sql"
 if [ -f "$MIGRATION_FILE" ]; then
     PGPASSWORD=$PG_PASSWORD psql -h localhost -U $PG_USER -d $PG_DB -p $PG_PORT -f "$MIGRATION_FILE"
 fi
 
-SEED_FILE="$INSTALL_DIR/data/migrations/seed.sql"
+SEED_FILE="$INSTALL_DIR/share/cppforge/data/migrations/seed.sql"
 if [ -f "$SEED_FILE" ]; then
     PGPASSWORD=$PG_PASSWORD psql -h localhost -U $PG_USER -d $PG_DB -p $PG_PORT -f "$SEED_FILE"
 fi
 
 echo "Creating .env file..."
-cat <<EOF > "$INSTALL_DIR/.env"
+mkdir -p /etc/cppforge
+cat <<EOF > "/etc/cppforge/.env"
 PG_HOST=127.0.0.1
 PG_PORT=$PG_PORT
 PG_DB=$PG_DB
@@ -61,5 +62,5 @@ PG_USER=$PG_USER
 PG_PASSWORD=$PG_PASSWORD
 EOF
 
-chmod 600 "$INSTALL_DIR/.env"
+chmod 600 "/etc/cppforge/.env"
 echo "PostgreSQL setup complete!"
