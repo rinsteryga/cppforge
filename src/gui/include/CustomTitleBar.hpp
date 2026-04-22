@@ -2,12 +2,13 @@
 
 #include <QPoint>
 #include <QWidget>
+#include <QString>
+#include <QIcon>
 
 class QHBoxLayout;
 class QLabel;
 class QPushButton;
 class QMouseEvent;
-class QIcon;
 
 class CustomTitleBar : public QWidget
 {
@@ -24,6 +25,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
@@ -33,7 +35,6 @@ private slots:
 
 private:
     void setupUI();
-    void updateMaximizeRestoreIcon();
 
     QLabel *iconLabel_ = nullptr;
     QLabel *titleLabel_ = nullptr;
@@ -43,5 +44,5 @@ private:
     QHBoxLayout *layout_ = nullptr;
 
     QPoint dragPosition_;
-    bool isMaximized_ = false;
+    bool isResizing_ = false; 
 };

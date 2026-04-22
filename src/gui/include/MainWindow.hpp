@@ -11,6 +11,7 @@
 #include <QString>
 #include <QWidget>
 #include <QtSql/QSqlQuery>
+#include <QEvent>
 
 #include <memory>
 #include <vector>
@@ -46,6 +47,8 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    
+    void changeEvent(QEvent *event) override;
 
 public slots:
     void fadeIn();
