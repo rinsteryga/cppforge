@@ -2,6 +2,7 @@
 
 #include "AchievementNotification.hpp"
 #include "CustomTitleBar.hpp"
+#include "DuelPage.hpp"
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
@@ -79,6 +80,20 @@ void MainWindow::setUserId(int id)
     {
         this->close();
         return;
+    }
+
+    QSqlQuery query;
+    query.prepare("SELECT username, avatar_path FROM users WHERE id = :id");
+    query.bindValue(":id", id);
+    if (query.exec() && query.next())
+    {
+        m_currentUsername = query.value("username").toString();
+        QString avatar = query.value("avatar_path").toString();
+
+        if (profilePage)
+            profilePage->setUserData(id, m_currentUsername, avatar);
+        if (duelPage)
+            duelPage->updateUserStats(m_currentUsername, 0, avatar);
     }
 
     loadAllModulesProgress();
@@ -325,6 +340,15 @@ void MainWindow::setupLeftPanel()
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
     connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
+
+    connect(ratingBtn, &QPushButton::clicked, this,
+            [this]()
+            {
+                if (duelPage)
+                {
+                    contentStack->setCurrentWidget(duelPage);
+                }
+            });
 }
 
 void MainWindow::setupCenterPanel()
@@ -445,6 +469,7 @@ void MainWindow::setupUI()
     contentStack = std::make_unique<QStackedWidget>();
     profilePage = new ProfilePage(this);
     learningPage = new QWidget();
+    duelPage = new DuelPage(this);
 
     roadmapPage = new QWidget();
     auto roadmapLayout = new QVBoxLayout(roadmapPage);
@@ -481,6 +506,7 @@ void MainWindow::setupUI()
     contentStack->addWidget(learningPage);
     contentStack->addWidget(profilePage);
     contentStack->addWidget(roadmapPage);
+    contentStack->addWidget(duelPage);
 
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(contentStack.get(), 4);

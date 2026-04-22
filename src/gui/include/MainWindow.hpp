@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DuelPage.hpp"
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
@@ -83,9 +84,11 @@ private:
     std::unique_ptr<TaskWindow> taskWindow_;
 
     std::unique_ptr<QStackedWidget> contentStack;
+
     ProfilePage *profilePage{nullptr};
     QWidget *learningPage{nullptr};
     QWidget *roadmapPage{nullptr};
+    DuelPage *duelPage{nullptr};
 
     QPushButton *learnBtn{nullptr};
     QPushButton *ratingBtn{nullptr};
