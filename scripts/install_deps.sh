@@ -16,12 +16,12 @@ LOG_FILE="$INSTALL_DIR/install_deps.log"
 echo "Starting installation..." > "$LOG_FILE"
 
 echo "Checking for PostgreSQL..."
-if ! command -v psql &> /dev/null; then
+if ! command -v psql > /dev/null 2>&1; then
     echo "ERROR: PostgreSQL not found!"
     exit 0
 fi
 
-if command -v systemctl &> /dev/null; then
+if command -v systemctl > /dev/null 2>&1; then
     systemctl start postgresql
     systemctl enable postgresql
 fi
