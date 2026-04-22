@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QPoint>
-#include <QWidget>
-#include <QString>
 #include <QIcon>
+#include <QPoint>
+#include <QString>
+#include <QWidget>
 
 class QHBoxLayout;
 class QLabel;
@@ -44,5 +44,5 @@ private:
     QHBoxLayout *layout_ = nullptr;
 
     QPoint dragPosition_;
-    bool isResizing_ = false; 
+    bool isResizing_ = false;
 };
