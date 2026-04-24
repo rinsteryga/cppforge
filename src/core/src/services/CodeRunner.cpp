@@ -39,7 +39,9 @@ namespace cppforge::services
         QTemporaryFile sourceFile(QDir::tempPath() + "/cppforge_XXXXXX.cpp");
         sourceFile.setAutoRemove(false);
         if (!sourceFile.open())
-            throw std::runtime_error("Не удалось создать временный файл");
+        {
+            throw std::runtime_error("can not create temporary file");
+        }
 
         sourceFile.write(code.toUtf8());
         QString sourcePath = sourceFile.fileName();
