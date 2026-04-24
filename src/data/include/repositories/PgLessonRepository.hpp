@@ -32,7 +32,7 @@ namespace cppforge::repositories
          * @param id The lesson identifier.
          * @return Lesson if found, std::nullopt otherwise.
          */
-        std::optional<entities::Lesson> getLessonById(uint64_t id) const override;
+        std::optional<entities::Lesson> getLessonById(uint64_t lessonId) const override;
 
     private:
         QSqlDatabase &database_;
