@@ -60,13 +60,22 @@ if ($IsInstalled) {
 
     $env:PGPASSWORD = $PG_PASSWORD
     
+    $env:PGPASSWORD = $PG_PASSWORD
+    
     $OldErrorAction = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
-    $ConnExitCode = $LASTEXITCODE
+    $DbReady = $false
+    for ($i = 0; $i -lt 15; $i++) {
+        & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -c "SELECT 1;" 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $DbReady = $true
+            break
+        }
+        Start-Sleep -Seconds 2
+    }
     $ErrorActionPreference = $OldErrorAction
     
-    if ($ConnExitCode -ne 0) {
+    if (-not $DbReady) {
         Write-Warning "Default password did not work, or server is unreachable. We will try to continue, but DB setup might fail."
         $SkipDbConfig = $true
     } else {
@@ -143,14 +152,22 @@ if ($IsInstalled) {
 
 if (-not $SkipDbConfig) {
     Write-Host "Configuring database..."
-    $RoleExists = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='$PG_USER'"
-    if ($RoleExists -ne "1") {
-        "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    $RoleExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='$PG_USER'" 2>&1
+    $RoleExists = ($RoleExistsRaw -join "").Trim()
+    if (-not $RoleExists.Contains("1")) {
+        Write-Host "Creating role $PG_USER..."
+        "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASSWORD';" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT 2>&1 | Out-Null
+    } else {
+        Write-Host "Role $PG_USER already exists."
     }
     
-    $DbExists = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'"
-    if ($DbExists -ne "1") {
-        "CREATE DATABASE $PG_DB OWNER $PG_USER;" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT
+    $DbExistsRaw = & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" 2>&1
+    $DbExists = ($DbExistsRaw -join "").Trim()
+    if (-not $DbExists.Contains("1")) {
+        Write-Host "Creating database $PG_DB..."
+        "CREATE DATABASE $PG_DB OWNER $PG_USER;" | & "$PgBinDir\psql.exe" -U postgres -d postgres -p $PG_PORT 2>&1 | Out-Null
+    } else {
+        Write-Host "Database $PG_DB already exists."
     }
     
     Write-Host "Applying database migrations..."
@@ -168,8 +185,20 @@ if (-not $SkipDbConfig) {
     } else {
         Write-Host "WARNING: Seed file not found at $SeedFile"
     }
-    Write-Host "Creating .env file..."
-    $EnvConfig = @"
+
+    $ModulesDir = "$InstallDir\data\migrations\modules"
+    if (Test-Path $ModulesDir) {
+        $ModuleFiles = Get-ChildItem -Path $ModulesDir -Filter "*.sql" | Sort-Object Name
+        foreach ($ModFile in $ModuleFiles) {
+            & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $ModFile.FullName
+        }
+    }
+} else {
+    Write-Warning "Skipped database setup because PostgreSQL connection failed."
+}
+
+Write-Host "Creating .env file..."
+$EnvConfig = @"
 PG_HOST=127.0.0.1
 PG_PORT=$PG_PORT
 PG_DB=$PG_DB
@@ -177,11 +206,8 @@ PG_USER=$PG_USER
 PG_PASSWORD=$PG_PASSWORD
 "@
 
-    $EnvPath = "$InstallDir\.env"
-    Set-Content -Path $EnvPath -Value $EnvConfig
-} else {
-    Write-Warning "Skipped database setup and .env creation because PostgreSQL connection failed."
-}
+$EnvPath = "$InstallDir\.env"
+Set-Content -Path $EnvPath -Value $EnvConfig
 
 Write-Host "PostgreSQL setup complete!"
 Stop-Transcript
