@@ -21,11 +21,11 @@ namespace cppforge::services
         bool userUpdated = false;
 
         using ValidatorFn = std::function<bool(const entities::User &, uint32_t)>;
-        std::unordered_map<entities::ConditionType, ValidatorFn> validators_ = {
+        std::unordered_map<entities::ConditionType, ValidatorFn> validators = {
             {entities::ConditionType::LevelsCompleted,
-             [](const entities::User &u, uint32_t val) { return u.getCompletedLevelsIds().size() >= val; }},
+             [](const entities::User &user, uint32_t val) { return user.getCompletedLevelsIds().size() >= val; }},
             {entities::ConditionType::StreakDays,
-             [](const entities::User &u, uint32_t val) { return u.getCurrentStreakDays() >= val; }},
+             [](const entities::User &user, uint32_t val) { return user.getCurrentStreakDays() >= val; }},
             {entities::ConditionType::CustomEvent, [](const entities::User &, uint32_t) { return false; }}};
 
         for (const auto &achievement : systemAchievements)
@@ -39,8 +39,8 @@ namespace cppforge::services
                 continue;
             }
 
-            auto valIt = validators_.find(achievement.getConditionType());
-            bool unlocked = (valIt != validators_.end()) ? valIt->second(user, achievement.getConditionValue()) : false;
+            auto valIt = validators.find(achievement.getConditionType());
+            bool unlocked = (valIt != validators.end()) ? valIt->second(user, achievement.getConditionValue()) : false;
 
             if (unlocked)
             {
