@@ -29,10 +29,10 @@ namespace cppforge::repositories
 
         /**
          * @brief Fetches a matching task by its unique ID.
-         * @param id The task identifier.
+         * @param taskId The task identifier.
          * @return MatchingTask if found, std::nullopt otherwise.
          */
-        std::optional<entities::MatchingTask> getMatchingTaskById(uint64_t id) const override;
+        std::optional<entities::MatchingTask> getMatchingTaskById(uint64_t taskId) const override;
 
     private:
         QSqlDatabase &database_;
