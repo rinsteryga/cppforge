@@ -5,6 +5,7 @@
 #include "../../core/include/services/StaticAnalyzer.hpp"
 #include "CustomTitleBar.hpp"
 
+#include <QDateTime>
 #include <QDebug>
 #include <QFutureWatcher>
 #include <QLabel>
@@ -15,7 +16,6 @@
 #include <QWidget>
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
-#include <QDateTime> 
 
 #include <memory>
 
@@ -47,8 +47,8 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
-    void onRunClicked();      
-    void onSubmitClicked();   
+    void onRunClicked();
+    void onSubmitClicked();
     void onNextTask();
     void onPrevTask();
 
@@ -58,7 +58,7 @@ private:
     void centerWindow();
 
     void saveTaskProgress(bool success, const QString &code);
-    
+
     int getModuleProgress(int moduleId);
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
@@ -82,10 +82,10 @@ private:
 
     cppforge::entities::CodingTask currentTask_;
 
-    int64_t currentUserId_{-1}; 
+    int64_t currentUserId_{-1};
     int currentModuleId_{-1};
     int currentModuleParentId_{-1};
     bool hasCodingTask_{false};
-    
-    qint64 lastClickTime_{0}; 
+
+    qint64 lastClickTime_{0};
 };

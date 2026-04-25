@@ -216,11 +216,10 @@ void TaskWindow::loadModule(int lessonId)
     }
 }
 
-// В TaskWindow.cpp
-
 void TaskWindow::saveTaskProgress(bool success, const QString &code)
 {
-    if (currentUserId_ <= 0) return;
+    if (currentUserId_ <= 0)
+        return;
 
     QSqlQuery query;
     query.prepare(R"(
@@ -231,14 +230,16 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
             is_completed = EXCLUDED.is_completed, 
             updated_at = CURRENT_TIMESTAMP
     )");
-    
+
     query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
     query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
     query.bindValue(":lid", static_cast<qlonglong>(currentModuleId_));
     query.bindValue(":status", success);
 
-    if (query.exec()) {
-        if (hasCodingTask_ && !code.isEmpty()) {
+    if (query.exec())
+    {
+        if (hasCodingTask_ && !code.isEmpty())
+        {
             QSqlQuery subQuery;
             subQuery.prepare(R"(
                 INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
@@ -252,20 +253,25 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
             subQuery.exec();
         }
 
-        if (success) {
-            if (btnSubmit_) {
+        if (success)
+        {
+            if (btnSubmit_)
+            {
                 btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
             }
-            if (btnNext_) {
+            if (btnNext_)
+            {
                 btnNext_->setEnabled(true);
                 btnNext_->setToolTip("");
             }
             emit lessonCompleted(currentModuleId_);
-            
+
             int totalProgress = getModuleProgress(currentModuleParentId_);
             emit moduleProgressUpdated(currentModuleParentId_, totalProgress);
         }
-    } else {
+    }
+    else
+    {
         qDebug() << "SQL Error in saveTaskProgress:" << query.lastError().text();
     }
 }
@@ -475,43 +481,55 @@ void TaskWindow::setupUI()
 
 void TaskWindow::onRunClicked()
 {
-    if (!hasCodingTask_ || !testOutput_) return;
+    if (!hasCodingTask_ || !testOutput_)
+        return;
 
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
     testOutput_->append("<b style='color:#3498db;'>[RUN]</b> Компиляция и запуск...");
 
     std::vector<cppforge::entities::TestCase> runTests;
-    if (!currentTask_.getTestCases().empty()) {
+    if (!currentTask_.getTestCases().empty())
+    {
         runTests.push_back(*currentTask_.getTestCases().begin());
     }
 
     auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
-    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished, [this, watcher]() {
-        auto result = watcher->result();
-        if (testOutput_) {
-            if (result.getErrors().isEmpty()) {
-                testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Вывод программы:</span>");
-                testOutput_->append("<pre style='background:#f4f4f4; padding:10px; border-radius:5px;'>" + result.getOutput() + "</pre>");
-            } else {
-                testOutput_->append("<span style='color:#e74c3c; font-weight:bold;'>Ошибка:</span>");
-                testOutput_->append("<pre style='color:#c0392b; white-space: pre-wrap;'>" + result.getErrors() + "</pre>");
-            }
-        }
-        watcher->deleteLater();
-    });
+    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
+            [this, watcher]()
+            {
+                auto result = watcher->result();
+                if (testOutput_)
+                {
+                    if (result.getErrors().isEmpty())
+                    {
+                        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Вывод программы:</span>");
+                        testOutput_->append("<pre style='background:#f4f4f4; padding:10px; border-radius:5px;'>" +
+                                            result.getOutput() + "</pre>");
+                    }
+                    else
+                    {
+                        testOutput_->append("<span style='color:#e74c3c; font-weight:bold;'>Ошибка:</span>");
+                        testOutput_->append("<pre style='color:#c0392b; white-space: pre-wrap;'>" + result.getErrors() +
+                                            "</pre>");
+                    }
+                }
+                watcher->deleteLater();
+            });
 
     watcher->setFuture(runner_->runAsync(code, runTests));
 }
 
 void TaskWindow::onSubmitClicked()
 {
-    if (currentUserId_ <= 0) return;
+    if (currentUserId_ <= 0)
+        return;
 
-    if (!hasCodingTask_) {
+    if (!hasCodingTask_)
+    {
         testOutput_->clear();
         testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>[Успех] Теория изучена!</span>");
-        saveTaskProgress(true, ""); // Просто помечаем теорию как пройденную
+        saveTaskProgress(true, "");
         return;
     }
 
@@ -519,42 +537,45 @@ void TaskWindow::onSubmitClicked()
     testOutput_->clear();
     testOutput_->append("<b style='color:#f39c12;'>[SUBMIT]</b> Полная проверка решения...");
 
-    // Анализатор (White/Black list)
     auto violation = analyzer_->analyze(currentTask_, code);
-    if (violation.has_value()) {
+    if (violation.has_value())
+    {
         testOutput_->append("<span style='color:#e74c3c;'>[Ошибка анализа] " + violation.value() + "</span>");
         saveTaskProgress(false, code);
         return;
     }
 
-    // Прогоняем ВСЕ тесты
-    std::vector<cppforge::entities::TestCase> allTests(
-        currentTask_.getTestCases().begin(), 
-        currentTask_.getTestCases().end()
-    );
+    std::vector<cppforge::entities::TestCase> allTests(currentTask_.getTestCases().begin(),
+                                                       currentTask_.getTestCases().end());
 
     auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
-    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished, [this, watcher, code]() {
-        auto result = watcher->result();
-        if (testOutput_) {
-            if (result.isSuccess()) {
-                testOutput_->append("<h3 style='color:#27ae60;'>✔ Задание выполнено верно!</h3>");
-                saveTaskProgress(true, code);
-            } else {
-                testOutput_->append("<h3 style='color:#e74c3c;'>✘ Решение не принято</h3>");
-                testOutput_->append("<p>Программа не прошла один или несколько тестов.</p>");
-                if (!result.getErrors().isEmpty()) {
-                    testOutput_->append("<pre style='color:red;'>" + result.getErrors() + "</pre>");
+    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
+            [this, watcher, code]()
+            {
+                auto result = watcher->result();
+                if (testOutput_)
+                {
+                    if (result.isSuccess())
+                    {
+                        testOutput_->append("<h3 style='color:#27ae60;'>✔ Задание выполнено верно!</h3>");
+                        saveTaskProgress(true, code);
+                    }
+                    else
+                    {
+                        testOutput_->append("<h3 style='color:#e74c3c;'>✘ Решение не принято</h3>");
+                        testOutput_->append("<p>Программа не прошла один или несколько тестов.</p>");
+                        if (!result.getErrors().isEmpty())
+                        {
+                            testOutput_->append("<pre style='color:red;'>" + result.getErrors() + "</pre>");
+                        }
+                        saveTaskProgress(false, code);
+                    }
                 }
-                saveTaskProgress(false, code);
-            }
-        }
-        watcher->deleteLater();
-    });
+                watcher->deleteLater();
+            });
 
     watcher->setFuture(runner_->runAsync(code, allTests));
 }
-
 
 void TaskWindow::paintEvent(QPaintEvent *event)
 {
