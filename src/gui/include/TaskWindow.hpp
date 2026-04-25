@@ -15,6 +15,7 @@
 #include <QWidget>
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
+#include <QDateTime> 
 
 #include <memory>
 
@@ -29,9 +30,7 @@ public:
     ~TaskWindow();
 
     void setUserId(int64_t id);
-
     void loadModule(int lessonId);
-
     void setTask(const cppforge::entities::CodingTask &task);
 
     void fadeIn();
@@ -48,8 +47,8 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
-    void onRunClicked();
-    void onSubmitClicked();
+    void onRunClicked();      
+    void onSubmitClicked();   
     void onNextTask();
     void onPrevTask();
 
@@ -58,6 +57,8 @@ private:
     void setupStyles();
     void centerWindow();
 
+    void saveTaskProgress(bool success, const QString &code);
+    
     int getModuleProgress(int moduleId);
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
@@ -81,8 +82,10 @@ private:
 
     cppforge::entities::CodingTask currentTask_;
 
-    int currentUserId_{-1};
+    int64_t currentUserId_{-1}; 
     int currentModuleId_{-1};
     int currentModuleParentId_{-1};
     bool hasCodingTask_{false};
+    
+    qint64 lastClickTime_{0}; 
 };
