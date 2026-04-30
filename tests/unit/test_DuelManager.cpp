@@ -19,28 +19,29 @@ private slots:
         qRegisterMetaType<DuelProgress>("DuelProgress");
     }
 
-    void testConnectionAndIdentityExchange()
+    void TestDuelManager::testConnectionAndIdentityExchange()
     {
-        auto host = std::make_unique<DuelManager>("HostPlayer", this);
-        auto client = std::make_unique<DuelManager>("ClientPlayer", this);
+        DuelManager host("HostPlayer");
+        DuelManager client("ClientPlayer");
 
-        QSignalSpy hostConnectedSpy(host.get(), &DuelManager::opponentConnected);
-        QSignalSpy clientConnectedSpy(client.get(), &DuelManager::opponentConnected);
+        QSignalSpy hostConnectedSpy(&host, &DuelManager::opponentConnected);
+        QSignalSpy clientConnectedSpy(&client, &DuelManager::opponentConnected);
 
-        QVERIFY(host->hostRoom(4242));
+        QVERIFY(host.hostRoom(4242));
 
-        // Даем время ОС на поднятие сокета
         QTest::qWait(500);
 
-        client->joinRoom("127.0.0.1", 4242);
+        client.joinRoom("127.0.0.1", 4242);
 
-        bool hostReceived = hostConnectedSpy.wait(5000);
-        bool clientReceived = clientConnectedSpy.wait(5000);
-
-        if (!hostReceived || !clientReceived)
+        int timeout = 10000;
+        while (timeout > 0 && (hostConnectedSpy.isEmpty() || clientConnectedSpy.isEmpty()))
         {
-            QFAIL("Connection timeout: Host or Client didn't receive opponentConnected signal in 5s");
+            QTest::qWait(100);
+            timeout -= 100;
         }
+
+        QVERIFY2(!hostConnectedSpy.isEmpty(), "Host timed out");
+        QVERIFY2(!clientConnectedSpy.isEmpty(), "Client timed out");
 
         QCOMPARE(hostConnectedSpy.count(), 1);
         QCOMPARE(clientConnectedSpy.count(), 1);
