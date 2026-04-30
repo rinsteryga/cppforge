@@ -29,17 +29,25 @@ private slots:
         client.joinRoom("127.0.0.1", 4242);
 
         if (hostConnectedSpy.isEmpty())
+        {
             hostConnectedSpy.wait(5000);
+        }
         if (clientConnectedSpy.isEmpty())
+        {
             clientConnectedSpy.wait(5000);
+        }
 
         QVERIFY2(!hostConnectedSpy.isEmpty(), "Host timed out waiting for connection");
         QVERIFY2(!clientConnectedSpy.isEmpty(), "Client timed out waiting for connection");
 
         if (hostIdentifiedSpy.isEmpty())
+        {
             hostIdentifiedSpy.wait(2000);
+        }
         if (clientIdentifiedSpy.isEmpty())
+        {
             clientIdentifiedSpy.wait(2000);
+        }
 
         QVERIFY2(!hostIdentifiedSpy.isEmpty(), "Host never identified opponent");
         QVERIFY2(!clientIdentifiedSpy.isEmpty(), "Client never identified opponent");
