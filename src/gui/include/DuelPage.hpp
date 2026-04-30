@@ -10,12 +10,15 @@ class QLabel;
 class QPushButton;
 class QFrame;
 
+#include "services/UserService.hpp"
+
 namespace cppforge
 {
     namespace services
     {
         class DuelManager;
-    }
+        class UserService;
+    } // namespace services
     namespace entities
     {
         struct CodingTask;
@@ -46,6 +49,9 @@ public:
      */
     ~DuelPage();
 
+    void setUserId(uint64_t id);
+    void setUserService(cppforge::services::UserService *service);
+
     /**
      * @brief Updates current user profile stats.
      * @param username User name.
@@ -68,6 +74,8 @@ signals:
     void startDuelSession(const cppforge::entities::CodingTask &task);
 
 private slots:
+    void handleDuelFinished(const QString &winner, int score);
+
     /**
      * @brief "Create Lobby" button click handler. Starts the TCP server.
      */
@@ -141,6 +149,7 @@ private:
     QFrame *m_rightPanel{nullptr};
 
     std::unique_ptr<cppforge::services::DuelManager> m_duelManager;
+    cppforge::services::UserService *m_userService{nullptr};
     bool m_isHosting{false};
     uint64_t m_currentUserId{0};
 };
