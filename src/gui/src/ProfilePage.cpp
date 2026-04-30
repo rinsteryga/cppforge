@@ -65,7 +65,7 @@ namespace
             contentLabel->setFixedWidth(450);
             cardLayout->addWidget(contentLabel);
 
-            auto *closeBtn = new QPushButton("Понятно");
+            auto *closeBtn = new QPushButton("Got it");
             closeBtn->setCursor(Qt::PointingHandCursor);
             connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
             cardLayout->addWidget(closeBtn, 0, Qt::AlignRight);
@@ -124,6 +124,22 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         totalSubmissionsLabel->setText(QString::number(userService_->getTotalSubmissionsCount(userId)));
         streakLabel->setText(QString("🔥 %1").arg(userService_->getStreak(userId)));
 
+        auto userOpt = userService_->findById(userId);
+        if (userOpt)
+        {
+            duelPointsLabel->setText(QString::number(userOpt->getDuelPoints()));
+            int total = userOpt->getDuelWins() + userOpt->getDuelLosses();
+            if (total > 0)
+            {
+                double wr = (static_cast<double>(userOpt->getDuelWins()) / total) * 100.0;
+                winRateLabel->setText(QString("%1%").arg(wr, 0, 'f', 1));
+            }
+            else
+            {
+                winRateLabel->setText("0%");
+            }
+        }
+
         auto clearLayout = [](QLayout *layout)
         {
             if (!layout)
@@ -142,7 +158,8 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         auto achievements = userService_->getAllAchievementsStatus(userId);
         auto *achGrid = qobject_cast<QGridLayout *>(achievementsContainer->layout());
 
-        int row = 0, col = 0;
+        int row = 0;
+        int col = 0;
         for (const auto &ach : achievements)
         {
             auto *achWidget = new QWidget();
@@ -189,7 +206,7 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             name->setFixedWidth(80);
             v->addWidget(name);
 
-            achWidget->setToolTip(ach.getName() + (earned ? "" : " (Заблокировано)") + ": " + ach.getDescription());
+            achWidget->setToolTip(ach.getName() + (earned ? "" : " (Locked)") + ": " + ach.getDescription());
 
             if (achGrid)
             {
@@ -230,7 +247,7 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         }
         if (activities.empty())
         {
-            actLayout->addWidget(new QLabel("Пока нет активности..."));
+            actLayout->addWidget(new QLabel("No activity yet..."));
         }
     }
 }
@@ -254,10 +271,10 @@ void ProfilePage::setupUI()
 
     auto *infoLayout = new QVBoxLayout();
 
-    userNameLabel = new QLabel("Загрузка...");
+    userNameLabel = new QLabel("Loading...");
     userNameLabel->setObjectName("UserNameLabel");
 
-    auto *changeAvatarBtn = new QPushButton("Изменить фото");
+    auto *changeAvatarBtn = new QPushButton("Change Avatar");
     changeAvatarBtn->setMinimumWidth(150);
     changeAvatarBtn->setCursor(Qt::PointingHandCursor);
     changeAvatarBtn->setObjectName("ChangeAvatarBtn");
@@ -279,7 +296,7 @@ void ProfilePage::setupUI()
     line->setStyleSheet("color: #E0E0E0;");
     leftSection->addWidget(line);
 
-    auto *statTitle = new QLabel("Статистика");
+    auto *statTitle = new QLabel("Statistics");
     statTitle->setObjectName("StatTitle");
     leftSection->addWidget(statTitle);
 
@@ -300,10 +317,12 @@ void ProfilePage::setupUI()
         statsGrid->addWidget(card, index / 2, index % 2);
     };
 
-    createStatCard(0, "Заданий решено:", &solvedTasksLabel);
-    createStatCard(1, "Уроков пройдено:", &completedLessonsLabel);
-    createStatCard(2, "Достижений:", &achievementsLabel);
-    createStatCard(3, "Всего попыток:", &totalSubmissionsLabel);
+    createStatCard(0, "Tasks Solved:", &solvedTasksLabel);
+    createStatCard(1, "Lessons Completed:", &completedLessonsLabel);
+    createStatCard(2, "Achievements:", &achievementsLabel);
+    createStatCard(3, "Total Attempts:", &totalSubmissionsLabel);
+    createStatCard(4, "Duel Points:", &duelPointsLabel);
+    createStatCard(5, "Win Rate:", &winRateLabel);
 
     leftSection->addLayout(statsGrid);
     leftSection->addStretch();
@@ -344,9 +363,9 @@ void ProfilePage::setupUI()
         return box;
     };
 
-    rightSection->addWidget(createBigBox("ДОСТИЖЕНИЯ", &achievementsContainer));
+    rightSection->addWidget(createBigBox("ACHIEVEMENTS", &achievementsContainer));
     rightSection->addSpacing(20);
-    rightSection->addWidget(createBigBox("НЕДАВНЯЯ АКТИВНОСТЬ", &activityContainer));
+    rightSection->addWidget(createBigBox("RECENT ACTIVITY", &activityContainer));
 
     auto *footerLayout = new QHBoxLayout();
     footerLayout->setSpacing(10);
@@ -368,11 +387,11 @@ void ProfilePage::setupUI()
         return sep;
     };
 
-    footerLayout->addWidget(createFooterBtn("О cppforge", &ProfilePage::onAboutClicked));
+    footerLayout->addWidget(createFooterBtn("About cppforge", &ProfilePage::onAboutClicked));
     footerLayout->addWidget(createSeparator());
-    footerLayout->addWidget(createFooterBtn("Контакты", &ProfilePage::onContactsClicked));
+    footerLayout->addWidget(createFooterBtn("Contacts", &ProfilePage::onContactsClicked));
     footerLayout->addWidget(createSeparator());
-    footerLayout->addWidget(createFooterBtn("Конфиденциальность", &ProfilePage::onPrivacyClicked));
+    footerLayout->addWidget(createFooterBtn("Privacy Policy", &ProfilePage::onPrivacyClicked));
 
     rightSection->addSpacing(30);
     rightSection->addLayout(footerLayout);
