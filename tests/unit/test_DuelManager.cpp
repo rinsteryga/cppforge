@@ -19,7 +19,7 @@ private slots:
         qRegisterMetaType<DuelProgress>("DuelProgress");
     }
 
-    void TestDuelManager::testConnectionAndIdentityExchange()
+    void testConnectionAndIdentityExchange()
     {
         DuelManager host("HostPlayer");
         DuelManager client("ClientPlayer");
