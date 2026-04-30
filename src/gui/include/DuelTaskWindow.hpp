@@ -105,19 +105,19 @@ private:
     /** @brief Указатель на менеджер сетевого взаимодействия. Не владеет объектом. */
     cppforge::services::DuelManager *duelManager_{nullptr};
 
-    std::unique_ptr<CustomTitleBar> customTitleBar_; ///< Кастомная панель заголовка окна.
-    QTextEdit *codeEditor_{nullptr};                 ///< Поле ввода исходного кода.
-    QTextEdit *testOutput_{nullptr};                 ///< Панель отображения результатов тестов.
-    QTextEdit *practiceEdit_{nullptr};               ///< Окно отображения описания задачи.
+    std::unique_ptr<CustomTitleBar> customTitleBar_;
+    QTextEdit *codeEditor_{nullptr};
+    QTextEdit *testOutput_{nullptr};
+    QTextEdit *practiceEdit_{nullptr};
 
-    QLabel *labelTimer_{nullptr}; ///< Виджет отображения оставшегося времени.
-    QLabel *labelScore_{nullptr}; ///< Виджет отображения динамического счета.
-    QTimer *duelTimer_{nullptr};  ///< Таймер обратного отсчета.
+    QLabel *labelTimer_{nullptr};
+    QLabel *labelScore_{nullptr};
+    QTimer *duelTimer_{nullptr};
 
-    int timeLeft_{600};      ///< Оставшееся время в секундах (по умолчанию 10 мин).
-    int currentScore_{1000}; ///< Текущий счет, уменьшающийся со временем.
+    int timeLeft_{600};
+    int currentScore_{1000};
 
-    cppforge::entities::CodingTask currentTask_;                   ///< Данные текущей задачи.
-    std::unique_ptr<cppforge::services::CodeRunner> runner_;       ///< Сервис для компиляции и запуска кода.
-    std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_; ///< Сервис для проверки качества кода.
+    cppforge::entities::CodingTask currentTask_;
+    std::unique_ptr<cppforge::services::CodeRunner> runner_;
+    std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
 };

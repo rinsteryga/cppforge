@@ -189,51 +189,45 @@ private:
      */
     void loadRoadmapForModule(int moduleId);
 
-    // Управление интерфейсом и анимацией
-    std::unique_ptr<CustomTitleBar> customTitleBar_;          ///< Кастомная полоса заголовка.
-    std::unique_ptr<QPropertyAnimation> transitionAnimation_; ///< Анимация переходов между страницами.
-    std::unique_ptr<QVBoxLayout> centerPanelLayout_;          ///< Основной компоновщик центральной области.
-    std::unique_ptr<TaskWindow> taskWindow_;                  ///< Отдельное окно для решения задач.
+    std::unique_ptr<CustomTitleBar> customTitleBar_;
+    std::unique_ptr<QPropertyAnimation> transitionAnimation_;
+    std::unique_ptr<QVBoxLayout> centerPanelLayout_;
+    std::unique_ptr<TaskWindow> taskWindow_;
 
-    std::unique_ptr<QStackedWidget> contentStack; ///< Стек страниц для навигации.
+    std::unique_ptr<QStackedWidget> contentStack;
 
-    // Страницы приложения
-    ProfilePage *profilePage{nullptr};          ///< Страница профиля.
-    QWidget *learningPage{nullptr};             ///< Главная страница обучения.
-    QWidget *roadmapPage{nullptr};              ///< Страница детального просмотра модуля.
-    DuelPage *duelPage{nullptr};                ///< Страница сетевых дуэлей.
-    DuelTaskWindow *m_duelTaskWindow = nullptr; ///< Окно активной дуэли.
+    ProfilePage *profilePage{nullptr};
+    QWidget *learningPage{nullptr};
+    QWidget *roadmapPage{nullptr};
+    DuelPage *duelPage{nullptr};
+    DuelTaskWindow *m_duelTaskWindow = nullptr;
 
-    // Кнопки навигации
-    QPushButton *learnBtn{nullptr};   ///< Кнопка "Обучение".
-    QPushButton *ratingBtn{nullptr};  ///< Кнопка "Дуэли/Рейтинг".
-    QPushButton *profileBtn{nullptr}; ///< Кнопка "Профиль".
-    QPushButton *logoutBtn{nullptr};  ///< Кнопка "Выход".
+    QPushButton *learnBtn{nullptr};
+    QPushButton *ratingBtn{nullptr};
+    QPushButton *profileBtn{nullptr};
+    QPushButton *logoutBtn{nullptr};
 
-    ModuleRoadmapWidget *roadmapWidget{nullptr}; ///< Виджет отображения прогресса модуля.
+    ModuleRoadmapWidget *roadmapWidget{nullptr};
 
-    // Состояние
-    QString m_currentUsername;     ///< Имя текущего пользователя.
-    int m_currentUserId{-1};       ///< ID текущего пользователя.
-    int m_currentOpenModuleId{-1}; ///< ID открытого в данный момент модуля.
+    QString m_currentUsername;
+    int m_currentUserId{-1};
+    int m_currentOpenModuleId{-1};
 
-    // Сервисы (не владеет указателями)
     cppforge::services::UserService *m_userService{nullptr};
     cppforge::services::AchievementService *m_achievementService{nullptr};
 
-    // UI компоненты панелей
-    std::unique_ptr<QFrame> sideBar;                ///< Боковая панель.
-    std::unique_ptr<QFrame> eventCard;              ///< Виджет событий.
-    std::unique_ptr<QFrame> dailyTaskCard;          ///< Виджет ежедневного задания.
-    std::unique_ptr<QScrollArea> modulesScrollArea; ///< Область прокрутки списка модулей.
-    std::unique_ptr<QWidget> modulesContainer;      ///< Контейнер для карточек модулей.
-    std::unique_ptr<QVBoxLayout> modulesLayout;     ///< Компоновщик карточек модулей.
+    std::unique_ptr<QFrame> sideBar;
+    std::unique_ptr<QFrame> eventCard;
+    std::unique_ptr<QFrame> dailyTaskCard;
+    std::unique_ptr<QScrollArea> modulesScrollArea;
+    std::unique_ptr<QWidget> modulesContainer;
+    std::unique_ptr<QVBoxLayout> modulesLayout;
 
-    std::vector<std::unique_ptr<QFrame>> moduleCards; ///< Список визуальных карточек модулей.
-    QList<QLabel *> moduleProgressLabels;             ///< Метки процентов прогресса.
-    QList<QProgressBar *> moduleProgressBars;         ///< Полосы прогресса.
-    QList<QPushButton *> moduleButtons;               ///< Кнопки перехода к модулям.
+    std::vector<std::unique_ptr<QFrame>> moduleCards;
+    QList<QLabel *> moduleProgressLabels;
+    QList<QProgressBar *> moduleProgressBars;
+    QList<QPushButton *> moduleButtons;
 
-    bool isTransitioning_{false}; ///< Флаг активной анимации перехода.
-    int pendingModuleId_{-1};     ///< ID модуля, ожидающего открытия после анимации.
+    bool isTransitioning_{false};
+    int pendingModuleId_{-1};
 };

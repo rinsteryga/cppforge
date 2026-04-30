@@ -194,12 +194,12 @@ namespace cppforge::services
          */
         cppforge::entities::CodingTask deserializeTask(const QJsonObject &json) const;
 
-        std::unique_ptr<QTcpServer> server_; ///< Указатель на TCP-сервер (для хоста)
-        QTcpSocket *socket_ = nullptr;       ///< Текущий сокет соединения
-        QByteArray buffer_;                  ///< Буфер для накопления входящих данных
-        QString m_localPlayerName;           ///< Никнейм текущего пользователя
-        QString m_opponentName;              ///< Никнейм соперника, полученный по сети
-        bool m_isHost = false;               ///< Флаг, указывающий, является ли пользователь хостом
+        std::unique_ptr<QTcpServer> server_;
+        QTcpSocket *socket_ = nullptr;
+        QByteArray buffer_;
+        QString m_localPlayerName;
+        QString m_opponentName;
+        bool m_isHost = false;
     };
 } // namespace cppforge::services
 

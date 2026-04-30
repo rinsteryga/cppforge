@@ -16,10 +16,10 @@
  */
 struct TheorySection
 {
-    QString id;      ///< Уникальный строковый идентификатор раздела.
-    QString title;   ///< Заголовок раздела.
-    QString content; ///< Текстовое содержимое или путь к материалу.
-    QString format;  ///< Формат содержимого (например, "markdown" или "html").
+    QString id;
+    QString title;
+    QString content;
+    QString format;
 
     /**
      * @brief Проверяет, заполнены ли основные поля раздела.
@@ -33,8 +33,8 @@ struct TheorySection
  */
 struct TestCase
 {
-    QString input;          ///< Входные данные, подаваемые в программу.
-    QString expectedOutput; ///< Ожидаемый результат выполнения (эталон).
+    QString input;
+    QString expectedOutput;
 
     /**
      * @brief Проверяет валидность тестового случая.
@@ -48,12 +48,12 @@ struct TestCase
  */
 struct Task
 {
-    int id = 0;                  ///< Идентификатор задачи.
-    QString title;               ///< Название задачи.
-    QString description;         ///< Подробное условие задачи.
-    QString difficulty;          ///< Уровень сложности (например, "Easy", "Medium").
-    QString initialCode;         ///< Начальный шаблон кода в редакторе.
-    QVector<TestCase> testCases; ///< Список тестов для автоматической проверки.
+    int id = 0;
+    QString title;
+    QString description;
+    QString difficulty;
+    QString initialCode;
+    QVector<TestCase> testCases;
 
     /**
      * @brief Проверяет валидность данных задачи.
@@ -67,11 +67,11 @@ struct Task
  */
 struct Module
 {
-    int id = 0;                    ///< Уникальный идентификатор модуля.
-    QString title;                 ///< Название модуля.
-    QString authorText;            ///< Описание или информация об авторе.
-    QVector<TheorySection> theory; ///< Список теоретических разделов.
-    QVector<Task> tasks;           ///< Список связанных задач.
+    int id = 0;
+    QString title;
+    QString authorText;
+    QVector<TheorySection> theory;
+    QVector<Task> tasks;
 
     /**
      * @brief Проверяет валидность данных модуля.
@@ -227,9 +227,9 @@ private:
     TaskManager(const TaskManager &) = delete;
     TaskManager &operator=(const TaskManager &) = delete;
 
-    QVector<Module> modules_; ///< Список всех модулей приложения.
-    int currentModule_ = -1;  ///< Текущий выбранный модуль.
-    int currentTask_ = -1;    ///< Текущая выбранный задача.
+    QVector<Module> modules_;
+    int currentModule_ = -1;
+    int currentTask_ = -1;
 
     /** @brief Разбирает JSON-объект в структуру TheorySection. */
     TheorySection parseTheorySection(const QJsonObject &obj);

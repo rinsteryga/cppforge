@@ -128,21 +128,19 @@ private:
     /** @brief Создает контейнер для списка участников (Leaderboard/Lobby). */
     QFrame *createLeaderboard();
 
-    // UI элементы профиля
-    QLabel *m_lblAvatar{nullptr};   ///< Метка для отображения аватара.
-    QLabel *m_lblUsername{nullptr}; ///< Метка для имени пользователя.
-    QLabel *m_lblRating{nullptr};   ///< Метка для значения рейтинга.
+    QLabel *m_lblAvatar{nullptr};
+    QLabel *m_lblUsername{nullptr};
+    QLabel *m_lblRating{nullptr};
 
-    // Кнопки управления
-    QPushButton *m_btnCreateLobby{nullptr}; ///< Кнопка создания сервера.
-    QPushButton *m_btnStartDuel = nullptr;  ///< Кнопка начала (для хоста).
-    QPushButton *m_btnJoinLobby{nullptr};   ///< Кнопка поиска хоста.
-    QPushButton *m_btnStartGame{nullptr};   ///< Кнопка быстрого старта.
+    QPushButton *m_btnCreateLobby{nullptr};
+    QPushButton *m_btnStartDuel = nullptr;
+    QPushButton *m_btnJoinLobby{nullptr};
+    QPushButton *m_btnStartGame{nullptr};
 
-    QVBoxLayout *m_leaderListLayout{nullptr}; ///< Лейаут для динамического списка игроков.
-    QFrame *m_rightPanel{nullptr};            ///< Правая панель интерфейса.
+    QVBoxLayout *m_leaderListLayout{nullptr};
+    QFrame *m_rightPanel{nullptr};
 
-    std::unique_ptr<cppforge::services::DuelManager> m_duelManager; ///< Менеджер сети.
-    bool m_isHosting{false};                                        ///< Флаг: выступает ли данный клиент сервером.
-    uint64_t m_currentUserId{0};                                    ///< ID текущего пользователя.
+    std::unique_ptr<cppforge::services::DuelManager> m_duelManager;
+    bool m_isHosting{false};
+    uint64_t m_currentUserId{0};
 };
