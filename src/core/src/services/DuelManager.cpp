@@ -1,6 +1,7 @@
 #include "../../include/services/DuelManager.hpp"
 
 #include "../../include/entities/TestCase.hpp"
+#include "../../include/services/TaskManager.hpp"
 
 #include <QDebug>
 #include <QJsonArray>
