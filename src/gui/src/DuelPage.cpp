@@ -162,10 +162,8 @@ QFrame *DuelPage::createActionPanel()
 
     connect(m_btnCreateLobby, &QPushButton::clicked, this, &DuelPage::onCreateLobbyClicked);
 
-    // 2. Кнопка присоединения к лобби
     connect(m_btnJoinLobby, &QPushButton::clicked, this, &DuelPage::onJoinLobbyClicked);
 
-    // 3. Кнопка СТАРТ (исправленная лямбда с защитой от null и логами)
     connect(m_btnStartDuel, &QPushButton::clicked, this,
             [this]()
             {
