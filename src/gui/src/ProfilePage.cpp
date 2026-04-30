@@ -1,4 +1,5 @@
 #include "ProfilePage.hpp"
+
 #include "../../core/include/services/UserService.hpp"
 
 #include <QDebug>
