@@ -28,9 +28,31 @@ DuelPage::DuelPage(QWidget *parent) : QWidget(parent)
     connect(m_duelManager.get(), &cppforge::services::DuelManager::taskReceived, this, &DuelPage::handleTaskReceived);
     connect(m_duelManager.get(), &cppforge::services::DuelManager::connectionError, this,
             &DuelPage::handleConnectionError);
+    connect(m_duelManager.get(), &cppforge::services::DuelManager::duelFinished, this, &DuelPage::handleDuelFinished);
 }
 
 DuelPage::~DuelPage() = default;
+
+void DuelPage::setUserId(uint64_t id)
+{
+    m_currentUserId = id;
+}
+
+void DuelPage::setUserService(cppforge::services::UserService *service)
+{
+    m_userService = service;
+}
+
+void DuelPage::handleDuelFinished(const QString &winner, int score)
+{
+    if (!m_userService || m_currentUserId == 0)
+    {
+        return;
+    }
+
+    bool isMe = (winner == m_lblUsername->text());
+    m_userService->recordDuelResult(m_currentUserId, isMe);
+}
 
 void DuelPage::setCircularAvatar(const QString &path)
 {
@@ -136,19 +158,20 @@ QFrame *DuelPage::createActionPanel()
     title->setAlignment(Qt::AlignCenter);
     title->setObjectName("sectionTitle");
 
-    m_btnCreateLobby = new QPushButton("Create Lobby");
+    m_btnCreateLobby = new QPushButton("CREATE LOBBY");
     m_btnCreateLobby->setObjectName("btnCreate");
     m_btnCreateLobby->setProperty("state", "default");
-    m_btnCreateLobby->setFixedHeight(65);
+    m_btnCreateLobby->setFixedHeight(70);
     m_btnCreateLobby->setCursor(Qt::PointingHandCursor);
 
-    m_btnJoinLobby = new QPushButton("Join Lobby");
-    m_btnJoinLobby->setFixedHeight(65);
+    m_btnJoinLobby = new QPushButton("JOIN LOBBY");
+    m_btnJoinLobby->setFixedHeight(70);
     m_btnJoinLobby->setCursor(Qt::PointingHandCursor);
 
     m_btnStartDuel = new QPushButton("START DUEL");
     m_btnStartDuel->setObjectName("btnStart");
-    m_btnStartDuel->setFixedHeight(65);
+    m_btnStartDuel->setFixedHeight(70);
+    m_btnStartDuel->setStyleSheet("background-color: #27ae60; color: white; border: none; font-size: 18px;");
     m_btnStartDuel->setCursor(Qt::PointingHandCursor);
     m_btnStartDuel->setVisible(false);
 
@@ -212,10 +235,10 @@ QFrame *DuelPage::createLeaderboard()
 void DuelPage::addLeaderboardEntry(const QString &name, bool isHost)
 {
     auto item = new QFrame();
-    item->setFixedHeight(55);
+    item->setFixedHeight(65);
     item->setObjectName("lobbyItem");
-    item->setStyleSheet(isHost ? "background: #F0FFF0; border: 1px solid #7FFF00; border-radius: 12px;"
-                               : "background: #F8F9FA; border: 1px solid #EAECEF; border-radius: 12px;");
+    item->setStyleSheet(isHost ? "background: #F0FFF0; border: 1px solid #7FFF00; border-radius: 14px;"
+                               : "background: #F8F9FA; border: 1px solid #EAECEF; border-radius: 14px;");
 
     auto layout = new QHBoxLayout(item);
     auto avatar = new QLabel();
@@ -223,7 +246,7 @@ void DuelPage::addLeaderboardEntry(const QString &name, bool isHost)
     avatar->setStyleSheet(QString("background: %1; border-radius: 16px;").arg(isHost ? "#00FA9A" : "#2E8B57"));
 
     auto lblName = new QLabel(name + (isHost ? " (You)" : ""));
-    lblName->setFont(QFont("Roboto", 10, isHost ? QFont::Bold : QFont::Normal));
+    lblName->setFont(QFont("Roboto", 11, isHost ? QFont::Bold : QFont::Normal));
 
     layout->addWidget(avatar);
     layout->addWidget(lblName);
@@ -274,7 +297,7 @@ void DuelPage::onCreateLobbyClicked()
 void DuelPage::onJoinLobbyClicked()
 {
     bool ok;
-    QString ip = QInputDialog::getText(this, "Search", "Host IP:", QLineEdit::Normal, "127.0.0.1", &ok);
+    QString ip = QInputDialog::getText(this, "Connect", "Host IP Address:", QLineEdit::Normal, "127.0.0.1", &ok);
     if (ok && !ip.isEmpty())
     {
         m_duelManager->joinRoom(ip, 4242);
@@ -286,9 +309,11 @@ void DuelPage::onJoinLobbyClicked()
 void DuelPage::handleOpponentConnected(const QString &ip)
 {
     if (m_leaderListLayout->count() >= 2)
+    {
         return;
+    }
 
-    addLeaderboardEntry("Соперник (" + ip + ")", false);
+    addLeaderboardEntry("Opponent (" + ip + ")", false);
 
     if (m_isHosting)
     {
@@ -322,37 +347,69 @@ void DuelPage::handleConnectionError(const QString &error)
 void DuelPage::applyStyles()
 {
     setStyleSheet(R"(
-        DuelPage { background-color: #F8F9FA; }
-        #card { background-color: white; border-radius: 20px; border: 1px solid #EDF0F2; }
-        #sectionTitle { font-size: 22px; font-weight: 900; color: #444; letter-spacing: 2px; }
-        #leaderboardTitle { font-size: 11px; font-weight: bold; color: #A0AEC0; }
+        DuelPage { background-color: #f0f2f5; }
+        #card { 
+            background-color: white; 
+            border-radius: 24px; 
+            border: 1px solid rgba(0,0,0,0.05); 
+        }
+        #sectionTitle { 
+            font-size: 26px; 
+            font-weight: 900; 
+            color: #1a1a1a; 
+            letter-spacing: 1px; 
+            margin-bottom: 10px;
+        }
+        #leaderboardTitle { 
+            font-size: 14px; 
+            font-weight: 800; 
+            color: #64748b; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
         
         QPushButton {
-            background-color: #FFFFFF;
-            border: 2px solid #EAECEF;
-            border-radius: 15px;
-            color: #2D3436;
-            font-weight: bold;
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 18px;
+            color: #1e293b;
+            font-size: 15px;
+            font-weight: 800;
+            transition: all 0.2s;
+        }
+
+        QPushButton:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            color: #2563eb;
         }
 
         #btnCreate[state="default"]:hover {
-            border-color: #2E8B57;
-            color: #2E8B57;
-            background-color: #F0FFF4;
+            border-color: #10b981;
+            color: #059669;
+            background-color: #ecfdf5;
         }
 
         #btnCreate[state="active"] {
-            background-color: #FEF2F2;
-            border-color: #E74C3C;
-            color: #991B1B;
+            background-color: #fef2f2;
+            border-color: #ef4444;
+            color: #dc2626;
         }
 
-        #btnCreate:pressed {
-            background-color: #FDEDEC;
+        #btnStart {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
-        QPushButton:hover:!#btnCreate:!#btnStart {
-            border-color: #3498DB;
+        #btnStart:hover {
+            background-color: #059669;
+            color: white;
+        }
+
+        #lobbyItem {
+            margin: 2px 0;
         }
     )");
 }
@@ -362,5 +419,7 @@ void DuelPage::updateUserStats(const QString &username, int rating, const QStrin
     m_lblUsername->setText(username);
     m_lblRating->setText(QString::number(rating));
     if (!avatarPath.isEmpty())
+    {
         setCircularAvatar(avatarPath);
+    }
 }
