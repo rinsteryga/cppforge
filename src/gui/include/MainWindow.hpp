@@ -35,12 +35,12 @@ class CustomTitleBar;
 
 /**
  * @class MainWindow
- * @brief Главное окно приложения, координирующее навигацию между основными разделами.
+ * @brief Main application window coordinating navigation between primary sections.
  *
- * MainWindow является центральным компонентом графического интерфейса (GUI).
- * Оно управляет переключением страниц (обучение, профиль, дуэли, дорожные карты модулей),
- * обеспечивает интеграцию с бизнес-логикой через сервисы (UserService, AchievementService)
- * и отвечает за визуальные эффекты переходов (анимации плавного появления/исчезновения).
+ * MainWindow is the central component of the GUI.
+ * It manages page switching (learning, profile, duels, module roadmaps),
+ * integrates with business logic via services (UserService, AchievementService, CourseService),
+ * and handles visual transition effects (fade-in/fade-out animations).
  */
 class MainWindow : public QWidget
 {
@@ -48,146 +48,151 @@ class MainWindow : public QWidget
 
 public:
     /**
-     * @brief Конструктор главного окна.
-     * @param parent Родительский виджет.
+     * @brief Main window constructor.
+     * @param parent Parent widget.
      */
     explicit MainWindow(QWidget *parent = nullptr);
 
     /**
-     * @brief Деструктор. Гарантирует корректное освобождение ресурсов.
+     * @brief Destructor. Ensures proper resource release.
      */
     ~MainWindow();
 
     /**
-     * @brief Устанавливает имя текущего авторизованного пользователя для отображения в UI.
-     * @param username Имя пользователя.
+     * @brief Sets the current authorized username for UI display.
+     * @param username The user's name.
      */
     void setCurrentUser(const QString &username) { m_currentUsername = username; }
 
     /**
-     * @brief Устанавливает идентификатор пользователя в системе.
-     * @param id Числовой ID пользователя из базы данных.
+     * @brief Sets the user identifier in the system.
+     * @param id Numeric user ID from the database.
      */
     void setUserId(int id);
 
     /**
-     * @brief Внедряет зависимость сервиса пользователей.
-     * @param service Указатель на UserService.
+     * @brief Injects the user service dependency.
+     * @param service Pointer to UserService.
      */
     void setUserService(cppforge::services::UserService *service);
 
     /**
-     * @brief Внедряет зависимость сервиса достижений.
-     * @param service Указатель на AchievementService.
+     * @brief Injects the achievement service dependency.
+     * @param service Pointer to AchievementService.
      */
     void setAchievementService(cppforge::services::AchievementService *service);
+
+    /**
+     * @brief Injects the course service dependency.
+     * @param service Pointer to CourseService.
+     */
     void setCourseService(cppforge::services::CourseService *service);
 
 protected:
     /**
-     * @brief Переопределенный обработчик отрисовки для реализации кастомных фонов или эффектов.
+     * @brief Overridden paint handler for custom backgrounds or effects.
      */
     void paintEvent(QPaintEvent *event) override;
 
     /**
-     * @brief Обработчик события отображения окна. Используется для инициализации стартовых анимаций.
+     * @brief Window show event handler. Used for initializing start animations.
      */
     void showEvent(QShowEvent *event) override;
 
     /**
-     * @brief Обрабатывает изменение состояния окна (например, смену языка или системной темы).
+     * @brief Handles window state changes (e.g., language or system theme changes).
      */
     void changeEvent(QEvent *event) override;
 
 public slots:
     /**
-     * @brief Запускает анимацию плавного появления окна (из прозрачности).
+     * @brief Starts the window fade-in animation (from transparency).
      */
     void fadeIn();
 
     /**
-     * @brief Запускает анимацию плавного исчезновения окна.
+     * @brief Starts the window fade-out animation.
      */
     void fadeOut();
 
     /**
-     * @brief Открывает специализированное окно для выполнения конкретной задачи.
-     * @param lessonId Идентификатор выбранного урока/задачи.
+     * @brief Opens a specialized window for executing a specific task.
+     * @param lessonId Identifier of the selected lesson/task.
      */
     void openTaskWindow(int lessonId);
 
 private slots:
-    /** @brief Обработчик клика по карточке модуля. */
+    /** @brief Module card click handler. */
     void onModuleButtonClicked();
 
-    /** @brief Переключает интерфейс на главную страницу обучения. */
+    /** @brief Switches the interface to the main learning page. */
     void onLearnButtonClicked();
 
-    /** @brief Переключает интерфейс на страницу профиля пользователя. */
+    /** @brief Switches the interface to the user profile page. */
     void onProfileButtonClicked();
 
-    /** @brief Вызывается при закрытии окна задачи для возврата к основному интерфейсу. */
+    /** @brief Called when the task window is closed to return to the main interface. */
     void onTaskWindowClosed();
 
-    /** @brief Обрабатывает выход пользователя из учетной записи. */
+    /** @brief Handles user logout. */
     void onLogoutClicked();
 
     /**
-     * @brief Обновляет визуальные индикаторы прогресса для конкретного модуля.
-     * @param moduleId ID модуля.
-     * @param progress Процент выполнения (0-100).
+     * @brief Updates visual progress indicators for a specific module.
+     * @param moduleId Module ID.
+     * @param progress Completion percentage (0-100).
      */
     void updateModuleProgress(int moduleId, int progress);
 
-    /** @brief Возвращает пользователя из детального просмотра модуля к списку модулей. */
+    /** @brief Returns from detailed module view to the module list. */
     void onBackToModulesClicked();
 
     /**
-     * @brief Обрабатывает событие разблокировки нового достижения.
-     * @param achievement Объект полученного достижения.
+     * @brief Handles new achievement unlocked event.
+     * @param achievement Earned achievement object.
      */
     void onAchievementUnlocked(cppforge::entities::Achievement achievement);
 
 private:
-    /** @brief Инициализирует структуру интерфейса и создает страницы. */
+    /** @brief Initializes UI structure and creates pages. */
     void setupUI();
 
-    /** @brief Настраивает флаги окна (рамки, прозрачность, кастомный заголовок). */
+    /** @brief Configures window flags (borders, transparency, custom title). */
     void setupWindowProperties();
 
-    /** @brief Настраивает кастомную панель заголовка окна. */
+    /** @brief Configures the custom title bar. */
     void setupTitleBar();
 
-    /** @brief Инициализирует левую навигационную панель. */
+    /** @brief Initializes the left navigation panel. */
     void setupLeftPanel();
 
-    /** @brief Инициализирует центральную область с контентом (QStackedWidget). */
+    /** @brief Initializes the central content area (QStackedWidget). */
     void setupCenterPanel();
 
-    /** @brief Инициализирует правую информационную панель. */
+    /** @brief Initializes the right info panel. */
     void setupRightPanel();
 
-    /** @brief Применяет глобальные QSS стили ко всем элементам окна. */
+    /** @brief Applies global QSS styles to all window elements. */
     void setupStyles();
 
-    /** @brief Центрирует окно приложения относительно экрана. */
+    /** @brief Centers the application window on the screen. */
     void centerWindow();
 
     /**
-     * @brief Запускает анимационный переход к дорожной карте конкретного модуля.
-     * @param moduleId ID целевого модуля.
+     * @brief Starts an animated transition to a specific module's roadmap.
+     * @param moduleId Target module ID.
      */
     void animateToTaskWindow(int moduleId);
 
-    /** @brief Проверяет наличие данных пользователя в БД перед инициализацией страниц. */
+    /** @brief Verifies user data in the DB before page initialization. */
     bool validateUserExists();
 
-    /** @brief Загружает прогресс выполнения по всем доступным модулям из БД. */
+    /** @brief Loads progress for all available modules from the DB. */
     void loadAllModulesProgress();
 
     /**
-     * @brief Формирует визуальную "дорожную карту" (roadmap) для выбранного модуля.
-     * @param moduleId ID модуля для загрузки.
+     * @brief Builds the visual roadmap for the selected module.
+     * @param moduleId Module ID to load.
      */
     void loadRoadmapForModule(int moduleId);
 
