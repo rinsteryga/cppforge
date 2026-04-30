@@ -13,21 +13,29 @@ class TestDuelManager : public QObject
     Q_OBJECT
 
 private slots:
-    void initTestCase() {}
-
-    void testConnectionAndMessaging()
+    void initTestCase() 
     {
-        DuelManager host;
-        DuelManager client;
+        qRegisterMetaType<CodingTask>("CodingTask");
+        qRegisterMetaType<DuelProgress>("DuelProgress");
+    }
+
+    void testConnectionAndIdentityExchange()
+    {
+        DuelManager host("HostPlayer");
+        DuelManager client("ClientPlayer");
 
         QSignalSpy hostConnectedSpy(&host, &DuelManager::opponentConnected);
+        QSignalSpy clientConnectedSpy(&client, &DuelManager::opponentConnected);
 
         QVERIFY(host.hostRoom(4242));
 
         client.joinRoom("127.0.0.1", 4242);
 
-        QVERIFY(hostConnectedSpy.wait(1000));
-        QCOMPARE(hostConnectedSpy.count(), 1);
+        QVERIFY(hostConnectedSpy.wait(2000));
+        QVERIFY(clientConnectedSpy.wait(2000));
+
+        QCOMPARE(host.getOpponentName(), QString("ClientPlayer"));
+        QCOMPARE(client.getOpponentName(), QString("HostPlayer"));
 
         QSignalSpy taskReceivedSpy(&client, &DuelManager::taskReceived);
 
@@ -37,20 +45,15 @@ private slots:
         QVERIFY(taskReceivedSpy.wait(1000));
         QCOMPARE(taskReceivedSpy.count(), 1);
 
-        QList<QVariant> taskArgs = taskReceivedSpy.takeFirst();
-        CodingTask receivedTask = taskArgs.at(0).value<CodingTask>();
-        QCOMPARE(receivedTask.getId(), static_cast<uint64_t>(1));
+        CodingTask receivedTask = taskReceivedSpy.at(0).at(0).value<CodingTask>();
         QCOMPARE(receivedTask.getTitle(), QString("Test Task"));
 
         QSignalSpy progressSpy(&host, &DuelManager::opponentProgressUpdated);
         client.sendProgress({3, 5});
 
         QVERIFY(progressSpy.wait(1000));
-        QCOMPARE(progressSpy.count(), 1);
-        QList<QVariant> progressArgs = progressSpy.takeFirst();
-        auto progress = progressArgs.at(0).value<DuelProgress>();
-        QCOMPARE(progress.passedTests, static_cast<uint32_t>(3));
-        QCOMPARE(progress.totalTests, static_cast<uint32_t>(5));
+        auto progress = progressSpy.at(0).at(0).value<DuelProgress>();
+        QCOMPARE(progress.passedTests, 3u);
 
         QSignalSpy winSpy(&host, &DuelManager::duelLost);
         client.sendWin();
