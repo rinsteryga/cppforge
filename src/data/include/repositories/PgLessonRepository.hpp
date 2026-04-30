@@ -33,6 +33,19 @@ namespace cppforge::repositories
          * @return Lesson if found, std::nullopt otherwise.
          */
         std::optional<entities::Lesson> getLessonById(uint64_t lessonId) const override;
+        /**
+         * @brief Gets the ID of the chronologically next lesson.
+         * @param currentLessonId The ID of the starting lesson.
+         * @return The next lesson ID if found, std::nullopt otherwise.
+         */
+        std::optional<uint64_t> getNextLessonId(uint64_t currentLessonId) const override;
+
+        /**
+         * @brief Gets the ID of the chronologically previous lesson.
+         * @param currentLessonId The ID of the starting lesson.
+         * @return The previous lesson ID if found, std::nullopt otherwise.
+         */
+        std::optional<uint64_t> getPrevLessonId(uint64_t currentLessonId) const override;
 
     private:
         QSqlDatabase &database_;
