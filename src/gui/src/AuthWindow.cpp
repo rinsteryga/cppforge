@@ -1,5 +1,6 @@
 #include "AuthWindow.hpp"
 
+#include "../../core/include/services/SessionManager.hpp"
 #include "SignUpWindow.hpp"
 
 #include <QApplication>
@@ -224,13 +225,10 @@ void AuthWindow::onLoginClicked()
     if (authManager_ && authManager_->login(usernameInput_->text(), passwordInput_->text()))
     {
         int userId = -1;
-        QSqlQuery query;
-        query.prepare("SELECT id FROM users WHERE username = :username");
-        query.bindValue(":username", usernameInput_->text());
-
-        if (query.exec() && query.next())
+        auto currentUser = cppforge::services::SessionManager::instance().getCurrentUser();
+        if (currentUser)
         {
-            userId = query.value(0).toInt();
+            userId = static_cast<int>(currentUser->getId());
         }
 
         QSettings settings("CppForge", "StudyApp");

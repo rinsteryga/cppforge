@@ -22,8 +22,8 @@ namespace cppforge::services
 
         using ValidatorFn = std::function<bool(const entities::User &, uint32_t)>;
         std::unordered_map<entities::ConditionType, ValidatorFn> validators = {
-            {entities::ConditionType::LevelsCompleted,
-             [](const entities::User &user, uint32_t val) { return user.getCompletedLevelsIds().size() >= val; }},
+            {entities::ConditionType::LevelsCompleted, [&](const entities::User &user, uint32_t val)
+             { return userRepo_.getSolvedTasksCount(user.getId()) >= static_cast<int>(val); }},
             {entities::ConditionType::StreakDays,
              [](const entities::User &user, uint32_t val) { return user.getCurrentStreakDays() >= val; }},
             {entities::ConditionType::CustomEvent, [](const entities::User &, uint32_t) { return false; }}};

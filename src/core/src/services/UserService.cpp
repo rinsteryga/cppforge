@@ -15,6 +15,11 @@ namespace cppforge::services
         return userRepository_.findByUsername(username);
     }
 
+    std::optional<entities::User> UserService::findById(uint64_t userId) const
+    {
+        return userRepository_.findById(userId);
+    }
+
     int UserService::getSolvedTasksCount(uint64_t userId) const
     {
         return userRepository_.getSolvedTasksCount(userId);
@@ -33,6 +38,27 @@ namespace cppforge::services
     int UserService::getStreak(uint64_t userId) const
     {
         return userRepository_.getStreak(userId);
+    }
+
+    void UserService::updateAvatar(uint64_t userId, const QString &avatarPath)
+    {
+        userRepository_.updateAvatar(userId, avatarPath);
+    }
+
+    bool UserService::saveLessonProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted)
+    {
+        return userRepository_.saveLessonProgress(userId, moduleId, lessonId, isCompleted);
+    }
+
+    bool UserService::saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code,
+                                     bool isSuccess)
+    {
+        bool saved = userRepository_.saveSubmission(userId, moduleId, taskId, code, isSuccess);
+        if (saved && isSuccess)
+        {
+            userRepository_.updateStreak(userId);
+        }
+        return saved;
     }
 
     int UserService::getTotalSubmissionsCount(uint64_t userId) const

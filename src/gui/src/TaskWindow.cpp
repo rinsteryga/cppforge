@@ -71,10 +71,17 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
 
 void TaskWindow::loadModule(int lessonId)
 {
+    if (!courseService_)
+    {
+        return;
+    }
+
     currentModuleId_ = lessonId;
 
     if (testOutput_)
+    {
         testOutput_->clear();
+    }
 
     if (btnSubmit_)
     {
@@ -83,32 +90,15 @@ void TaskWindow::loadModule(int lessonId)
         btnSubmit_->setStyleSheet("");
     }
 
-    QSqlQuery query;
-    query.prepare(R"(
-            SELECT 
-                l.title, 
-                l.content, 
-                l.module_id,
-                t.id AS task_id, 
-                t.description, 
-                t.initial_code, 
-                t.whitelist, 
-                t.blacklist,
-                (SELECT is_completed FROM user_progress WHERE user_id = :uid AND lesson_id = l.id) as is_done
-            FROM lessons l 
-            LEFT JOIN coding_tasks t ON l.id = t.lesson_id 
-            WHERE l.id = :lessonId
-        )");
-    query.bindValue(":lessonId", lessonId);
-    query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-
-    if (!query.exec() || !query.next())
+    auto dataOpt = courseService_->getTaskWindowData(currentUserId_, lessonId);
+    if (!dataOpt.has_value())
         return;
 
-    QString title = query.value("title").toString();
-    QString theory = query.value("content").toString();
-    bool isCompleted = query.value("is_done").toBool();
-    currentModuleParentId_ = query.value("module_id").toInt();
+    auto data = dataOpt.value();
+    QString title = data.title;
+    QString theory = data.theoryContent;
+    bool isCompleted = data.isCompleted;
+    currentModuleParentId_ = data.moduleId;
 
     customTitleBar_->setTitle(title);
     if (theoryEdit_)
@@ -117,14 +107,12 @@ void TaskWindow::loadModule(int lessonId)
         applyTextFormatting(theoryEdit_);
     }
 
-    QVariant taskIdVar = query.value("task_id");
-
-    if (!taskIdVar.isNull())
+    if (data.taskId.has_value())
     {
         hasCodingTask_ = true;
-        uint64_t taskId = taskIdVar.toULongLong();
-        QString practiceDesc = query.value("description").toString();
-        QString initCode = query.value("initial_code").toString();
+        uint64_t taskId = data.taskId.value();
+        QString practiceDesc = data.practiceDescription.value_or("");
+        QString initCode = data.initialCode.value_or("");
 
         if (btnRun_)
             btnRun_->setVisible(true);
@@ -134,15 +122,9 @@ void TaskWindow::loadModule(int lessonId)
             applyTextFormatting(practiceEdit_);
         }
 
-        QSqlQuery loadSubQuery;
-        loadSubQuery.prepare("SELECT source_code FROM submissions WHERE user_id = :uid AND coding_task_id = :tid ORDER "
-                             "BY submitted_at DESC LIMIT 1");
-        loadSubQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-        loadSubQuery.bindValue(":tid", static_cast<qulonglong>(taskId));
-
-        if (loadSubQuery.exec() && loadSubQuery.next())
+        if (data.previousCode.has_value())
         {
-            codeEditor_->setPlainText(loadSubQuery.value(0).toString());
+            codeEditor_->setPlainText(data.previousCode.value());
         }
         else
         {
@@ -159,20 +141,8 @@ void TaskWindow::loadModule(int lessonId)
 
         codeEditor_->setReadOnly(false);
 
-        std::set<cppforge::entities::TestCase> testCases;
-        QSqlQuery testQuery;
-        testQuery.prepare("SELECT id, input, expected_output, is_public FROM test_cases WHERE coding_task_id = :tid");
-        testQuery.bindValue(":tid", static_cast<qulonglong>(taskId));
-        if (testQuery.exec())
-        {
-            while (testQuery.next())
-            {
-                testCases.emplace(testQuery.value("id").toULongLong(), testQuery.value("input").toString(),
-                                  testQuery.value("expected_output").toString(), testQuery.value("is_public").toBool());
-            }
-        }
         currentTask_ = cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc,
-                                                      initCode, testCases, 1000, 256, std::nullopt, std::nullopt);
+                                                      initCode, data.testCases, 1000, 256, std::nullopt, std::nullopt);
     }
     else
     {
@@ -218,39 +188,18 @@ void TaskWindow::loadModule(int lessonId)
 
 void TaskWindow::saveTaskProgress(bool success, const QString &code)
 {
-    if (currentUserId_ <= 0)
+    if (currentUserId_ <= 0 || !userService_)
+    {
         return;
+    }
 
-    QSqlQuery query;
-    query.prepare(R"(
-            INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
-            VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
-            ON CONFLICT (user_id, lesson_id) 
-            DO UPDATE SET 
-                is_completed = EXCLUDED.is_completed, 
-                updated_at = CURRENT_TIMESTAMP
-        )");
+    bool saved = userService_->saveLessonProgress(currentUserId_, currentModuleParentId_, currentModuleId_, success);
 
-    query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-    query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
-    query.bindValue(":lid", static_cast<qlonglong>(currentModuleId_));
-    query.bindValue(":status", success);
-
-    if (query.exec())
+    if (saved)
     {
         if (hasCodingTask_ && !code.isEmpty())
         {
-            QSqlQuery subQuery;
-            subQuery.prepare(R"(
-                    INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
-                    VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
-                )");
-            subQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-            subQuery.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
-            subQuery.bindValue(":tid", static_cast<qlonglong>(currentTask_.getId()));
-            subQuery.bindValue(":code", code);
-            subQuery.bindValue(":success", success);
-            subQuery.exec();
+            userService_->saveSubmission(currentUserId_, currentModuleParentId_, currentTask_.getId(), code, success);
         }
 
         if (success)
@@ -272,38 +221,36 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
     }
     else
     {
-        qDebug() << "SQL Error in saveTaskProgress:" << query.lastError().text();
+        qDebug() << "Error in saveTaskProgress: failed to save to service";
     }
 }
 
 void TaskWindow::onNextTask()
 {
-    QSqlQuery query;
-    query.prepare(R"(
-            SELECT id FROM lessons 
-            WHERE (module_id, order_index) > (
-                SELECT module_id, order_index FROM lessons WHERE id = :id
-            )
-            ORDER BY module_id ASC, order_index ASC LIMIT 1
-        )");
-    query.bindValue(":id", currentModuleId_);
-    if (query.exec() && query.next())
-        loadModule(query.value(0).toInt());
+    if (!courseService_)
+    {
+        return;
+    }
+
+    auto nextId = courseService_->getNextLessonId(currentModuleId_);
+    if (nextId.has_value())
+    {
+        loadModule(nextId.value());
+    }
 }
 
 void TaskWindow::onPrevTask()
 {
-    QSqlQuery query;
-    query.prepare(R"(
-            SELECT id FROM lessons 
-            WHERE (module_id, order_index) < (
-                SELECT module_id, order_index FROM lessons WHERE id = :id
-            )
-            ORDER BY module_id DESC, order_index DESC LIMIT 1
-        )");
-    query.bindValue(":id", currentModuleId_);
-    if (query.exec() && query.next())
-        loadModule(query.value(0).toInt());
+    if (!courseService_)
+    {
+        return;
+    }
+
+    auto prevId = courseService_->getPrevLessonId(currentModuleId_);
+    if (prevId.has_value())
+    {
+        loadModule(prevId.value());
+    }
 }
 
 void TaskWindow::setupUI()
@@ -482,7 +429,9 @@ void TaskWindow::setupUI()
 void TaskWindow::onRunClicked()
 {
     if (!hasCodingTask_ || !testOutput_)
+    {
         return;
+    }
 
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
@@ -523,7 +472,9 @@ void TaskWindow::onRunClicked()
 void TaskWindow::onSubmitClicked()
 {
     if (currentUserId_ <= 0)
+    {
         return;
+    }
 
     if (!hasCodingTask_)
     {
@@ -722,31 +673,9 @@ void TaskWindow::setUserId(int64_t id)
 
 int TaskWindow::getModuleProgress(int moduleId)
 {
-    if (moduleId <= 0)
-        return 0;
-
-    QSqlQuery query;
-    query.prepare(R"(
-            SELECT 
-                (SELECT COUNT(*) FROM lessons WHERE module_id = :mid) as total,
-                (SELECT COUNT(*) FROM user_progress 
-                WHERE module_id = :mid AND user_id = :uid AND is_completed = true) as completed
-        )");
-    query.bindValue(":mid", moduleId);
-    query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-
-    if (query.exec() && query.next())
+    if (!courseService_ || moduleId <= 0 || currentUserId_ <= 0)
     {
-        int total = query.value("total").toInt();
-        int completed = query.value("completed").toInt();
-
-        if (total <= 0)
-            return 0;
-
-        int progress = static_cast<int>((static_cast<double>(completed) / total) * 100.0);
-        return std::clamp(progress, 0, 100);
+        return 0;
     }
-
-    qDebug() << "Progress SQL Error:" << query.lastError().text();
-    return 0;
+    return courseService_->getModuleProgress(currentUserId_, moduleId);
 }

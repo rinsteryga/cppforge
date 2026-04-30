@@ -21,6 +21,7 @@ namespace cppforge::services
 {
     class UserService;
     class AchievementService;
+    class CourseService;
 } // namespace cppforge::services
 
 class QFrame;
@@ -80,6 +81,7 @@ public:
      * @param service Указатель на AchievementService.
      */
     void setAchievementService(cppforge::services::AchievementService *service);
+    void setCourseService(cppforge::services::CourseService *service);
 
 protected:
     /**
@@ -215,6 +217,7 @@ private:
 
     cppforge::services::UserService *m_userService{nullptr};
     cppforge::services::AchievementService *m_achievementService{nullptr};
+    cppforge::services::CourseService *m_courseService{nullptr};
 
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;

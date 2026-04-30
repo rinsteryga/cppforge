@@ -4,6 +4,7 @@
 #include "repositories/PgUserRepository.hpp"
 #include "services/AchievementService.hpp"
 #include "services/AuthManager.hpp"
+#include "services/CourseService.hpp"
 #include "services/UserService.hpp"
 
 #include <QApplication>
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
     auto userService = std::make_shared<cppforge::services::UserService>(*userRepoForService, *achievementRepo);
     auto achievementService =
         std::make_shared<cppforge::services::AchievementService>(*userRepoForService, *achievementRepo);
+    auto courseService = std::make_shared<cppforge::services::CourseService>();
 
     QSettings settings("CppForge", "StudyApp");
     bool remember = settings.value("auth/remember", false).toBool();
@@ -55,6 +57,7 @@ int main(int argc, char *argv[])
     MainWindow mainWindow;
     mainWindow.setUserService(userService.get());
     mainWindow.setAchievementService(achievementService.get());
+    mainWindow.setCourseService(courseService.get());
 
     auto showMain = [&](const QString &username, int userId)
     {

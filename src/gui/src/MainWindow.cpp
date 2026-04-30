@@ -1,5 +1,8 @@
 #include "MainWindow.hpp"
 
+#include "../../core/include/services/AchievementService.hpp"
+#include "../../core/include/services/CourseService.hpp"
+#include "../../core/include/services/UserService.hpp"
 #include "AchievementNotification.hpp"
 #include "CustomTitleBar.hpp"
 #include "DuelTaskWindow.hpp"
@@ -55,11 +58,10 @@ bool MainWindow::validateUserExists()
     if (m_currentUserId <= 0)
         return false;
 
-    QSqlQuery query;
-    query.prepare("SELECT id FROM users WHERE id = :id");
-    query.bindValue(":id", m_currentUserId);
+    if (!m_userService)
+        return false;
 
-    if (!query.exec() || !query.next())
+    if (!m_userService->findById(m_currentUserId).has_value())
     {
         qDebug() << "!!! КРИТИЧЕСКАЯ ОШИБКА: Пользователь удален из БД. Сброс сессии.";
 
@@ -83,18 +85,19 @@ void MainWindow::setUserId(int id)
         return;
     }
 
-    QSqlQuery query;
-    query.prepare("SELECT username, avatar_path FROM users WHERE id = :id");
-    query.bindValue(":id", id);
-    if (query.exec() && query.next())
+    if (m_userService)
     {
-        m_currentUsername = query.value("username").toString();
-        QString avatar = query.value("avatar_path").toString();
+        auto userOpt = m_userService->findById(id);
+        if (userOpt)
+        {
+            m_currentUsername = userOpt->getUsername();
+            QString avatar = userOpt->getAvatarPath();
 
-        if (profilePage)
-            profilePage->setUserData(id, m_currentUsername, avatar);
-        if (duelPage)
-            duelPage->updateUserStats(m_currentUsername, 0, avatar);
+            if (profilePage)
+                profilePage->setUserData(id, m_currentUsername, avatar);
+            if (duelPage)
+                duelPage->updateUserStats(m_currentUsername, 0, avatar);
+        }
     }
 
     loadAllModulesProgress();
@@ -119,30 +122,21 @@ void MainWindow::setAchievementService(cppforge::services::AchievementService *s
     }
 }
 
+void MainWindow::setCourseService(cppforge::services::CourseService *service)
+{
+    m_courseService = service;
+}
+
 void MainWindow::loadAllModulesProgress()
 {
-    if (m_currentUserId == -1 || moduleProgressBars.isEmpty())
+    if (m_currentUserId == -1 || moduleProgressBars.isEmpty() || !m_courseService)
         return;
 
-    for (int i = 1; i <= 14; ++i)
+    std::vector<int> progresses = m_courseService->getAllModulesProgress(m_currentUserId);
+
+    for (int i = 0; i < progresses.size(); ++i)
     {
-        QSqlQuery query;
-        query.prepare(R"(
-            SELECT 
-                (SELECT COUNT(*) FROM user_progress 
-                 WHERE user_id = :uid AND module_id = :mid AND is_completed = TRUE) * 100 / 
-                NULLIF((SELECT COUNT(*) FROM lessons WHERE module_id = :mid), 0)
-        )");
-
-        query.bindValue(":uid", m_currentUserId);
-        query.bindValue(":mid", i);
-
-        int progressValue = 0;
-        if (query.exec() && query.next())
-        {
-            progressValue = query.value(0).toInt();
-        }
-        updateModuleProgress(i, progressValue);
+        updateModuleProgress(i + 1, progresses[i]);
     }
 }
 
@@ -252,6 +246,10 @@ void MainWindow::fadeOut()
                     if (!taskWindow_)
                     {
                         taskWindow_ = std::make_unique<TaskWindow>();
+                        if (m_userService)
+                            taskWindow_->setUserService(m_userService);
+                        if (m_courseService)
+                            taskWindow_->setCourseService(m_courseService);
                         connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this,
                                 &MainWindow::updateModuleProgress);
                         connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
@@ -589,17 +587,17 @@ void MainWindow::onLearnButtonClicked()
 
 void MainWindow::onProfileButtonClicked()
 {
-    QSqlQuery query;
-    query.prepare("SELECT id, username, avatar_path FROM users WHERE username = :name");
-    query.bindValue(":name", m_currentUsername);
-
-    if (query.exec() && query.next())
+    if (m_userService)
     {
-        int id = query.value("id").toInt();
-        QString name = query.value("username").toString();
-        QString avatar = query.value("avatar_path").toString();
-        profilePage->setUserData(id, name, avatar);
-        m_currentUserId = id;
+        auto userOpt = m_userService->getUser(m_currentUsername);
+        if (userOpt)
+        {
+            int id = userOpt->getId();
+            QString name = userOpt->getUsername();
+            QString avatar = userOpt->getAvatarPath();
+            profilePage->setUserData(id, name, avatar);
+            m_currentUserId = id;
+        }
     }
     contentStack->setCurrentIndex(1);
 }
@@ -620,41 +618,19 @@ void MainWindow::openTaskWindow(int lessonId)
 
 void MainWindow::loadRoadmapForModule(int moduleId)
 {
-    if (m_currentUserId == -1)
+    if (m_currentUserId == -1 || !m_courseService)
         return;
 
     m_currentOpenModuleId = moduleId;
 
+    auto nodesData = m_courseService->getModuleRoadmap(m_currentUserId, moduleId);
+
     std::vector<RoadmapNode> nodes;
-    QSqlQuery query;
-    query.prepare(R"(
-        SELECT l.id, l.title, COALESCE(up.is_completed, FALSE) as completed
-        FROM lessons l
-        LEFT JOIN user_progress up ON l.id = up.lesson_id AND up.user_id = :uid
-        WHERE l.module_id = :mid
-        ORDER BY l.id ASC
-    )");
-
-    query.bindValue(":uid", m_currentUserId);
-    query.bindValue(":mid", moduleId);
-
-    if (query.exec())
+    for (const auto &data : nodesData)
     {
-        while (query.next())
-        {
-            RoadmapNode node;
-            node.lessonId = query.value("id").toInt();
-            node.title = query.value("title").toString();
-            node.isCompleted = query.value("completed").toBool();
-
-            bool isLocked = false;
-            if (!nodes.empty())
-            {
-                isLocked = !nodes.back().isCompleted;
-            }
-            node.isLocked = isLocked;
-            nodes.push_back(node);
-        }
+        RoadmapNode node;
+        node.data = data;
+        nodes.push_back(node);
     }
 
     roadmapWidget->setLessons(nodes);

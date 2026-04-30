@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../core/include/entities/RoadmapNodeData.hpp"
+
 #include <QPoint>
 #include <QString>
 #include <QWidget>
@@ -8,10 +10,7 @@
 
 struct RoadmapNode
 {
-    int lessonId;
-    QString title;
-    bool isCompleted;
-    bool isLocked;
+    cppforge::entities::RoadmapNodeData data;
     QPoint pos;
 };
 
