@@ -2,6 +2,7 @@
 
 #include "../../include/entities/TestCase.hpp"
 
+#include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -22,6 +23,7 @@ namespace cppforge::services
 
     bool DuelManager::hostRoom(quint16 port)
     {
+        m_isHost = true;
         disconnectAll();
         server_ = std::make_unique<QTcpServer>(this);
         connect(server_.get(), &QTcpServer::newConnection, this, &DuelManager::onNewConnection);
@@ -30,11 +32,15 @@ namespace cppforge::services
 
     void DuelManager::joinRoom(const QString &ip, quint16 port)
     {
+        m_isHost = false;
         disconnectAll();
         socket_ = new QTcpSocket(this);
         connect(socket_, &QTcpSocket::readyRead, this, &DuelManager::onReadyRead);
         connect(socket_, &QAbstractSocket::errorOccurred, this, &DuelManager::onSocketError);
         connect(socket_, &QTcpSocket::disconnected, this, &DuelManager::onSocketDisconnected);
+
+        connect(socket_, &QTcpSocket::connected, this, [this]() { sendIdentity(m_localPlayerName); });
+
         socket_->connectToHost(ip, port);
     }
 
@@ -88,6 +94,9 @@ namespace cppforge::services
             socket_ = server_->nextPendingConnection();
             connect(socket_, &QTcpSocket::readyRead, this, &DuelManager::onReadyRead);
             connect(socket_, &QTcpSocket::disconnected, this, &DuelManager::onSocketDisconnected);
+
+            sendIdentity(m_localPlayerName);
+
             emit opponentConnected(socket_->peerAddress().toString());
         }
     }
@@ -115,6 +124,20 @@ namespace cppforge::services
         }
     }
 
+    void DuelManager::sendIdentity(const QString &myName)
+    {
+        m_localPlayerName = myName;
+
+        QJsonObject json;
+        json["type"] = "IDENTIFY";
+        QJsonObject payload;
+        payload["nickname"] = myName;
+        payload["isHost"] = m_isHost;
+        json["payload"] = payload;
+
+        sendMessage(json);
+    }
+
     void DuelManager::onSocketError(QAbstractSocket::SocketError)
     {
         if (socket_ != nullptr)
@@ -133,23 +156,39 @@ namespace cppforge::services
     void DuelManager::processMessage(const QJsonObject &json)
     {
         QString type = json["type"].toString();
+        QJsonObject payload = json["payload"].toObject();
 
-        if (type == "TASK")
+        if (type == "IDENTIFY")
         {
-            cppforge::entities::CodingTask task = deserializeTask(json["payload"].toObject());
+            m_opponentName = payload["nickname"].toString();
+            emit opponentIdentified(m_opponentName);
+        }
+
+        else if (type == "TASK")
+        {
+            cppforge::entities::CodingTask task = deserializeTask(payload);
             emit taskReceived(task);
         }
+
         else if (type == "PROGRESS")
         {
-            QJsonObject payload = json["payload"].toObject();
             cppforge::services::DuelProgress progress;
             progress.passedTests = static_cast<uint32_t>(payload["passed"].toInt());
             progress.totalTests = static_cast<uint32_t>(payload["total"].toInt());
             emit opponentProgressUpdated(progress);
         }
-        else if (type == "WIN")
+
+        else if (type == "WIN" || type == "FINISH")
         {
-            emit duelLost();
+            int finalScore = payload["score"].toInt();
+            QString winner = payload["winner"].toString();
+
+            if (winner.isEmpty() && type == "FINISH")
+            {
+                winner = m_localPlayerName;
+            }
+
+            emit duelFinished(winner, finalScore);
         }
     }
 
@@ -164,6 +203,27 @@ namespace cppforge::services
         QByteArray data = doc.toJson(QJsonDocument::Compact) + '\n';
         socket_->write(data);
         socket_->flush();
+    }
+
+    void DuelManager::startRandomDuel()
+    {
+        qDebug() << "Requesting random duel task from Database...";
+
+        auto &tm = TaskManager::instance();
+
+        cppforge::entities::CodingTask task = tm.getRandomDuelTaskFromDb();
+
+        if (task.getId() == 0)
+        {
+            qDebug() << "CRITICAL ERROR: No duel task returned from DB! Check 'is_duel' flag or SQL connection.";
+            return;
+        }
+
+        qDebug() << "Task found! Sending to server and UI. Title:" << task.getTitle();
+
+        sendTask(task);
+
+        emit taskReceived(task);
     }
 
     QJsonObject DuelManager::serializeTask(const cppforge::entities::CodingTask &task) const
@@ -197,6 +257,21 @@ namespace cppforge::services
         json["test_cases"] = testsArray;
 
         return json;
+    }
+
+    void DuelManager::finishDuel(int score)
+    {
+        QJsonObject payload;
+        payload["score"] = score;
+        payload["winner"] = m_localPlayerName;
+
+        QJsonObject json;
+        json["type"] = "FINISH";
+        json["payload"] = payload;
+
+        sendMessage(json);
+
+        emit duelFinished(m_localPlayerName, score);
     }
 
     cppforge::entities::CodingTask DuelManager::deserializeTask(const QJsonObject &json) const

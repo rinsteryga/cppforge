@@ -1,9 +1,11 @@
 #pragma once
 
 #include "../entities/CodingTask.hpp"
+#include "TaskManager.hpp"
 
 #include <QJsonObject>
 #include <QObject>
+#include <QRandomGenerator>
 #include <QString>
 #include <QtNetwork/QTcpServer>
 #include <QtNetwork/QTcpSocket>
@@ -14,20 +16,19 @@
 namespace cppforge::services
 {
     /**
-     * @brief Data structure representing progress in a duel.
+     * @brief Структура данных, представляющая прогресс выполнения тестов в дуэли.
      */
     struct DuelProgress
     {
-        uint32_t passedTests = 0;
-        uint32_t totalTests = 0;
+        uint32_t passedTests = 0; ///< Количество пройденных тестов
+        uint32_t totalTests = 0;  ///< Общее количество тестов в задаче
     };
 
     /**
-     * @brief Manages Peer-to-Peer network communication for 1v1 coding duels.
+     * @brief Управляет сетевым взаимодействием (Peer-to-Peer) для дуэлей 1 на 1.
      *
-     * DuelManager is responsible for hosting a local TCP server or connecting to
-     * an existing host. It handles message serialization, progress broadcasting,
-     * and duel state management.
+     * DuelManager отвечает за создание TCP-сервера (хостинг) или подключение к существующему хосту.
+     * Класс обрабатывает сериализацию сообщений, трансляцию прогресса и управление состоянием сессии.
      */
     class DuelManager : public QObject
     {
@@ -35,97 +36,170 @@ namespace cppforge::services
 
     public:
         /**
-         * @brief Constructs a new DuelManager instance.
-         * @param parent The optional parent QObject.
+         * @brief Конструктор DuelManager.
+         * @param parent Родительский QObject (опционально).
          */
         explicit DuelManager(QObject *parent = nullptr);
 
         /**
-         * @brief Destructor for DuelManager.
+         * @brief Деструктор DuelManager. Гарантирует закрытие всех соединений.
          */
         ~DuelManager() override;
 
         /**
-         * @brief Starts a local TCP server to host a duel room.
-         * @param port The port to listen on. Default is 4242.
-         * @return True if the server started successfully, false otherwise.
+         * @brief Выбирает случайную задачу из базы данных и инициирует дуэль.
+         *
+         * Метод предназначен для вызова стороной Хоста. Выбирает случайную задачу,
+         * помеченную как подходящую для дуэли, и транслирует её оппоненту.
+         */
+        void startRandomDuel();
+
+        /**
+         * @brief Завершает локальную сессию дуэли и отправляет финальный результат оппоненту.
+         * @param score Набранные очки текущего пользователя.
+         */
+        void finishDuel(int score);
+
+        /**
+         * @brief Запускает локальный TCP-сервер для создания комнаты дуэли.
+         * @param port Порт для прослушивания. По умолчанию 4242.
+         * @return true, если сервер успешно запущен, иначе false.
          */
         bool hostRoom(quint16 port = 4242);
 
         /**
-         * @brief Connects to an existing host room.
-         * @param ip The IP address of the host.
-         * @param port The port the host is listening on.
+         * @brief Подключается к существующей комнате дуэли.
+         * @param ip IP-адрес хоста.
+         * @param port Порт хоста. По умолчанию 4242.
          */
         void joinRoom(const QString &ip, quint16 port = 4242);
 
         /**
-         * @brief Sends a coding task to the connected opponent.
-         * @param task The coding task to be sent.
+         * @brief Отправляет данные задачи подключенному оппоненту.
+         * @param task Объект задачи для передачи.
          */
         void sendTask(const cppforge::entities::CodingTask &task);
 
         /**
-         * @brief Broadcasts the current test progress to the opponent.
-         * @param progress The progress instance.
+         * @brief Транслирует текущий прогресс прохождения тестов оппоненту.
+         * @param progress Объект с данными о прогрессе.
          */
         void sendProgress(const cppforge::services::DuelProgress &progress);
 
         /**
-         * @brief Notifies the opponent that this user has won the duel.
+         * @brief Отправляет идентификационные данные (никнейм) текущего пользователя.
+         * @param myName Никнейм текущего пользователя.
+         */
+        void sendIdentity(const QString &myName);
+
+        /**
+         * @brief Уведомляет оппонента о победе текущего пользователя.
          */
         void sendWin();
 
         /**
-         * @brief Closes the current connection and stops the server if hosting.
+         * @brief Закрывает текущее соединение и останавливает сервер, если пользователь был хостом.
          */
         void disconnectAll();
 
     signals:
         /**
-         * @brief Emitted when an opponent successfully connects.
-         * @param opponentIp The IP address of the connected opponent.
+         * @brief Сигнализирует о том, что оппонент успешно подключился к серверу.
+         * @param opponentIp IP-адрес подключившегося оппонента.
          */
         void opponentConnected(const QString &opponentIp);
 
         /**
-         * @brief Emitted when the host sends the duel task.
-         * @param task The received coding task.
+         * @brief Сигнализирует о получении задачи дуэли по сети.
+         * @param task Десериализованный объект задачи.
          */
         void taskReceived(const cppforge::entities::CodingTask &task);
 
         /**
-         * @brief Emitted when the opponent's test progress is updated.
-         * @param progress The opponent's progress instance.
+         * @brief Сигнализирует об обновлении прогресса тестов у оппонента.
+         * @param progress Актуальные данные о прогрессе соперника.
          */
         void opponentProgressUpdated(const cppforge::services::DuelProgress &progress);
 
         /**
-         * @brief Emitted when the opponent finishes all tests before the current user.
+         * @brief Сигнализирует о том, что оппонент завершил задачу быстрее текущего пользователя.
          */
         void duelLost();
 
         /**
-         * @brief Emitted when there is a connection error.
-         * @param errorString Description of the error.
+         * @brief Сигнализирует о возникновении ошибки сетевого соединения.
+         * @param errorString Описание ошибки.
          */
         void connectionError(const QString &errorString);
 
+        /**
+         * @brief Сигнализирует об окончании дуэли.
+         * @param winner Имя победителя (локального игрока или оппонента).
+         * @param score Итоговый счет победителя.
+         */
+        void duelFinished(const QString &winner, int score);
+
+        /**
+         * @brief Сигнализирует о получении имени оппонента.
+         * @param name Никнейм соперника.
+         */
+        void opponentIdentified(const QString &name);
+
     private slots:
+        /**
+         * @brief Обрабатывает новое входящее подключение на TCP-сервере.
+         */
         void onNewConnection();
+
+        /**
+         * @brief Читает входящие данные из сокета и собирает их в JSON-сообщения.
+         */
         void onReadyRead();
+
+        /**
+         * @brief Обрабатывает ошибки сокета.
+         * @param socketError Код возникшей ошибки.
+         */
         void onSocketError(QAbstractSocket::SocketError socketError);
+
+        /**
+         * @brief Выполняет очистку ресурсов при разрыве соединения.
+         */
         void onSocketDisconnected();
 
     private:
+        /**
+         * @brief Анализирует полученный JSON и выполняет соответствующие действия в зависимости от типа сообщения.
+         * @param json Объект сообщения.
+         */
         void processMessage(const QJsonObject &json);
+
+        /**
+         * @brief Сериализует JSON-объект и записывает его в сокет с разделителем новой строки.
+         * @param json Сообщение для отправки.
+         */
         void sendMessage(const QJsonObject &json);
+
+        /**
+         * @brief Преобразует сущность CodingTask в JSON-объект для передачи по сети.
+         * @param task Задача для сериализации.
+         * @return QJsonObject, представляющий задачу.
+         */
         QJsonObject serializeTask(const cppforge::entities::CodingTask &task) const;
+
+        /**
+         * @brief Восстанавливает объект CodingTask из полученного JSON-объекта.
+         * @param json JSON-объект с данными задачи.
+         * @return Десериализованный объект CodingTask.
+         */
         cppforge::entities::CodingTask deserializeTask(const QJsonObject &json) const;
 
-        std::unique_ptr<QTcpServer> server_;
-        QTcpSocket *socket_;
-        QByteArray buffer_;
+        std::unique_ptr<QTcpServer> server_; ///< Указатель на TCP-сервер (для хоста)
+        QTcpSocket *socket_ = nullptr;       ///< Текущий сокет соединения
+        QByteArray buffer_;                  ///< Буфер для накопления входящих данных
+        QString m_localPlayerName;           ///< Никнейм текущего пользователя
+        QString m_opponentName;              ///< Никнейм соперника, полученный по сети
+        bool m_isHost = false;               ///< Флаг, указывающий, является ли пользователь хостом
     };
 } // namespace cppforge::services
 
