@@ -53,19 +53,75 @@ namespace cppforge::repositories
          * @return The count of unique successfully solved coding tasks.
          */
         int getSolvedTasksCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the count of lessons a user has completed.
+         * @param userId The ID of the user.
+         * @return The count of completed lessons.
+         */
         int getCompletedLessonsCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the count of achievements a user has earned.
+         * @param userId The ID of the user.
+         * @return The count of earned achievements.
+         */
         int getAchievementsCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the current streak of a user.
+         * @param userId The ID of the user.
+         * @return The current streak in days.
+         */
         int getStreak(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the total number of submissions made by a user.
+         * @param userId The ID of the user.
+         * @return The total submission count.
+         */
         int getTotalSubmissionsCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the last N activities of a user.
+         * @param userId The ID of the user.
+         * @param limit Maximum number of activities to return.
+         * @return A vector of Activity objects.
+         */
         std::vector<Activity> getRecentActivity(uint64_t userId, int limit) const override;
+
+        /**
+         * @brief Retrieves the IDs of all achievements earned by a user.
+         * @param userId The ID of the user.
+         * @return A vector of achievement IDs.
+         */
         std::vector<uint64_t> getEarnedAchievementIds(uint64_t userId) const override;
+
+        /**
+         * @brief Updates the user's streak and last solved timestamp in the database.
+         * @param userId The ID of the user to update.
+         */
         void updateStreak(uint64_t userId) override;
 
     private:
         QSqlDatabase &database_;
 
+        /**
+         * @brief Lazy-loads achievement IDs for a user entity.
+         * @param user The User entity to populate.
+         */
         void loadUserAchievements(entities::User &user) const;
+
+        /**
+         * @brief Lazy-loads completed level IDs for a user entity.
+         * @param user The User entity to populate.
+         */
         void loadUserCompletedLevels(entities::User &user) const;
+
+        /**
+         * @brief Persists the user's achievements to the database.
+         * @param user The User entity whose achievements should be saved.
+         */
         void saveUserAchievements(const entities::User &user);
     };
 } // namespace cppforge::repositories

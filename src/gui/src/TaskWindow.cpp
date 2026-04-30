@@ -216,6 +216,66 @@ void TaskWindow::loadModule(int lessonId)
     }
 }
 
+void TaskWindow::saveTaskProgress(bool success, const QString &code)
+{
+    if (currentUserId_ <= 0)
+        return;
+
+    QSqlQuery query;
+    query.prepare(R"(
+        INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
+        VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
+        ON CONFLICT (user_id, lesson_id) 
+        DO UPDATE SET 
+            is_completed = EXCLUDED.is_completed, 
+            updated_at = CURRENT_TIMESTAMP
+    )");
+
+    query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+    query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
+    query.bindValue(":lid", static_cast<qlonglong>(currentModuleId_));
+    query.bindValue(":status", success);
+
+    if (query.exec())
+    {
+        if (hasCodingTask_ && !code.isEmpty())
+        {
+            QSqlQuery subQuery;
+            subQuery.prepare(R"(
+                INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
+                VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
+            )");
+            subQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
+            subQuery.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
+            subQuery.bindValue(":tid", static_cast<qlonglong>(currentTask_.getId()));
+            subQuery.bindValue(":code", code);
+            subQuery.bindValue(":success", success);
+            subQuery.exec();
+        }
+
+        if (success)
+        {
+            if (btnSubmit_)
+            {
+                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+            }
+            if (btnNext_)
+            {
+                btnNext_->setEnabled(true);
+                btnNext_->setToolTip("");
+            }
+            emit lessonCompleted(currentModuleId_);
+
+            int totalProgress = getModuleProgress(currentModuleParentId_);
+            emit moduleProgressUpdated(currentModuleParentId_, totalProgress);
+        }
+    }
+    else
+    {
+        qDebug() << "SQL Error in saveTaskProgress:" << query.lastError().text();
+    }
+}
+
 void TaskWindow::onNextTask()
 {
     QSqlQuery query;
@@ -421,23 +481,18 @@ void TaskWindow::setupUI()
 
 void TaskWindow::onRunClicked()
 {
-    if (currentTask_.getId() == 0 || !testOutput_)
+    if (!hasCodingTask_ || !testOutput_)
         return;
 
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
-    testOutput_->append("Анализ...");
+    testOutput_->append("<b style='color:#3498db;'>[RUN]</b> Компиляция и запуск...");
 
-    auto violation = analyzer_->analyze(currentTask_, code);
-    if (violation.has_value())
+    std::vector<cppforge::entities::TestCase> runTests;
+    if (!currentTask_.getTestCases().empty())
     {
-        testOutput_->append("<span style='color:red;'>Ошибка: " + violation.value() + "</span>");
-        return;
+        runTests.push_back(*currentTask_.getTestCases().begin());
     }
-
-    testOutput_->append("Запуск...");
-    std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
-                                                         currentTask_.getTestCases().end());
 
     auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
     connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
@@ -446,157 +501,80 @@ void TaskWindow::onRunClicked()
                 auto result = watcher->result();
                 if (testOutput_)
                 {
-                    if (result.isSuccess())
+                    if (result.getErrors().isEmpty())
                     {
-                        testOutput_->append("<span style='color:green; font-weight:bold;'>[OK] Успешно!</span>");
+                        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Вывод программы:</span>");
+                        testOutput_->append("<pre style='background:#f4f4f4; padding:10px; border-radius:5px;'>" +
+                                            result.getOutput() + "</pre>");
                     }
                     else
                     {
-                        testOutput_->append("<span style='color:red;'>[FAIL] " + result.getErrors() + "</span>");
+                        testOutput_->append("<span style='color:#e74c3c; font-weight:bold;'>Ошибка:</span>");
+                        testOutput_->append("<pre style='color:#c0392b; white-space: pre-wrap;'>" + result.getErrors() +
+                                            "</pre>");
                     }
                 }
                 watcher->deleteLater();
             });
 
-    watcher->setFuture(runner_->runAsync(code, testVector));
+    watcher->setFuture(runner_->runAsync(code, runTests));
 }
 
 void TaskWindow::onSubmitClicked()
 {
     if (currentUserId_ <= 0)
-    {
-        if (testOutput_)
-        {
-            testOutput_->append(
-                "<span style='color:red;'>[Error] Не удалось сохранить прогресс: пользователь не авторизован.</span>");
-        }
         return;
-    }
-
-    if (!testOutput_)
-        return;
-
-    auto saveProgress = [this](bool isPractice, const QString &code = "", bool success = false)
-    {
-        QSqlQuery query;
-        query.prepare(R"(
-            INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
-            VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
-            ON CONFLICT (user_id, lesson_id) 
-            DO UPDATE SET 
-                is_completed = EXCLUDED.is_completed, 
-                updated_at = CURRENT_TIMESTAMP
-        )");
-        query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-        query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
-        query.bindValue(":lid", static_cast<qlonglong>(currentModuleId_));
-        query.bindValue(":status", !isPractice || success);
-
-        if (query.exec())
-        {
-            if (isPractice && !code.isEmpty())
-            {
-                QSqlQuery subQuery;
-                subQuery.prepare(R"(
-                    INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
-                    VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
-                )");
-                subQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-                subQuery.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
-                subQuery.bindValue(":tid", static_cast<qlonglong>(currentTask_.getId()));
-                subQuery.bindValue(":code", code);
-                subQuery.bindValue(":success", success);
-                subQuery.exec();
-            }
-
-            if (!isPractice || success)
-            {
-                if (btnSubmit_)
-                {
-                    btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
-                }
-
-                if (btnNext_)
-                {
-                    btnNext_->setEnabled(true);
-                    btnNext_->setToolTip("");
-                }
-
-                QSqlQuery streakQuery;
-                streakQuery.prepare(R"(
-                    UPDATE users 
-                    SET current_streak_days = CASE 
-                        WHEN last_level_solved_at IS NULL OR last_level_solved_at < CURRENT_DATE - INTERVAL '1 day' THEN 1
-                        WHEN last_level_solved_at >= CURRENT_DATE - INTERVAL '1 day' AND last_level_solved_at < CURRENT_DATE THEN current_streak_days + 1
-                        ELSE current_streak_days
-                    END,
-                    last_level_solved_at = CURRENT_TIMESTAMP
-                    WHERE id = :uid AND (last_level_solved_at IS NULL OR last_level_solved_at < CURRENT_DATE)
-                )");
-                streakQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
-                streakQuery.exec();
-
-                emit lessonCompleted(currentModuleId_);
-
-                int totalProgress = getModuleProgress(currentModuleParentId_);
-                emit moduleProgressUpdated(currentModuleParentId_, totalProgress);
-            }
-        }
-        else
-        {
-            qDebug() << "SQL Error in saveProgress:" << query.lastError().text();
-        }
-    };
 
     if (!hasCodingTask_)
     {
         testOutput_->clear();
         testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>[Успех] Теория изучена!</span>");
-        saveProgress(false);
+        saveTaskProgress(true, "");
+        return;
     }
-    else
+
+    QString code = codeEditor_->toPlainText();
+    testOutput_->clear();
+    testOutput_->append("<b style='color:#f39c12;'>[SUBMIT]</b> Полная проверка решения...");
+
+    auto violation = analyzer_->analyze(currentTask_, code);
+    if (violation.has_value())
     {
-        QString code = codeEditor_->toPlainText();
-        testOutput_->clear();
-        testOutput_->append("Проверка решения...");
-
-        auto violation = analyzer_->analyze(currentTask_, code);
-        if (violation.has_value())
-        {
-            testOutput_->append("<span style='color:#e74c3c;'>[Ошибка анализа] " + violation.value() + "</span>");
-            saveProgress(true, code, false);
-            return;
-        }
-
-        std::vector<cppforge::entities::TestCase> testVector(currentTask_.getTestCases().begin(),
-                                                             currentTask_.getTestCases().end());
-
-        auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
-
-        connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
-                [this, watcher, code, saveProgress]()
-                {
-                    auto result = watcher->result();
-                    if (testOutput_)
-                    {
-                        if (result.isSuccess())
-                        {
-                            testOutput_->append(
-                                "<span style='color:#27ae60; font-weight:bold;'>[Успех] Все тесты пройдены!</span>");
-                            saveProgress(true, code, true);
-                        }
-                        else
-                        {
-                            testOutput_->append("<span style='color:#e74c3c;'>[Ошибка] Тесты не пройдены:</span>");
-                            testOutput_->append("<pre>" + result.getErrors() + "</pre>");
-                            saveProgress(true, code, false);
-                        }
-                    }
-                    watcher->deleteLater();
-                });
-
-        watcher->setFuture(runner_->runAsync(code, testVector));
+        testOutput_->append("<span style='color:#e74c3c;'>[Ошибка анализа] " + violation.value() + "</span>");
+        saveTaskProgress(false, code);
+        return;
     }
+
+    std::vector<cppforge::entities::TestCase> allTests(currentTask_.getTestCases().begin(),
+                                                       currentTask_.getTestCases().end());
+
+    auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
+    connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
+            [this, watcher, code]()
+            {
+                auto result = watcher->result();
+                if (testOutput_)
+                {
+                    if (result.isSuccess())
+                    {
+                        testOutput_->append("<h3 style='color:#27ae60;'>✔ Задание выполнено верно!</h3>");
+                        saveTaskProgress(true, code);
+                    }
+                    else
+                    {
+                        testOutput_->append("<h3 style='color:#e74c3c;'>✘ Решение не принято</h3>");
+                        testOutput_->append("<p>Программа не прошла один или несколько тестов.</p>");
+                        if (!result.getErrors().isEmpty())
+                        {
+                            testOutput_->append("<pre style='color:red;'>" + result.getErrors() + "</pre>");
+                        }
+                        saveTaskProgress(false, code);
+                    }
+                }
+                watcher->deleteLater();
+            });
+
+    watcher->setFuture(runner_->runAsync(code, allTests));
 }
 
 void TaskWindow::paintEvent(QPaintEvent *event)

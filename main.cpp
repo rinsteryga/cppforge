@@ -17,13 +17,10 @@
 #include <QSqlQuery>
 #include <QTimer>
 
-namespace cppforge
+namespace cppforge::data
 {
-    namespace data
-    {
-        QSqlDatabase connectDatabase();
-    }
-} // namespace cppforge
+    QSqlDatabase connectDatabase();
+}
 
 int main(int argc, char *argv[])
 {

@@ -2,6 +2,7 @@
 
 #include "AchievementNotification.hpp"
 #include "CustomTitleBar.hpp"
+#include "DuelPage.hpp"
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
@@ -79,6 +80,20 @@ void MainWindow::setUserId(int id)
     {
         this->close();
         return;
+    }
+
+    QSqlQuery query;
+    query.prepare("SELECT username, avatar_path FROM users WHERE id = :id");
+    query.bindValue(":id", id);
+    if (query.exec() && query.next())
+    {
+        m_currentUsername = query.value("username").toString();
+        QString avatar = query.value("avatar_path").toString();
+
+        if (profilePage)
+            profilePage->setUserData(id, m_currentUsername, avatar);
+        if (duelPage)
+            duelPage->updateUserStats(m_currentUsername, 0, avatar);
     }
 
     loadAllModulesProgress();
@@ -193,13 +208,14 @@ void MainWindow::showEvent(QShowEvent *event)
 
 void MainWindow::centerWindow()
 {
-    QScreen *screen = QGuiApplication::primaryScreen();
+    QScreen *screen = QGuiApplication::screenAt(QCursor::pos());
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+
     if (screen)
     {
-        QRect availableGeometry = screen->availableGeometry();
-        int x = availableGeometry.x() + (availableGeometry.width() - width()) / 2;
-        int y = availableGeometry.y() + (availableGeometry.height() - height()) / 2;
-        move(x, y);
+        QRect adjRect = screen->availableGeometry();
+        move(adjRect.center() - rect().center());
     }
 }
 
@@ -257,7 +273,7 @@ void MainWindow::setupWindowProperties()
     resize(1280, 900);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
-    setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint);
     setAttribute(Qt::WA_TranslucentBackground, false);
     setObjectName("MainWindow");
 }
@@ -325,6 +341,15 @@ void MainWindow::setupLeftPanel()
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
     connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
+
+    connect(ratingBtn, &QPushButton::clicked, this,
+            [this]()
+            {
+                if (duelPage)
+                {
+                    contentStack->setCurrentWidget(duelPage);
+                }
+            });
 }
 
 void MainWindow::setupCenterPanel()
@@ -445,6 +470,7 @@ void MainWindow::setupUI()
     contentStack = std::make_unique<QStackedWidget>();
     profilePage = new ProfilePage(this);
     learningPage = new QWidget();
+    duelPage = new DuelPage(this);
 
     roadmapPage = new QWidget();
     auto roadmapLayout = new QVBoxLayout(roadmapPage);
@@ -481,6 +507,7 @@ void MainWindow::setupUI()
     contentStack->addWidget(learningPage);
     contentStack->addWidget(profilePage);
     contentStack->addWidget(roadmapPage);
+    contentStack->addWidget(duelPage);
 
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(contentStack.get(), 4);
@@ -618,6 +645,27 @@ void MainWindow::onBackToModulesClicked()
     {
         contentStack->setCurrentIndex(0);
     }
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange)
+    {
+        if (this->isMinimized())
+        {
+            event->accept();
+            return;
+        }
+
+        if (this->isMaximized())
+        {
+        }
+        else
+        {
+            this->setContentsMargins(0, 0, 0, 0);
+        }
+    }
+    QWidget::changeEvent(event);
 }
 
 void MainWindow::onLogoutClicked()

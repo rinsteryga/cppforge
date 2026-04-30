@@ -5,7 +5,6 @@
 #include <QString>
 
 #include <optional>
-#include <set>
 
 namespace cppforge::services
 {

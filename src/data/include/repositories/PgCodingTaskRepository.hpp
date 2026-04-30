@@ -29,10 +29,10 @@ namespace cppforge::repositories
 
         /**
          * @brief Fetches a specific coding task by its unique ID.
-         * @param id The task identifier.
+         * @param taskId The task identifier.
          * @return CodingTask if found, std::nullopt otherwise.
          */
-        std::optional<entities::CodingTask> getTaskById(uint64_t id) const override;
+        std::optional<entities::CodingTask> getTaskById(uint64_t taskId) const override;
 
         /**
          * @brief Fetches a random duel coding task by topic.

@@ -5,7 +5,6 @@
 #include "../repositories/IUserRepository.hpp"
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 
 namespace cppforge::services

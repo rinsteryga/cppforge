@@ -52,8 +52,8 @@ namespace cppforge::services
 
         for (auto &ach : all)
         {
-            auto it = std::find(earnedIds.begin(), earnedIds.end(), ach.getId());
-            if (it != earnedIds.end())
+            auto iter = std::find(earnedIds.begin(), earnedIds.end(), ach.getId());
+            if (iter != earnedIds.end())
             {
                 ach.setDateEarned(std::chrono::system_clock::now());
             }

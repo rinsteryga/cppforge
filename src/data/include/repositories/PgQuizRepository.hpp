@@ -32,7 +32,7 @@ namespace cppforge::repositories
          * @param id The quiz identifier.
          * @return Quiz if found, std::nullopt otherwise.
          */
-        std::optional<entities::Quiz> getQuizById(uint64_t id) const override;
+        std::optional<entities::Quiz> getQuizById(uint64_t quizId) const override;
 
     private:
         QSqlDatabase &database_;

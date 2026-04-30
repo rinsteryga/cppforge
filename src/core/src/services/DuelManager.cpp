@@ -67,7 +67,7 @@ namespace cppforge::services
 
     void DuelManager::disconnectAll()
     {
-        if (socket_)
+        if (socket_ != nullptr)
         {
             socket_->disconnectFromHost();
             socket_->deleteLater();
@@ -94,7 +94,7 @@ namespace cppforge::services
 
     void DuelManager::onReadyRead()
     {
-        if (!socket_)
+        if (socket_ == nullptr)
         {
             return;
         }
@@ -115,9 +115,9 @@ namespace cppforge::services
         }
     }
 
-    void DuelManager::onSocketError(QAbstractSocket::SocketError /*socketError*/)
+    void DuelManager::onSocketError(QAbstractSocket::SocketError)
     {
-        if (socket_)
+        if (socket_ != nullptr)
         {
             emit connectionError(socket_->errorString());
         }
@@ -155,7 +155,7 @@ namespace cppforge::services
 
     void DuelManager::sendMessage(const QJsonObject &json)
     {
-        if (!socket_ || socket_->state() != QAbstractSocket::ConnectedState)
+        if (socket_ == nullptr || socket_->state() != QAbstractSocket::ConnectedState)
         {
             return;
         }
@@ -185,13 +185,13 @@ namespace cppforge::services
         json["memory_limit"] = task.getMemoryLimit();
 
         QJsonArray testsArray;
-        for (const auto &tc : task.getTestCases())
+        for (const auto &testCase : task.getTestCases())
         {
             QJsonObject testJson;
-            testJson["id"] = static_cast<qint64>(tc.getId());
-            testJson["input"] = tc.getInput();
-            testJson["expected_output"] = tc.getExpectedOutput();
-            testJson["is_public"] = tc.isPublic();
+            testJson["id"] = static_cast<qint64>(testCase.getId());
+            testJson["input"] = testCase.getInput();
+            testJson["expected_output"] = testCase.getExpectedOutput();
+            testJson["is_public"] = testCase.isPublic();
             testsArray.append(testJson);
         }
         json["test_cases"] = testsArray;
@@ -220,7 +220,7 @@ namespace cppforge::services
 
         std::set<cppforge::entities::TestCase> testCases;
         QJsonArray testsArray = json["test_cases"].toArray();
-        for (const QJsonValue &val : testsArray)
+        for (const auto &val : testsArray)
         {
             QJsonObject testJson = val.toObject();
             uint64_t testId = testJson["id"].toVariant().toULongLong();
@@ -230,7 +230,7 @@ namespace cppforge::services
             testCases.emplace(testId, input, output, isPublic);
         }
 
-        return cppforge::entities::CodingTask(id, lessonId, title, description, initialCode, testCases, timeLimit,
-                                              memoryLimit, std::nullopt, std::nullopt, duelTopic);
+        return entities::CodingTask(id, lessonId, title, description, initialCode, testCases, timeLimit, memoryLimit,
+                                    std::nullopt, std::nullopt, duelTopic);
     }
 } // namespace cppforge::services

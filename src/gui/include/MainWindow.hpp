@@ -1,9 +1,11 @@
 #pragma once
 
+#include "DuelPage.hpp"
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
 
+#include <QEvent>
 #include <QList>
 #include <QPropertyAnimation>
 #include <QStackedWidget>
@@ -46,6 +48,8 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     void showEvent(QShowEvent *event) override;
 
+    void changeEvent(QEvent *event) override;
+
 public slots:
     void fadeIn();
     void fadeOut();
@@ -83,9 +87,11 @@ private:
     std::unique_ptr<TaskWindow> taskWindow_;
 
     std::unique_ptr<QStackedWidget> contentStack;
+
     ProfilePage *profilePage{nullptr};
     QWidget *learningPage{nullptr};
     QWidget *roadmapPage{nullptr};
+    DuelPage *duelPage{nullptr};
 
     QPushButton *learnBtn{nullptr};
     QPushButton *ratingBtn{nullptr};
