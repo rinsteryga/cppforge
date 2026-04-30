@@ -1,4 +1,6 @@
-#include "TaskManager.hpp"
+#include "../../include/services/TaskManager.hpp"
+
+#include "../../core/include/entities/CodingTask.hpp"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -7,6 +9,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QTextCodec>
+#include <QtSql/QSqlError>
+#include <QtSql/QSqlQuery>
 
 TaskManager &TaskManager::instance()
 {
@@ -415,4 +419,49 @@ void TaskManager::printAllModules() const
             qDebug() << "    -" << t.id << ":" << t.title;
         }
     }
+}
+
+cppforge::entities::CodingTask TaskManager::getRandomDuelTaskFromDb()
+{
+    QSqlQuery query;
+    query.prepare("SELECT id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit "
+                  "FROM coding_tasks WHERE is_duel = TRUE ORDER BY RANDOM() LIMIT 1");
+
+    if (!query.exec())
+    {
+        qDebug() << "SQL Error (getRandomDuelTask):" << query.lastError().text();
+        return {};
+    }
+
+    if (query.next())
+    {
+        uint64_t id = query.value("id").toULongLong();
+        QString title = query.value("title").toString();
+        QString desc = query.value("description").toString();
+        QString code = query.value("initial_code").toString();
+
+        std::set<cppforge::entities::TestCase> testCases;
+
+        QSqlQuery testQuery;
+        testQuery.prepare("SELECT input, expected_output FROM test_cases WHERE coding_task_id = ?");
+        testQuery.addBindValue(id);
+
+        if (testQuery.exec())
+        {
+            uint64_t tcId = 1;
+            while (testQuery.next())
+            {
+                testCases.insert(cppforge::entities::TestCase(tcId++, testQuery.value("input").toString(),
+                                                              testQuery.value("expected_output").toString(), true));
+            }
+        }
+
+        qDebug() << "Loaded duel task from DB:" << title;
+
+        return cppforge::entities::CodingTask(id, std::nullopt, title, desc, code, testCases,
+                                              query.value("time_limit").toInt(), query.value("memory_limit").toInt());
+    }
+
+    qDebug() << "No duel tasks found in database!";
+    return {};
 }
