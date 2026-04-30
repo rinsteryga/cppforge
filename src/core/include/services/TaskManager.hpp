@@ -11,8 +11,13 @@
 #include <QStringList>
 #include <QVector>
 
+namespace cppforge::repositories
+{
+    class ICodingTaskRepository;
+}
+
 /**
- * @brief Представляет раздел теоретического материала внутри модуля.
+ * @brief Represents a theoretical material section within a module.
  */
 struct TheorySection
 {
@@ -22,14 +27,14 @@ struct TheorySection
     QString format;
 
     /**
-     * @brief Проверяет, заполнены ли основные поля раздела.
-     * @return true, если id и заголовок не пусты.
+     * @brief Checks if the essential fields of the section are filled.
+     * @return true if id and title are not empty.
      */
     bool isValid() const { return !id.isEmpty() && !title.isEmpty(); }
 };
 
 /**
- * @brief Хранит данные отдельного тестового случая для проверки кода.
+ * @brief Stores data for an individual test case used for code verification.
  */
 struct TestCase
 {
@@ -37,14 +42,14 @@ struct TestCase
     QString expectedOutput;
 
     /**
-     * @brief Проверяет валидность тестового случая.
-     * @return true, если поля ввода и ожидаемого вывода заполнены.
+     * @brief Checks test case validity.
+     * @return true if input and expected output fields are filled.
      */
     bool isValid() const { return !input.isEmpty() && !expectedOutput.isEmpty(); }
 };
 
 /**
- * @brief Описывает практическую задачу по программированию.
+ * @brief Describes a practical programming task.
  */
 struct Task
 {
@@ -56,14 +61,14 @@ struct Task
     QVector<TestCase> testCases;
 
     /**
-     * @brief Проверяет валидность данных задачи.
-     * @return true, если ID задан и название не пустое.
+     * @brief Checks task data validity.
+     * @return true if ID is set and title is not empty.
      */
     bool isValid() const { return id > 0 && !title.isEmpty(); }
 };
 
 /**
- * @brief Представляет учебный модуль, содержащий теорию и практические задания.
+ * @brief Represents a learning module containing theory and practical tasks.
  */
 struct Module
 {
@@ -74,169 +79,180 @@ struct Module
     QVector<Task> tasks;
 
     /**
-     * @brief Проверяет валидность данных модуля.
-     * @return true, если ID корректен и название заполнено.
+     * @brief Checks module data validity.
+     * @return true if ID is correct and title is filled.
      */
     bool isValid() const { return id >= 0 && !title.isEmpty(); }
 };
 
-/**
- * @class TaskManager
- * @brief Менеджер для управления учебным контентом: модулями, теорией и задачами.
- *
- * Класс реализован как Singleton и отвечает за загрузку данных из внешних источников (JSON)
- * и навигацию по ним.
- */
-class TaskManager : public QObject
+namespace cppforge::services
 {
-    Q_OBJECT
-
-public:
     /**
-     * @brief Возвращает единственный экземпляр TaskManager.
-     * @return Ссылка на экземпляр менеджера.
+     * @class TaskManager
+     * @brief Manager for handling learning content: modules, theory, and tasks.
+     *
+     * The class is implemented as a Singleton and is responsible for loading data
+     * from external sources (JSON) and providing navigation.
      */
-    static TaskManager &instance();
+    class TaskManager : public QObject
+    {
+        Q_OBJECT
 
-    /**
-     * @brief Деструктор по умолчанию.
-     */
-    ~TaskManager() = default;
+    public:
+        /**
+         * @brief Returns the single instance of TaskManager.
+         * @return Reference to the manager instance.
+         */
+        static TaskManager &instance();
 
-    /**
-     * @brief Загружает структуру задач и модулей из JSON-файла.
-     * @param filePath Путь к файлу конфигурации.
-     * @return true, если загрузка и парсинг прошли успешно.
-     */
-    bool loadTasks(const QString &filePath);
+        /**
+         * @brief Default destructor.
+         */
+        ~TaskManager() = default;
 
-    /**
-     * @brief Очищает все загруженные модули и сбрасывает состояние менеджера.
-     */
-    void reset();
+        /**
+         * @brief Loads task and module structure from a JSON file.
+         * @param filePath Path to the configuration file.
+         * @return true if loading and parsing succeeded.
+         */
+        bool loadTasks(const QString &filePath);
 
-    /**
-     * @brief Находит и возвращает модуль по его ID.
-     * @param moduleId Идентификатор искомого модуля.
-     * @return Объект модуля (валидность проверяется через Module::isValid()).
-     */
-    Module getModule(int moduleId) const;
+        /**
+         * @brief Clears all loaded modules and resets the manager's state.
+         */
+        void reset();
 
-    /**
-     * @brief Возвращает конкретную задачу.
-     * @param moduleId ID модуля, которому принадлежит задача.
-     * @param taskId ID искомой задачи.
-     * @return Объект задачи.
-     */
-    Task getTask(int moduleId, int taskId) const;
+        /**
+         * @brief Finds and returns a module by its ID.
+         * @param moduleId Identifier of the module to find.
+         * @return Module object (validity checked via Module::isValid()).
+         */
+        Module getModule(int moduleId) const;
 
-    /**
-     * @brief Возвращает список всех задач указанного модуля.
-     * @param moduleId ID модуля.
-     */
-    QVector<Task> getTasksForModule(int moduleId) const;
+        /**
+         * @brief Returns a specific task.
+         * @param moduleId ID of the module the task belongs to.
+         * @param taskId ID of the task to find.
+         * @return Task object.
+         */
+        Task getTask(int moduleId, int taskId) const;
 
-    /**
-     * @brief Возвращает список всех разделов теории указанного модуля.
-     * @param moduleId ID модуля.
-     */
-    QVector<TheorySection> getTheoryForModule(int moduleId) const;
+        /**
+         * @brief Returns a list of all tasks for a specified module.
+         * @param moduleId Module ID.
+         */
+        QVector<Task> getTasksForModule(int moduleId) const;
 
-    /**
-     * @brief Выбирает случайную задачу из базы данных для режима дуэли.
-     * @return Сущность CodingTask, готовую для передачи в DuelManager.
-     */
-    cppforge::entities::CodingTask getRandomDuelTaskFromDb();
+        /**
+         * @brief Returns a list of all theory sections for a specified module.
+         * @param moduleId Module ID.
+         */
+        QVector<TheorySection> getTheoryForModule(int moduleId) const;
 
-    /** @brief Возвращает ID текущего активного модуля. */
-    int getCurrentModule() const { return currentModule_; }
+        /**
+         * @brief Selects a random task from the database for duel mode.
+         * @return CodingTask entity ready to be passed to DuelManager.
+         */
+        cppforge::entities::CodingTask getRandomDuelTaskFromDb();
 
-    /** @brief Возвращает ID текущей активной задачи. */
-    int getCurrentTask() const { return currentTask_; }
+        /**
+         * @brief Injects the task repository for database operations.
+         * @param repo Pointer to the repository implementation.
+         */
+        void setTaskRepository(cppforge::repositories::ICodingTaskRepository *repo);
 
-    /**
-     * @brief Устанавливает текущую активную задачу и модуль.
-     * @param moduleId ID нового активного модуля.
-     * @param taskId ID новой активной задачи.
-     */
-    void setCurrentTask(int moduleId, int taskId);
+        /** @brief Returns the ID of the currently active module. */
+        int getCurrentModule() const { return currentModule_; }
 
-    /**
-     * @brief Проверяет, существует ли модуль с данным ID.
-     */
-    bool isModuleAvailable(int moduleId) const;
+        /** @brief Returns the ID of the currently active task. */
+        int getCurrentTask() const { return currentTask_; }
 
-    /**
-     * @brief Проверяет, существует ли задача в конкретном модуле.
-     */
-    bool isTaskAvailable(int moduleId, int taskId) const;
+        /**
+         * @brief Sets the currently active task and module.
+         * @param moduleId ID of the new active module.
+         * @param taskId ID of the new active task.
+         */
+        void setCurrentTask(int moduleId, int taskId);
 
-    /**
-     * @brief Возвращает список названий всех загруженных модулей.
-     */
-    QStringList getModuleTitles() const;
+        /**
+         * @brief Checks if a module with given ID exists.
+         */
+        bool isModuleAvailable(int moduleId) const;
 
-    /**
-     * @brief Возвращает общее количество загруженных модулей.
-     */
-    int getModuleCount() const;
+        /**
+         * @brief Checks if a task exists within a specific module.
+         */
+        bool isTaskAvailable(int moduleId, int taskId) const;
 
-    /**
-     * @brief Возвращает количество задач в конкретном модуле.
-     */
-    int getTaskCount(int moduleId) const;
+        /**
+         * @brief Returns a list of titles for all loaded modules.
+         */
+        QStringList getModuleTitles() const;
 
-    /**
-     * @brief Возвращает количество разделов теории в конкретном модуле.
-     */
-    int getTheoryCount(int moduleId) const;
+        /**
+         * @brief Returns the total count of loaded modules.
+         */
+        int getModuleCount() const;
 
-    /**
-     * @brief Выводит отладочную информацию о модуле в консоль.
-     */
-    void printModuleInfo(int moduleId) const;
+        /**
+         * @brief Returns the task count in a specific module.
+         */
+        int getTaskCount(int moduleId) const;
 
-    /**
-     * @brief Выводит структуру всех загруженных модулей в консоль.
-     */
-    void printAllModules() const;
+        /**
+         * @brief Returns the theory section count in a specific module.
+         */
+        int getTheoryCount(int moduleId) const;
 
-signals:
-    /**
-     * @brief Генерируется при изменении активной задачи.
-     * @param moduleId Новый ID модуля.
-     * @param taskId Новый ID задачи.
-     */
-    void taskChanged(int moduleId, int taskId);
+        /**
+         * @brief Prints debug information about a module to the console.
+         */
+        void printModuleInfo(int moduleId) const;
 
-    /**
-     * @brief Генерируется после успешного завершения метода loadTasks().
-     */
-    void tasksLoaded();
+        /**
+         * @brief Prints the structure of all loaded modules to the console.
+         */
+        void printAllModules() const;
 
-    /**
-     * @brief Генерируется при обновлении прогресса прохождения модуля.
-     * @param moduleId ID модуля.
-     * @param progress Процент выполнения (0-100).
-     */
-    void moduleProgressUpdated(int moduleId, int progress);
+    signals:
+        /**
+         * @brief Triggered when the active task changes.
+         * @param moduleId New module ID.
+         * @param taskId New task ID.
+         */
+        void taskChanged(int moduleId, int taskId);
 
-private:
-    /** @brief Приватный конструктор (Singleton). */
-    TaskManager() = default;
-    TaskManager(const TaskManager &) = delete;
-    TaskManager &operator=(const TaskManager &) = delete;
+        /**
+         * @brief Triggered after successful loadTasks() completion.
+         */
+        void tasksLoaded();
 
-    QVector<Module> modules_;
-    int currentModule_ = -1;
-    int currentTask_ = -1;
+        /**
+         * @brief Triggered when module progress is updated.
+         * @param moduleId Module ID.
+         * @param progress Completion percentage (0-100).
+         */
+        void moduleProgressUpdated(int moduleId, int progress);
 
-    /** @brief Разбирает JSON-объект в структуру TheorySection. */
-    TheorySection parseTheorySection(const QJsonObject &obj);
+    private:
+        /** @brief Private constructor (Singleton). */
+        TaskManager() = default;
+        TaskManager(const TaskManager &) = delete;
+        TaskManager &operator=(const TaskManager &) = delete;
 
-    /** @brief Разбирает JSON-объект в структуру Task. */
-    Task parseTask(const QJsonObject &obj);
+        QVector<Module> modules_;
+        int currentModule_ = -1;
+        int currentTask_ = -1;
 
-    /** @brief Разбирает JSON-объект в структуру Module. */
-    Module parseModule(const QJsonObject &obj);
-};
+        cppforge::repositories::ICodingTaskRepository *m_taskRepo = nullptr;
+
+        /** @brief Parses a JSON object into a TheorySection structure. */
+        TheorySection parseTheorySection(const QJsonObject &obj);
+
+        /** @brief Parses a JSON object into a Task structure. */
+        Task parseTask(const QJsonObject &obj);
+
+        /** @brief Parses a JSON object into a Module structure. */
+        Module parseModule(const QJsonObject &obj);
+    };
+} // namespace cppforge::services
