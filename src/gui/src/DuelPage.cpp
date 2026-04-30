@@ -146,15 +146,36 @@ QFrame *DuelPage::createActionPanel()
     m_btnJoinLobby->setFixedHeight(65);
     m_btnJoinLobby->setCursor(Qt::PointingHandCursor);
 
+    m_btnStartDuel = new QPushButton("НАЧАТЬ ДУЭЛЬ");
+    m_btnStartDuel->setObjectName("btnStart");
+    m_btnStartDuel->setFixedHeight(65);
+    m_btnStartDuel->setCursor(Qt::PointingHandCursor);
+    m_btnStartDuel->setVisible(false);
+
     layout->addStretch();
     layout->addWidget(title);
     layout->addSpacing(10);
     layout->addWidget(m_btnCreateLobby);
     layout->addWidget(m_btnJoinLobby);
+    layout->addWidget(m_btnStartDuel);
     layout->addStretch();
 
     connect(m_btnCreateLobby, &QPushButton::clicked, this, &DuelPage::onCreateLobbyClicked);
     connect(m_btnJoinLobby, &QPushButton::clicked, this, &DuelPage::onJoinLobbyClicked);
+    connect(m_btnStartDuel, &QPushButton::clicked, this,
+            [this]()
+            {
+                qDebug() << "--- КНОПКА НАЖАТА ---";
+                if (m_duelManager)
+                {
+                    qDebug() << "Менеджер активен, запрашиваю задачу...";
+                    m_duelManager->startRandomDuel();
+                }
+                else
+                {
+                    qDebug() << "ОШИБКА: m_duelManager ис null!";
+                }
+            });
 
     return frame;
 }
@@ -229,6 +250,7 @@ void DuelPage::onCreateLobbyClicked()
         m_btnCreateLobby->setText("Создать лобби");
         m_btnCreateLobby->setProperty("state", "default");
         m_btnJoinLobby->setEnabled(true);
+        m_btnStartDuel->setVisible(false);
         clearLobbyList();
     }
     else if (m_duelManager->hostRoom(4242))
@@ -261,7 +283,14 @@ void DuelPage::handleOpponentConnected(const QString &ip)
 {
     if (m_leaderListLayout->count() >= 2)
         return;
+
     addLeaderboardEntry("Соперник (" + ip + ")", false);
+
+    if (m_isHosting)
+    {
+        m_btnStartDuel->setVisible(true);
+    }
+
     QMessageBox::information(this, "Дуэль", "Противник подключился!");
 }
 
@@ -278,6 +307,7 @@ void DuelPage::handleConnectionError(const QString &error)
     m_btnCreateLobby->setText("Создать лобби");
     m_btnCreateLobby->setProperty("state", "default");
     m_btnJoinLobby->setEnabled(true);
+    m_btnStartDuel->setVisible(false);
 
     m_btnCreateLobby->style()->unpolish(m_btnCreateLobby);
     m_btnCreateLobby->style()->polish(m_btnCreateLobby);
@@ -301,6 +331,23 @@ void DuelPage::applyStyles()
             font-weight: bold;
         }
 
+<<<<<<< HEAD
+=======
+        /* Кнопка НАЧАТЬ (Акцентная) */
+        #btnStart {
+            background-color: #2E8B57;
+            color: white;
+            border: none;
+        }
+        #btnStart:hover {
+            background-color: #3CB371;
+        }
+        #btnStart:pressed {
+            background-color: #228B22;
+        }
+
+        /* Кнопка СОЗДАТЬ: Состояние по умолчанию + Зеленый ховер */
+>>>>>>> 6b30106 (ui: integrate duel flow and add Doxygen documentation)
         #btnCreate[state="default"]:hover {
             border-color: #2E8B57;
             color: #2E8B57;
@@ -317,7 +364,7 @@ void DuelPage::applyStyles()
             background-color: #FDEDEC;
         }
         
-        QPushButton:hover:!#btnCreate {
+        QPushButton:hover:!#btnCreate:!#btnStart {
             border-color: #3498DB;
         }
     )");

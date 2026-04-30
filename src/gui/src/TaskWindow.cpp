@@ -85,20 +85,20 @@ void TaskWindow::loadModule(int lessonId)
 
     QSqlQuery query;
     query.prepare(R"(
-        SELECT 
-            l.title, 
-            l.content, 
-            l.module_id,
-            t.id AS task_id, 
-            t.description, 
-            t.initial_code, 
-            t.whitelist, 
-            t.blacklist,
-            (SELECT is_completed FROM user_progress WHERE user_id = :uid AND lesson_id = l.id) as is_done
-        FROM lessons l 
-        LEFT JOIN coding_tasks t ON l.id = t.lesson_id 
-        WHERE l.id = :lessonId
-    )");
+            SELECT 
+                l.title, 
+                l.content, 
+                l.module_id,
+                t.id AS task_id, 
+                t.description, 
+                t.initial_code, 
+                t.whitelist, 
+                t.blacklist,
+                (SELECT is_completed FROM user_progress WHERE user_id = :uid AND lesson_id = l.id) as is_done
+            FROM lessons l 
+            LEFT JOIN coding_tasks t ON l.id = t.lesson_id 
+            WHERE l.id = :lessonId
+        )");
     query.bindValue(":lessonId", lessonId);
     query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
 
@@ -223,13 +223,13 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
 
     QSqlQuery query;
     query.prepare(R"(
-        INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
-        VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
-        ON CONFLICT (user_id, lesson_id) 
-        DO UPDATE SET 
-            is_completed = EXCLUDED.is_completed, 
-            updated_at = CURRENT_TIMESTAMP
-    )");
+            INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
+            VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
+            ON CONFLICT (user_id, lesson_id) 
+            DO UPDATE SET 
+                is_completed = EXCLUDED.is_completed, 
+                updated_at = CURRENT_TIMESTAMP
+        )");
 
     query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
     query.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
@@ -242,9 +242,9 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
         {
             QSqlQuery subQuery;
             subQuery.prepare(R"(
-                INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
-                VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
-            )");
+                    INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
+                    VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
+                )");
             subQuery.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
             subQuery.bindValue(":mid", static_cast<qlonglong>(currentModuleParentId_));
             subQuery.bindValue(":tid", static_cast<qlonglong>(currentTask_.getId()));
@@ -280,12 +280,12 @@ void TaskWindow::onNextTask()
 {
     QSqlQuery query;
     query.prepare(R"(
-        SELECT id FROM lessons 
-        WHERE (module_id, order_index) > (
-            SELECT module_id, order_index FROM lessons WHERE id = :id
-        )
-        ORDER BY module_id ASC, order_index ASC LIMIT 1
-    )");
+            SELECT id FROM lessons 
+            WHERE (module_id, order_index) > (
+                SELECT module_id, order_index FROM lessons WHERE id = :id
+            )
+            ORDER BY module_id ASC, order_index ASC LIMIT 1
+        )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
         loadModule(query.value(0).toInt());
@@ -295,12 +295,12 @@ void TaskWindow::onPrevTask()
 {
     QSqlQuery query;
     query.prepare(R"(
-        SELECT id FROM lessons 
-        WHERE (module_id, order_index) < (
-            SELECT module_id, order_index FROM lessons WHERE id = :id
-        )
-        ORDER BY module_id DESC, order_index DESC LIMIT 1
-    )");
+            SELECT id FROM lessons 
+            WHERE (module_id, order_index) < (
+                SELECT module_id, order_index FROM lessons WHERE id = :id
+            )
+            ORDER BY module_id DESC, order_index DESC LIMIT 1
+        )");
     query.bindValue(":id", currentModuleId_);
     if (query.exec() && query.next())
         loadModule(query.value(0).toInt());
@@ -662,19 +662,19 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 void TaskWindow::setupStyles()
 {
     setStyleSheet(R"(
-        #TaskWindow { background-color: white; border: 1px solid #777; }
-        #tabHeader { background-color: #f8f8f8; border-bottom: 2px solid #ddd; }
-        QPushButton#tabButton { border: none; background: transparent; padding: 0 25px; color: #666; }
-        QPushButton#tabButton:checked { border-bottom: 4px solid #62639b; color: #62639b; }
-        #editorFrame, #testFrame { background-color: white; border: 1px solid #ccc; border-radius: 8px; }
-        #codeEditor, #testOutput { border: none; }
-        QPushButton#runButton, QPushButton#submitButton, QPushButton#navButton { 
-            border-radius: 8px; font-weight: bold; border: 1px solid #ccc; 
-        }
-        QPushButton#runButton, QPushButton#navButton { background-color: #f0f0f0; }
-        QPushButton#submitButton { background-color: #b8e2c8; border: none; color: #2d5a3d; }
-        QPushButton#backButton { background-color: #e0e0e0; border-radius: 8px; border: none; color: #444; }
-    )");
+            #TaskWindow { background-color: white; border: 1px solid #777; }
+            #tabHeader { background-color: #f8f8f8; border-bottom: 2px solid #ddd; }
+            QPushButton#tabButton { border: none; background: transparent; padding: 0 25px; color: #666; }
+            QPushButton#tabButton:checked { border-bottom: 4px solid #62639b; color: #62639b; }
+            #editorFrame, #testFrame { background-color: white; border: 1px solid #ccc; border-radius: 8px; }
+            #codeEditor, #testOutput { border: none; }
+            QPushButton#runButton, QPushButton#submitButton, QPushButton#navButton { 
+                border-radius: 8px; font-weight: bold; border: 1px solid #ccc; 
+            }
+            QPushButton#runButton, QPushButton#navButton { background-color: #f0f0f0; }
+            QPushButton#submitButton { background-color: #b8e2c8; border: none; color: #2d5a3d; }
+            QPushButton#backButton { background-color: #e0e0e0; border-radius: 8px; border: none; color: #444; }
+        )");
 }
 
 void TaskWindow::fadeIn()
@@ -727,11 +727,11 @@ int TaskWindow::getModuleProgress(int moduleId)
 
     QSqlQuery query;
     query.prepare(R"(
-        SELECT 
-            (SELECT COUNT(*) FROM lessons WHERE module_id = :mid) as total,
-            (SELECT COUNT(*) FROM user_progress 
-             WHERE module_id = :mid AND user_id = :uid AND is_completed = true) as completed
-    )");
+            SELECT 
+                (SELECT COUNT(*) FROM lessons WHERE module_id = :mid) as total,
+                (SELECT COUNT(*) FROM user_progress 
+                WHERE module_id = :mid AND user_id = :uid AND is_completed = true) as completed
+        )");
     query.bindValue(":mid", moduleId);
     query.bindValue(":uid", static_cast<qlonglong>(currentUserId_));
 
