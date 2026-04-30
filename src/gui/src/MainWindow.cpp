@@ -12,12 +12,12 @@
 #include "services/AchievementService.hpp"
 #include "services/DuelManager.hpp"
 
+#include <QApplication>
 #include <QDebug>
 #include <QFont>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
-#include <QApplication>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -95,9 +95,15 @@ void MainWindow::setUserId(int id)
             QString avatar = userOpt->getAvatarPath();
 
             if (profilePage)
+            {
                 profilePage->setUserData(id, m_currentUsername, avatar);
+            }
             if (duelPage)
+            {
+                duelPage->setUserId(id);
+                duelPage->setUserService(m_userService);
                 duelPage->updateUserStats(m_currentUsername, 0, avatar);
+            }
         }
     }
 
@@ -147,7 +153,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
         return;
 
     moduleProgressBars[moduleId - 1]->setValue(progress);
-    moduleProgressLabels[moduleId - 1]->setText(QString("%1% выполнено").arg(progress));
+    moduleProgressLabels[moduleId - 1]->setText(QString("%1% completed").arg(progress));
 
     if (progress == 100 && moduleId < (int)moduleButtons.size())
     {
@@ -155,7 +161,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
         if (nextBtn && !nextBtn->isEnabled())
         {
             nextBtn->setEnabled(true);
-            nextBtn->setText("Начать обучение");
+            nextBtn->setText("Start Learning");
             nextBtn->setStyleSheet("");
             disconnect(nextBtn, &QPushButton::clicked, nullptr, nullptr);
             connect(nextBtn, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
@@ -301,7 +307,7 @@ void MainWindow::setupLeftPanel()
 {
     sideBar = std::make_unique<QFrame>(this);
     sideBar->setObjectName("sideBar");
-    sideBar->setFixedWidth(220);
+    sideBar->setFixedWidth(240);
 
     auto layout = new QVBoxLayout(sideBar.get());
     layout->setContentsMargins(20, 40, 20, 30);
@@ -325,17 +331,17 @@ void MainWindow::setupLeftPanel()
     layout->addWidget(logoContainer, 0, Qt::AlignCenter);
     layout->addSpacing(20);
 
-    learnBtn = new QPushButton("Учиться");
-    ratingBtn = new QPushButton("Дуэль");
-    profileBtn = new QPushButton("Профиль");
-    logoutBtn = new QPushButton("Выйти");
+    learnBtn = new QPushButton("Learn");
+    ratingBtn = new QPushButton("Duel");
+    profileBtn = new QPushButton("Profile");
+    logoutBtn = new QPushButton("Logout");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
     for (auto btn : {learnBtn, ratingBtn, profileBtn, logoutBtn})
     {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
-        btn->setFixedHeight(48);
+        btn->setFixedHeight(52);
         btn->setObjectName("navButton");
     }
 
@@ -376,10 +382,10 @@ void MainWindow::setupCenterPanel()
     auto eLayout = new QVBoxLayout(eventCard.get());
     eLayout->setContentsMargins(25, 25, 25, 25);
 
-    auto eventTitle = new QLabel("События");
+    auto eventTitle = new QLabel("Events");
     eventTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     eLayout->addWidget(eventTitle);
-    eLayout->addWidget(new QLabel("Нет предстоящих событий"));
+    eLayout->addWidget(new QLabel("No upcoming events"));
     eLayout->addStretch();
 
     dailyTaskCard = std::make_unique<QFrame>();
@@ -387,7 +393,7 @@ void MainWindow::setupCenterPanel()
     auto dLayout = new QVBoxLayout(dailyTaskCard.get());
     dLayout->setContentsMargins(25, 25, 25, 25);
 
-    auto dailyTitle = new QLabel("Задание дня");
+    auto dailyTitle = new QLabel("Daily Task");
     dailyTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     dLayout->addWidget(dailyTitle);
 
@@ -427,13 +433,13 @@ void MainWindow::setupRightPanel()
         progress->setValue(0);
         progress->setFixedHeight(16);
 
-        auto progressLabel = new QLabel("0% выполнено");
+        auto progressLabel = new QLabel("0% completed");
         progressLabel->setFont(QFont("Roboto", 12));
 
         bool isLocked = (i != 1);
-        auto button = new QPushButton(isLocked ? "Заблокировано" : "Начать обучение");
+        auto button = new QPushButton(isLocked ? "Locked" : "Start Learning");
         button->setProperty("moduleId", i);
-        button->setFixedHeight(42);
+        button->setFixedHeight(45);
         button->setCursor(Qt::PointingHandCursor);
         button->setEnabled(!isLocked);
 
@@ -484,8 +490,9 @@ void MainWindow::setupUI()
     connect(profilePage, &ProfilePage::secretTaskTriggered, this, &MainWindow::onSecretTaskTriggered);
 
     learningPage = new QWidget();
-    duelPage = new DuelPage(this);
-
+    duelPage = new DuelPage();
+    duelPage->setUserId(m_currentUserId);
+    duelPage->setUserService(m_userService);
     connect(duelPage, &DuelPage::startDuelSession, this,
             [this](const cppforge::entities::CodingTask &task)
             {
@@ -504,6 +511,13 @@ void MainWindow::setupUI()
                 connect(manager, &cppforge::services::DuelManager::duelFinished, m_duelTaskWindow,
                         &DuelTaskWindow::showFinalResult);
 
+                connect(m_duelTaskWindow, &DuelTaskWindow::sessionClosed, this,
+                        [this]()
+                        {
+                            this->show();
+                            this->fadeIn();
+                        });
+
                 connect(m_duelTaskWindow, &QWidget::destroyed, this,
                         [this]()
                         {
@@ -520,7 +534,7 @@ void MainWindow::setupUI()
     auto roadmapLayout = new QVBoxLayout(roadmapPage);
     roadmapLayout->setContentsMargins(0, 0, 0, 0);
 
-    QPushButton *backBtn = new QPushButton("← Назад к модулям");
+    QPushButton *backBtn = new QPushButton("← Back to Modules");
     backBtn->setMinimumWidth(200);
     backBtn->setCursor(Qt::PointingHandCursor);
     connect(backBtn, &QPushButton::clicked, this, &MainWindow::onBackToModulesClicked);
