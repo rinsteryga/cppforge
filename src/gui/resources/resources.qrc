@@ -7,5 +7,7 @@
         <file>images/default_avatar2.png</file>
         <file>images/default_avatar3.png</file>
         <file>images/default_avatar4.png</file>
+        <file>images/lb.png</file>
+        <file>images/patrick.png</file>
     </qresource>
 </RCC>
