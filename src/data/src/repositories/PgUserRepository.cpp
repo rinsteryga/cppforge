@@ -200,6 +200,8 @@ namespace cppforge::repositories
             return false;
         }
 
+        saveUserAchievements(user);
+
         return true;
     }
 
