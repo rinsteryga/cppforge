@@ -27,13 +27,13 @@ namespace cppforge
 
 /**
  * @class DuelTaskWindow
- * @brief Окно активной сессии дуэли, объединяющее редактор кода, таймер и систему тестирования.
+ * @brief Window for an active duel session, combining a code editor, timer, and testing system.
  *
- * Данный класс является основным интерфейсом игрока во время дуэли. Он отвечает за:
- * - Отображение условия задачи и написание кода.
- * - Индикацию оставшегося времени и текущего потенциального счета.
- * - Запуск тестов решения и статический анализ кода.
- * - Взаимодействие с DuelManager для синхронизации прогресса с оппонентом.
+ * This class is the primary player interface during a duel. It is responsible for:
+ * - Displaying task requirements and code writing.
+ * - Indicating remaining time and current potential score.
+ * - Running solution tests and static code analysis.
+ * - Interacting with DuelManager to synchronize progress with the opponent.
  */
 class DuelTaskWindow : public QWidget
 {
@@ -41,68 +41,68 @@ class DuelTaskWindow : public QWidget
 
 public:
     /**
-     * @brief Конструктор окна дуэли.
-     * @param manager Указатель на существующий DuelManager для обмена данными по сети.
-     * @param parent Родительский виджет.
+     * @brief Duel task window constructor.
+     * @param manager Pointer to an existing DuelManager for network data exchange.
+     * @param parent Parent widget.
      */
     explicit DuelTaskWindow(cppforge::services::DuelManager *manager, QWidget *parent = nullptr);
 
     /**
-     * @brief Инициализирует окно данными конкретной задачи.
-     * @param task Объект задачи (текст, начальный код, тесты).
+     * @brief Initializes the window with specific task data.
+     * @param task Task object (text, initial code, tests).
      */
     void setTask(const cppforge::entities::CodingTask &task);
 
     /**
-     * @brief Устанавливает имя локального игрока для отображения в интерфейсе.
-     * @param name Никнейм пользователя.
+     * @brief Sets the local player's name for UI display.
+     * @param name User's nickname.
      */
     void setLocalNickname(const QString &name);
 
     /**
-     * @brief Отображает модальное окно или панель с итогами завершенной дуэли.
-     * @param winnerName Имя победителя.
-     * @param score Финальный счет победителя.
+     * @brief Displays a modal window or panel with finished duel results.
+     * @param winnerName Winner's name.
+     * @param score Winner's final score.
      */
     void showFinalResult(const QString &winnerName, int score);
 
 protected:
     /**
-     * @brief Переопределенное событие появления окна. Используется для запуска анимаций или таймера.
+     * @brief Overridden window show event. Used for starting animations or the timer.
      */
     void showEvent(QShowEvent *event) override;
 
     /**
-     * @brief Фильтр событий для обработки специфических нажатий клавиш в редакторе (например, Tab).
+     * @brief Event filter for handling specific key presses in the editor (e.g., Tab).
      */
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
     /**
-     * @brief Вызывается каждую секунду. Обновляет таймер и динамически уменьшает текущий счет.
+     * @brief Called every second. Updates the timer and dynamically decreases the current score.
      */
     void onTick();
 
     /**
-     * @brief Выполняет запуск текущего кода на наборе тестов задачи.
+     * @brief Executes the current code against the task's test suite.
      */
     void onRunClicked();
 
     /**
-     * @brief Финализирует решение. Проверяет все тесты и, при успехе, отправляет сигнал о завершении дуэли.
+     * @brief Finalizes the solution. Verifies all tests and, if successful, signals duel completion.
      */
     void onSubmitClicked();
 
 private:
-    /** @brief Инициализация графических компонентов и их компоновка. */
+    /** @brief Initializes UI components and their layout. */
     void setupUI();
 
-    /** @brief Настройка визуального стиля окна, шрифтов и цветовой схемы. */
+    /** @brief Configures visual window style, fonts, and color scheme. */
     void setupStyles();
 
-    QString m_localNickname; ///< Никнейм текущего пользователя.
+    QString m_localNickname; ///< Nickname of the current user.
 
-    /** @brief Указатель на менеджер сетевого взаимодействия. Не владеет объектом. */
+    /** @brief Pointer to the network interaction manager. Does not own the object. */
     cppforge::services::DuelManager *duelManager_{nullptr};
 
     std::unique_ptr<CustomTitleBar> customTitleBar_;
