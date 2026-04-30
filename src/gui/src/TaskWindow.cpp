@@ -61,7 +61,7 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
     hasCodingTask_ = true;
     currentModuleParentId_ = -1;
 
-    customTitleBar_->setTitle(task.getTitle());
+    customTitleBar_->setTitle("Task: " + task.getTitle());
 
     if (practiceEdit_)
     {
@@ -71,7 +71,7 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
 
     if (theoryEdit_)
     {
-        theoryEdit_->setPlainText("Для этого задания теоретический материал не предусмотрен.");
+        theoryEdit_->setPlainText("Theoretical material is not provided for this task.");
         applyTextFormatting(theoryEdit_);
     }
 
@@ -163,8 +163,8 @@ void TaskWindow::loadModule(int lessonId)
 
         if (isCompleted && testOutput_)
         {
-            testOutput_->append(
-                "<span style='color:#27ae60; font-weight:bold;'>[Статус] Это задание уже было выполнено верно.</span>");
+            testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>[Status] This task has already been "
+                                "completed correctly.</span>");
             if (btnSubmit_)
                 btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
         }
@@ -179,22 +179,22 @@ void TaskWindow::loadModule(int lessonId)
         hasCodingTask_ = false;
         if (practiceEdit_)
         {
-            practiceEdit_->setPlainText("Для этого модуля практических заданий не предусмотрено.");
+            practiceEdit_->setPlainText("Practical tasks are not provided for this module.");
             applyTextFormatting(practiceEdit_);
         }
-        codeEditor_->setPlainText("// Только теоретический материал.");
+        codeEditor_->setPlainText("// Theory only material.");
         codeEditor_->setReadOnly(true);
         if (btnRun_)
             btnRun_->setVisible(false);
 
         if (btnSubmit_)
         {
-            btnSubmit_->setText("Изучено");
+            btnSubmit_->setText("Studied");
             if (isCompleted)
             {
                 if (testOutput_)
                     testOutput_->append(
-                        "<span style='color:#27ae60; font-weight:bold;'>[Статус] Теория изучена.</span>");
+                        "<span style='color:#27ae60; font-weight:bold;'>[Status] Theory studied.</span>");
                 btnSubmit_->setEnabled(true);
                 btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
             }
@@ -210,7 +210,7 @@ void TaskWindow::loadModule(int lessonId)
     {
         btnNext_->setEnabled(isCompleted);
         if (!isCompleted)
-            btnNext_->setToolTip("Сначала завершите текущее задание");
+            btnNext_->setToolTip("Complete current task first");
         else
             btnNext_->setToolTip("");
     }
@@ -312,7 +312,7 @@ void TaskWindow::setupUI()
 
     customTitleBar_ = std::make_unique<CustomTitleBar>(this);
     customTitleBar_->setIcon(QIcon(":/icons/main_logo.ico"));
-    customTitleBar_->setTitle("Задание");
+    customTitleBar_->setTitle("Task");
     rootLayout->addWidget(customTitleBar_.get());
 
     QFrame *line = new QFrame();
@@ -331,8 +331,10 @@ void TaskWindow::setupUI()
     tabHeader->setObjectName("tabHeader");
     tabHeader->setFixedHeight(60);
     auto tabLayout = new QHBoxLayout(tabHeader);
-    auto btnTheory = new QPushButton("✧ Теория");
-    auto btnPractice = new QPushButton("✧ Практика");
+    auto btnTheory = new QPushButton("✧ Theory");
+    auto btnPractice = new QPushButton("✧ Practice");
+    btnTheory->setMinimumWidth(160);
+    btnPractice->setMinimumWidth(160);
     btnPractice->setObjectName("tabButton");
     btnTheory->setObjectName("tabButton");
     btnPractice->setCheckable(true);
@@ -376,8 +378,8 @@ void TaskWindow::setupUI()
     btnBack_->setObjectName("backButton");
     footerLeft->addWidget(btnBack_);
 
-    btnPrev_ = new QPushButton("Назад");
-    btnNext_ = new QPushButton("Вперед");
+    btnPrev_ = new QPushButton("Previous");
+    btnNext_ = new QPushButton("Next");
     btnPrev_->setObjectName("navButton");
     btnNext_->setObjectName("navButton");
     btnPrev_->setFixedSize(130, 55);
@@ -498,13 +500,13 @@ void TaskWindow::onRunClicked()
                 {
                     if (result.getErrors().isEmpty())
                     {
-                        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Вывод программы:</span>");
+                        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Program Output:</span>");
                         testOutput_->append("<pre style='background:#f4f4f4; padding:10px; border-radius:5px;'>" +
                                             result.getOutput() + "</pre>");
                     }
                     else
                     {
-                        testOutput_->append("<span style='color:#e74c3c; font-weight:bold;'>Ошибка:</span>");
+                        testOutput_->append("<span style='color:#e74c3c; font-weight:bold;'>Error:</span>");
                         testOutput_->append("<pre style='color:#c0392b; white-space: pre-wrap;'>" + result.getErrors() +
                                             "</pre>");
                     }
@@ -525,19 +527,19 @@ void TaskWindow::onSubmitClicked()
     if (!hasCodingTask_)
     {
         testOutput_->clear();
-        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>[Успех] Теория изучена!</span>");
+        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>[Success] Theory studied!</span>");
         saveTaskProgress(true, "");
         return;
     }
 
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
-    testOutput_->append("<b style='color:#f39c12;'>[SUBMIT]</b> Полная проверка решения...");
+    testOutput_->append("<b style='color:#f39c12;'>[SUBMIT]</b> Full solution check...");
 
     auto violation = analyzer_->analyze(currentTask_, code);
     if (violation.has_value())
     {
-        testOutput_->append("<span style='color:#e74c3c;'>[Ошибка анализа] " + violation.value() + "</span>");
+        testOutput_->append("<span style='color:#e74c3c;'>[Analysis Error] " + violation.value() + "</span>");
         saveTaskProgress(false, code);
         return;
     }
@@ -554,13 +556,13 @@ void TaskWindow::onSubmitClicked()
                 {
                     if (result.isSuccess())
                     {
-                        testOutput_->append("<h3 style='color:#27ae60;'>✔ Задание выполнено верно!</h3>");
+                        testOutput_->append("<h3 style='color:#27ae60;'>✔ Task completed correctly!</h3>");
                         saveTaskProgress(true, code);
                     }
                     else
                     {
-                        testOutput_->append("<h3 style='color:#e74c3c;'>✘ Решение не принято</h3>");
-                        testOutput_->append("<p>Программа не прошла один или несколько тестов.</p>");
+                        testOutput_->append("<h3 style='color:#e74c3c;'>✘ Solution not accepted</h3>");
+                        testOutput_->append("<p>The program failed one or more tests.</p>");
                         if (!result.getErrors().isEmpty())
                         {
                             testOutput_->append("<pre style='color:red;'>" + result.getErrors() + "</pre>");
