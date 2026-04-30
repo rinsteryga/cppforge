@@ -71,7 +71,7 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
         const auto &node = m_nodes[i];
 
         QColor mainColor =
-            node.isLocked ? QColor("#E5E5E5") : (node.isCompleted ? QColor("#58CC02") : QColor("#1CB0F6"));
+            node.data.isLocked ? QColor("#E5E5E5") : (node.data.isCompleted ? QColor("#58CC02") : QColor("#1CB0F6"));
         QColor shadowColor = mainColor.darker(120);
 
         painter.setBrush(shadowColor);
@@ -85,7 +85,7 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
 
         painter.setPen(Qt::white);
         painter.setFont(QFont("Roboto", 12, QFont::Bold));
-        QString icon = node.isCompleted ? "✔" : (node.isLocked ? "🔒" : "▶");
+        QString icon = node.data.isCompleted ? "✔" : (node.data.isLocked ? "🔒" : "▶");
         painter.drawText(QRect(node.pos.x() - 15, node.pos.y() - 15, 30, 30), Qt::AlignCenter, icon);
 
         painter.setPen(QColor("#3C3C3C"));
@@ -101,7 +101,7 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
         QRect textRect(node.pos.x() + textOffset, node.pos.y() - 15, 60, 30);
         painter.drawText(textRect, alignment, label);
 
-        if (!node.isCompleted && !node.isLocked)
+        if (!node.data.isCompleted && !node.data.isLocked)
         {
             painter.setPen(QColor("#1CB0F6"));
             painter.setFont(QFont("Roboto", 9, QFont::Black));
@@ -117,7 +117,7 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
         painter.setFont(tooltipFont);
 
         QFontMetrics metrics(tooltipFont);
-        int textWidth = metrics.horizontalAdvance(node.title);
+        int textWidth = metrics.horizontalAdvance(node.data.title);
         int textHeight = metrics.height();
 
         int padding = 8;
@@ -130,7 +130,7 @@ void ModuleRoadmapWidget::paintEvent(QPaintEvent *event)
         painter.drawRoundedRect(tooltipRect, 6, 6);
 
         painter.setPen(Qt::white);
-        painter.drawText(tooltipRect, Qt::AlignCenter, node.title);
+        painter.drawText(tooltipRect, Qt::AlignCenter, node.data.title);
     }
 }
 
@@ -144,9 +144,9 @@ void ModuleRoadmapWidget::mousePressEvent(QMouseEvent *event)
             int dy = event->pos().y() - node.pos.y();
             if ((dx * dx + dy * dy) <= (m_nodeRadius * m_nodeRadius))
             {
-                if (!node.isLocked)
+                if (!node.data.isLocked)
                 {
-                    emit lessonSelected(node.lessonId);
+                    emit lessonSelected(node.data.lessonId);
                 }
                 return;
             }
