@@ -64,7 +64,7 @@ bool MainWindow::validateUserExists()
 
     if (!m_userService->findById(m_currentUserId).has_value())
     {
-        qDebug() << "!!! КРИТИЧЕСКАЯ ОШИБКА: Пользователь удален из БД. Сброс сессии.";
+        qDebug() << "!!! CRITICAL ERROR: User removed from DB. Resetting session.";
 
         QSettings settings("CppForge", "StudyApp");
         settings.remove("auth/user_id");
@@ -288,7 +288,7 @@ void MainWindow::fadeOut()
 void MainWindow::setupWindowProperties()
 {
     setMinimumSize(1100, 800);
-    resize(1280, 900);
+    resize(1400, 950);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint);
@@ -426,7 +426,7 @@ void MainWindow::setupRightPanel()
         auto mLayout = new QVBoxLayout(moduleCard.get());
         mLayout->setContentsMargins(20, 20, 20, 20);
 
-        auto mTitle = new QLabel(QString("Модуль %1").arg(i));
+        auto mTitle = new QLabel(QString("Module %1").arg(i));
         mTitle->setFont(QFont("Roboto", 15, QFont::Bold));
 
         auto progress = new QProgressBar();
@@ -581,7 +581,7 @@ void MainWindow::setupStyles()
         
         QFrame#sideBar { background-color: white; border: 1px solid #e0e0e0; }
         
-        /* Фикс разводов для всех лейблов */
+        /* Anti-aliasing fix for all labels */
         QLabel { background-color: transparent; border: none; }
 
         QPushButton#navButton { background-color: transparent; border: none; color: #555; text-align: left; padding-left: 20px; }
