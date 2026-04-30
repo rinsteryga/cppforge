@@ -34,13 +34,22 @@ namespace cppforge::services
     void DuelManager::joinRoom(const QString &ip, quint16 port)
     {
         m_isHost = false;
+
         disconnectAll();
+
         socket_ = new QTcpSocket(this);
+
         connect(socket_, &QTcpSocket::readyRead, this, &DuelManager::onReadyRead);
         connect(socket_, &QAbstractSocket::errorOccurred, this, &DuelManager::onSocketError);
         connect(socket_, &QTcpSocket::disconnected, this, &DuelManager::onSocketDisconnected);
 
-        connect(socket_, &QTcpSocket::connected, this, [this]() { sendIdentity(m_localPlayerName); });
+        connect(socket_, &QTcpSocket::connected, this,
+                [this]()
+                {
+                    sendIdentity(m_localPlayerName);
+
+                    emit opponentConnected(socket_->peerAddress().toString());
+                });
 
         socket_->connectToHost(ip, port);
     }

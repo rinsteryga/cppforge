@@ -2,7 +2,6 @@
 #include "../../src/core/include/services/DuelManager.hpp"
 
 #include <QSignalSpy>
-#include <QTimer>
 #include <QtTest/QtTest>
 
 using namespace cppforge::services;
@@ -26,25 +25,26 @@ private slots:
 
         QSignalSpy hostConnectedSpy(&host, &DuelManager::opponentConnected);
         QSignalSpy clientConnectedSpy(&client, &DuelManager::opponentConnected);
+        QSignalSpy hostIdentifiedSpy(&host, &DuelManager::opponentIdentified);
+        QSignalSpy clientIdentifiedSpy(&client, &DuelManager::opponentIdentified);
 
         QVERIFY(host.hostRoom(4242));
 
-        QTest::qWait(500);
-
         client.joinRoom("127.0.0.1", 4242);
 
-        int timeout = 10000;
-        while (timeout > 0 && (hostConnectedSpy.isEmpty() || clientConnectedSpy.isEmpty()))
-        {
-            QTest::qWait(100);
-            timeout -= 100;
-        }
+        QVERIFY2(hostConnectedSpy.wait(5000), "Host timed out waiting for connection");
+        QVERIFY2(clientConnectedSpy.wait(5000), "Client timed out waiting for connection");
 
-        QVERIFY2(!hostConnectedSpy.isEmpty(), "Host timed out");
-        QVERIFY2(!clientConnectedSpy.isEmpty(), "Client timed out");
+        if (hostIdentifiedSpy.isEmpty())
+            hostIdentifiedSpy.wait(2000);
+        if (clientIdentifiedSpy.isEmpty())
+            clientIdentifiedSpy.wait(2000);
 
-        QCOMPARE(hostConnectedSpy.count(), 1);
-        QCOMPARE(clientConnectedSpy.count(), 1);
+        QVERIFY2(!hostIdentifiedSpy.isEmpty(), "Host never identified opponent");
+        QVERIFY2(!clientIdentifiedSpy.isEmpty(), "Client never identified opponent");
+
+        QCOMPARE(host.getOpponentName(), QString("ClientPlayer"));
+        QCOMPARE(client.getOpponentName(), QString("HostPlayer"));
     }
 };
 
