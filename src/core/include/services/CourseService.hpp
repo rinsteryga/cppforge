@@ -7,6 +7,13 @@
 #include <optional>
 #include <vector>
 
+namespace cppforge::repositories
+{
+    class ILessonRepository;
+    class ICodingTaskRepository;
+    class IUserRepository;
+} // namespace cppforge::repositories
+
 namespace cppforge::services
 {
     /**
@@ -21,8 +28,12 @@ namespace cppforge::services
     public:
         /**
          * @brief Constructs a new CourseService instance.
+         * @param lessonRepo Repository for lesson data access.
+         * @param taskRepo Repository for coding task data access.
+         * @param userRepo Repository for user progress and submission data.
          */
-        CourseService() = default;
+        CourseService(repositories::ILessonRepository *lessonRepo, repositories::ICodingTaskRepository *taskRepo,
+                      repositories::IUserRepository *userRepo);
 
         /**
          * @brief Retrieves the sequence of lessons for a specific module as a roadmap.
@@ -78,5 +89,10 @@ namespace cppforge::services
          * @return An optional containing the previous lesson ID if available.
          */
         std::optional<uint64_t> getPrevLessonId(uint64_t currentLessonId) const;
+
+    private:
+        repositories::ILessonRepository *m_lessonRepo;
+        repositories::ICodingTaskRepository *m_taskRepo;
+        repositories::IUserRepository *m_userRepo;
     };
 } // namespace cppforge::services
