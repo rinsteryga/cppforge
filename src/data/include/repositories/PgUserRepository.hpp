@@ -27,6 +27,13 @@ namespace cppforge::repositories
         explicit PgUserRepository(QSqlDatabase &database);
 
         /**
+         * @brief Fetches a user by their ID.
+         * @param id The ID to search for.
+         * @return User if found, std::nullopt otherwise.
+         */
+        std::optional<entities::User> findById(uint64_t id) const override;
+
+        /**
          * @brief Fetches a user by their email.
          * @param email The email to search for.
          * @return User if found, std::nullopt otherwise.
@@ -102,6 +109,17 @@ namespace cppforge::repositories
          * @param userId The ID of the user to update.
          */
         void updateStreak(uint64_t userId) override;
+
+        /**
+         * @brief Updates the user's avatar path in the database.
+         * @param userId The ID of the user to update.
+         * @param avatarPath The new path to the avatar image.
+         */
+        void updateAvatar(uint64_t userId, const QString &avatarPath) override;
+
+        bool saveLessonProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted) override;
+        bool saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code,
+                            bool isSuccess) override;
 
     private:
         QSqlDatabase &database_;
