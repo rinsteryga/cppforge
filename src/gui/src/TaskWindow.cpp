@@ -613,19 +613,19 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 void TaskWindow::setupStyles()
 {
     setStyleSheet(R"(
-        #TaskWindow { background-color: white; border: 1px solid #777; }
-        #tabHeader { background-color: #f8f8f8; border-bottom: 2px solid #ddd; }
-        QPushButton#tabButton { border: none; background: transparent; padding: 0 25px; color: #666; }
-        QPushButton#tabButton:checked { border-bottom: 4px solid #62639b; color: #62639b; }
-        #editorFrame, #testFrame { background-color: white; border: 1px solid #ccc; border-radius: 8px; }
-        #codeEditor, #testOutput { border: none; }
-        QPushButton#runButton, QPushButton#submitButton, QPushButton#navButton { 
-            border-radius: 8px; font-weight: bold; border: 1px solid #ccc; 
-        }
-        QPushButton#runButton, QPushButton#navButton { background-color: #f0f0f0; }
-        QPushButton#submitButton { background-color: #b8e2c8; border: none; color: #2d5a3d; }
-        QPushButton#backButton { background-color: #e0e0e0; border-radius: 8px; border: none; color: #444; }
-    )");
+            #TaskWindow { background-color: white; border: 1px solid #777; }
+            #tabHeader { background-color: #f8f8f8; border-bottom: 2px solid #ddd; }
+            QPushButton#tabButton { border: none; background: transparent; padding: 0 25px; color: #666; }
+            QPushButton#tabButton:checked { border-bottom: 4px solid #62639b; color: #62639b; }
+            #editorFrame, #testFrame { background-color: white; border: 1px solid #ccc; border-radius: 8px; }
+            #codeEditor, #testOutput { border: none; }
+            QPushButton#runButton, QPushButton#submitButton, QPushButton#navButton { 
+                border-radius: 8px; font-weight: bold; border: 1px solid #ccc; 
+            }
+            QPushButton#runButton, QPushButton#navButton { background-color: #f0f0f0; }
+            QPushButton#submitButton { background-color: #b8e2c8; border: none; color: #2d5a3d; }
+            QPushButton#backButton { background-color: #e0e0e0; border-radius: 8px; border: none; color: #444; }
+        )");
 }
 
 void TaskWindow::fadeIn()

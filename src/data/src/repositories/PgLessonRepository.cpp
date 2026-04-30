@@ -66,5 +66,49 @@ namespace cppforge
 
             return std::nullopt;
         }
+
+        std::optional<uint64_t> PgLessonRepository::getNextLessonId(uint64_t currentLessonId) const
+        {
+            if (!database_.isOpen())
+                return std::nullopt;
+
+            QSqlQuery query(database_);
+            query.prepare(R"(
+                SELECT id FROM lessons 
+                WHERE (module_id, order_index) > (
+                    SELECT module_id, order_index FROM lessons WHERE id = :id
+                )
+                ORDER BY module_id ASC, order_index ASC LIMIT 1
+            )");
+            query.bindValue(":id", static_cast<qulonglong>(currentLessonId));
+
+            if (query.exec() && query.next())
+            {
+                return query.value(0).toULongLong();
+            }
+            return std::nullopt;
+        }
+
+        std::optional<uint64_t> PgLessonRepository::getPrevLessonId(uint64_t currentLessonId) const
+        {
+            if (!database_.isOpen())
+                return std::nullopt;
+
+            QSqlQuery query(database_);
+            query.prepare(R"(
+                SELECT id FROM lessons 
+                WHERE (module_id, order_index) < (
+                    SELECT module_id, order_index FROM lessons WHERE id = :id
+                )
+                ORDER BY module_id DESC, order_index DESC LIMIT 1
+            )");
+            query.bindValue(":id", static_cast<qulonglong>(currentLessonId));
+
+            if (query.exec() && query.next())
+            {
+                return query.value(0).toULongLong();
+            }
+            return std::nullopt;
+        }
     } // namespace repositories
 } // namespace cppforge

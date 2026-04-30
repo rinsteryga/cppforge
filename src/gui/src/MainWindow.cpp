@@ -5,10 +5,12 @@
 #include "../../core/include/services/UserService.hpp"
 #include "AchievementNotification.hpp"
 #include "CustomTitleBar.hpp"
-#include "DuelPage.hpp"
+#include "DuelTaskWindow.hpp"
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
+#include "services/AchievementService.hpp"
+#include "services/DuelManager.hpp"
 
 #include <QDebug>
 #include <QFont>
@@ -468,6 +470,36 @@ void MainWindow::setupUI()
     profilePage = new ProfilePage(this);
     learningPage = new QWidget();
     duelPage = new DuelPage(this);
+
+    connect(duelPage, &DuelPage::startDuelSession, this,
+            [this](const cppforge::entities::CodingTask &task)
+            {
+                auto manager = duelPage->getDuelManager();
+
+                manager->sendIdentity(m_currentUsername);
+
+                m_duelTaskWindow = new DuelTaskWindow(manager);
+
+                m_duelTaskWindow->setTask(task);
+
+                m_duelTaskWindow->setLocalNickname(m_currentUsername);
+
+                m_duelTaskWindow->setAttribute(Qt::WA_DeleteOnClose);
+
+                connect(manager, &cppforge::services::DuelManager::duelFinished, m_duelTaskWindow,
+                        &DuelTaskWindow::showFinalResult);
+
+                connect(m_duelTaskWindow, &QWidget::destroyed, this,
+                        [this]()
+                        {
+                            m_duelTaskWindow = nullptr;
+                            this->show();
+                            this->fadeIn();
+                        });
+
+                this->hide();
+                m_duelTaskWindow->show();
+            });
 
     roadmapPage = new QWidget();
     auto roadmapLayout = new QVBoxLayout(roadmapPage);

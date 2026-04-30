@@ -117,9 +117,59 @@ namespace cppforge::repositories
          */
         void updateAvatar(uint64_t userId, const QString &avatarPath) override;
 
+        /**
+         * @brief Saves or updates the progression state of a lesson.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param lessonId The ID of the lesson.
+         * @param isCompleted True if the user successfully completed the lesson.
+         * @return True if saved successfully.
+         */
         bool saveLessonProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted) override;
+
+        /**
+         * @brief Records a user's code submission for a task in the database.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param taskId The ID of the coding task.
+         * @param code The source code submitted.
+         * @param isSuccess True if the submission passed all tests.
+         * @return True if saved successfully.
+         */
         bool saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code,
                             bool isSuccess) override;
+
+        /**
+         * @brief Retrieves the source code of the most recent submission for a task.
+         * @param userId The ID of the user.
+         * @param taskId The ID of the coding task.
+         * @return The source code if found, std::nullopt otherwise.
+         */
+        std::optional<QString> getLastSubmission(uint64_t userId, uint64_t taskId) const override;
+
+        /**
+         * @brief Checks if a specific user has completed a specific lesson.
+         * @param userId The ID of the user.
+         * @param lessonId The ID of the lesson.
+         * @return True if completed.
+         */
+        bool isLessonCompleted(uint64_t userId, uint64_t lessonId) const override;
+
+        /**
+         * @brief Retrieves the IDs of all lessons completed by a user in a module.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @return A vector of completed lesson IDs.
+         */
+        std::vector<uint64_t> getCompletedLessonIds(uint64_t userId, uint64_t moduleId) const override;
+
+        /**
+         * @brief Calculates the completion progress percentage for a specific module.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @return The completion percentage (0-100).
+         */
+        int getModuleProgress(uint64_t userId, uint64_t moduleId) const override;
 
     private:
         QSqlDatabase &database_;

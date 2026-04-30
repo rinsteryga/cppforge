@@ -40,6 +40,11 @@ namespace cppforge::repositories
          * @return CodingTask if found, std::nullopt otherwise.
          */
         std::optional<entities::CodingTask> getRandomDuelTaskByTopic(const QString &topic) const override;
+        /**
+         * @brief Fetches a random duel coding task from the database.
+         * @return CodingTask if found, std::nullopt otherwise.
+         */
+        std::optional<entities::CodingTask> getRandomDuelTask() const override;
 
     private:
         QSqlDatabase &database_;

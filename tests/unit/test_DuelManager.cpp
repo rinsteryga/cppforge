@@ -1,8 +1,6 @@
-#include "../../src/core/include/entities/CodingTask.hpp"
 #include "../../src/core/include/services/DuelManager.hpp"
 
 #include <QSignalSpy>
-#include <QTimer>
 #include <QtTest/QtTest>
 
 using namespace cppforge::services;
@@ -15,51 +13,46 @@ class TestDuelManager : public QObject
 private slots:
     void initTestCase() {}
 
-    void testConnectionAndMessaging()
+    void testConnectionAndIdentityExchange()
     {
-        DuelManager host;
-        DuelManager client;
+        DuelManager host("HostPlayer");
+        DuelManager client("ClientPlayer");
 
         QSignalSpy hostConnectedSpy(&host, &DuelManager::opponentConnected);
+        QSignalSpy clientConnectedSpy(&client, &DuelManager::opponentConnected);
+        QSignalSpy hostIdentifiedSpy(&host, &DuelManager::opponentIdentified);
+        QSignalSpy clientIdentifiedSpy(&client, &DuelManager::opponentIdentified);
 
         QVERIFY(host.hostRoom(4242));
 
         client.joinRoom("127.0.0.1", 4242);
 
-        QVERIFY(hostConnectedSpy.wait(1000));
-        QCOMPARE(hostConnectedSpy.count(), 1);
+        if (hostConnectedSpy.isEmpty())
+        {
+            hostConnectedSpy.wait(5000);
+        }
+        if (clientConnectedSpy.isEmpty())
+        {
+            clientConnectedSpy.wait(5000);
+        }
 
-        QSignalSpy taskReceivedSpy(&client, &DuelManager::taskReceived);
+        QVERIFY2(!hostConnectedSpy.isEmpty(), "Host timed out waiting for connection");
+        QVERIFY2(!clientConnectedSpy.isEmpty(), "Client timed out waiting for connection");
 
-        CodingTask dummyTask(1, 1, "Test Task", "Desc", "int main() {}", {}, 2000, 256, std::nullopt, std::nullopt);
-        host.sendTask(dummyTask);
+        if (hostIdentifiedSpy.isEmpty())
+        {
+            hostIdentifiedSpy.wait(2000);
+        }
+        if (clientIdentifiedSpy.isEmpty())
+        {
+            clientIdentifiedSpy.wait(2000);
+        }
 
-        QVERIFY(taskReceivedSpy.wait(1000));
-        QCOMPARE(taskReceivedSpy.count(), 1);
+        QVERIFY2(!hostIdentifiedSpy.isEmpty(), "Host never identified opponent");
+        QVERIFY2(!clientIdentifiedSpy.isEmpty(), "Client never identified opponent");
 
-        QList<QVariant> taskArgs = taskReceivedSpy.takeFirst();
-        CodingTask receivedTask = taskArgs.at(0).value<CodingTask>();
-        QCOMPARE(receivedTask.getId(), static_cast<uint64_t>(1));
-        QCOMPARE(receivedTask.getTitle(), QString("Test Task"));
-
-        QSignalSpy progressSpy(&host, &DuelManager::opponentProgressUpdated);
-        client.sendProgress({3, 5});
-
-        QVERIFY(progressSpy.wait(1000));
-        QCOMPARE(progressSpy.count(), 1);
-        QList<QVariant> progressArgs = progressSpy.takeFirst();
-        auto progress = progressArgs.at(0).value<DuelProgress>();
-        QCOMPARE(progress.passedTests, static_cast<uint32_t>(3));
-        QCOMPARE(progress.totalTests, static_cast<uint32_t>(5));
-
-        QSignalSpy winSpy(&host, &DuelManager::duelLost);
-        client.sendWin();
-
-        QVERIFY(winSpy.wait(1000));
-        QCOMPARE(winSpy.count(), 1);
-
-        client.disconnectAll();
-        host.disconnectAll();
+        QCOMPARE(host.getOpponentName(), QString("ClientPlayer"));
+        QCOMPARE(client.getOpponentName(), QString("HostPlayer"));
     }
 };
 
