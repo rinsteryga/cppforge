@@ -188,6 +188,10 @@ namespace cppforge::services
             emit opponentProgressUpdated(progress);
         }
 
+        else if (type == "SURRENDER")
+        {
+            emit duelFinished(m_localPlayerName, 1000);
+        }
         else if (type == "WIN" || type == "FINISH")
         {
             int finalScore = payload["score"].toInt();
@@ -282,6 +286,19 @@ namespace cppforge::services
         sendMessage(json);
 
         emit duelFinished(m_localPlayerName, score);
+    }
+
+    void DuelManager::surrender()
+    {
+        QJsonObject json;
+        json["type"] = "SURRENDER";
+        QJsonObject payload;
+        payload["surrenderer"] = m_localPlayerName;
+        json["payload"] = payload;
+
+        sendMessage(json);
+
+        emit duelFinished(m_opponentName, 0);
     }
 
     cppforge::entities::CodingTask DuelManager::deserializeTask(const QJsonObject &json) const
