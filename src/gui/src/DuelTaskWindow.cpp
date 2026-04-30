@@ -41,27 +41,28 @@ void DuelTaskWindow::setupUI()
     customTitleBar_ = std::make_unique<CustomTitleBar>(this);
     rootLayout->addWidget(customTitleBar_.get());
 
-    QFrame *line = new QFrame();
-    line->setFixedHeight(1);
-    line->setStyleSheet("background-color: #999;");
-    rootLayout->addWidget(line);
-
     auto duelHeader = new QFrame();
-    duelHeader->setFixedHeight(65);
+    duelHeader->setFixedHeight(70);
     duelHeader->setObjectName("duelHeader");
-    duelHeader->setStyleSheet("background-color: #2c3e50; border-bottom: 2px solid #1a252f;");
+    duelHeader->setStyleSheet(R"(
+        #duelHeader {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0f172a, stop:1 #334155);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    )");
 
     auto duelLayout = new QHBoxLayout(duelHeader);
     duelLayout->setContentsMargins(30, 0, 30, 0);
 
     labelTimer_ = new QLabel("TIME: 10:00");
-    labelScore_ = new QLabel("SCORE: 1000");
+    labelScore_ = new QLabel("WIN: +10 | LOSS: -5");
 
-    QFont duelFont("Consolas", 18, QFont::Bold);
-    labelTimer_->setFont(duelFont);
-    labelScore_->setFont(duelFont);
-    labelTimer_->setStyleSheet("color: #e74c3c;");
-    labelScore_->setStyleSheet("color: #f1c40f;");
+    labelTimer_->setFont(QFont("Outfit", 20, QFont::Black));
+    labelScore_->setFont(QFont("Outfit", 12, QFont::Bold));
+
+    labelTimer_->setStyleSheet("color: #ffffff; background: transparent;");
+    labelScore_->setStyleSheet(
+        "color: #94a3b8; background: transparent; text-transform: uppercase; letter-spacing: 1px;");
 
     duelLayout->addWidget(labelTimer_);
     duelLayout->addStretch();
@@ -74,8 +75,14 @@ void DuelTaskWindow::setupUI()
     practiceEdit_ = new QTextEdit();
     practiceEdit_->setReadOnly(true);
     practiceEdit_->setFrameStyle(QFrame::NoFrame);
-    practiceEdit_->setFont(QFont("Roboto", 13));
-    practiceEdit_->setStyleSheet("padding: 25px; background-color: #fdfdfd;");
+    practiceEdit_->setFont(QFont("Inter", 12));
+    practiceEdit_->setStyleSheet(R"(
+        padding: 30px; 
+        background-color: #ffffff; 
+        border-right: 1px solid #e2e8f0;
+        color: #334155;
+        line-height: 1.6;
+    )");
     practiceEdit_->installEventFilter(this);
 
     auto rightContainer = new QWidget();
@@ -101,17 +108,27 @@ void DuelTaskWindow::setupUI()
     codeLayout->addWidget(codeEditor_);
 
     auto codeActions = new QHBoxLayout();
-    auto btnRun = new QPushButton("Run");
-    auto btnSubmit = new QPushButton("FINISH DUEL");
+    btnRun_ = new QPushButton("Run");
+    btnSubmit_ = new QPushButton("FINISH DUEL");
+    btnSurrender_ = new QPushButton("SURRENDER");
+    btnExit_ = new QPushButton("EXIT");
 
-    btnRun->setObjectName("runButton");
-    btnSubmit->setObjectName("submitButton");
-    btnRun->setFixedSize(120, 50);
-    btnSubmit->setFixedSize(160, 50);
+    btnRun_->setObjectName("runButton");
+    btnSubmit_->setObjectName("submitButton");
+    btnSurrender_->setObjectName("surrenderButton");
+    btnExit_->setObjectName("exitButton");
+    btnExit_->setVisible(false);
+
+    btnRun_->setFixedSize(100, 45);
+    btnSubmit_->setFixedSize(140, 45);
+    btnSurrender_->setFixedSize(120, 45);
+    btnExit_->setFixedSize(100, 45);
 
     codeActions->addStretch();
-    codeActions->addWidget(btnRun);
-    codeActions->addWidget(btnSubmit);
+    codeActions->addWidget(btnRun_);
+    codeActions->addWidget(btnSubmit_);
+    codeActions->addWidget(btnSurrender_);
+    codeActions->addWidget(btnExit_);
     codeLayout->addLayout(codeActions);
 
     auto testFrame = new QFrame();
@@ -136,26 +153,60 @@ void DuelTaskWindow::setupUI()
     mainSplitter->addWidget(rightContainer);
     rootLayout->addWidget(mainSplitter);
 
-    connect(btnRun, &QPushButton::clicked, this, &DuelTaskWindow::onRunClicked);
-    connect(btnSubmit, &QPushButton::clicked, this, &DuelTaskWindow::onSubmitClicked);
+    connect(btnRun_, &QPushButton::clicked, this, &DuelTaskWindow::onRunClicked);
+    connect(btnSubmit_, &QPushButton::clicked, this, &DuelTaskWindow::onSubmitClicked);
+    connect(btnSurrender_, &QPushButton::clicked, this, &DuelTaskWindow::onSurrenderClicked);
+    connect(btnExit_, &QPushButton::clicked, this, &DuelTaskWindow::onExitClicked);
 }
 
 void DuelTaskWindow::setupStyles()
 {
     setStyleSheet(R"(
-        #DuelEditorWindow { background-color: white; border: 1px solid #777; }
-        #editorFrame, #testFrame { background-color: white; border: 1px solid #ccc; border-radius: 8px; }
-        #codeEditor, #testOutput { border: none; }
-        QPushButton#runButton { background-color: #f0f0f0; border-radius: 8px; font-weight: bold; border: 1px solid #ccc; }
+        #DuelEditorWindow { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+        #editorFrame, #testFrame { 
+            background-color: white; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 16px;
+        }
+        #codeEditor, #testOutput { background-color: transparent; border: none; padding: 10px; }
+        
+        QPushButton#runButton { 
+            background-color: #ffffff; 
+            border: 1px solid #e2e8f0;
+            border-radius: 12px; 
+            font-weight: 800; 
+            color: #475569;
+        }
+        QPushButton#runButton:hover { background-color: #f1f5f9; border-color: #cbd5e1; }
+        
         QPushButton#submitButton { 
-            background-color: #e67e22; 
-            border-radius: 8px; 
-            font-weight: bold; 
+            background-color: #3b82f6; 
+            border-radius: 12px; 
+            font-weight: 800; 
             border: none; 
             color: white; 
         }
-        QPushButton#submitButton:hover { background-color: #d35400; }
-        QLabel { font-weight: bold; color: #555; }
+        QPushButton#submitButton:hover { background-color: #2563eb; }
+        
+        QPushButton#surrenderButton { 
+            background-color: #ef4444; 
+            color: white; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            border: none; 
+        }
+        QPushButton#surrenderButton:hover { background-color: #dc2626; }
+        
+        QPushButton#exitButton { 
+            background-color: #64748b; 
+            color: white; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            border: none; 
+        }
+        QPushButton#exitButton:hover { background-color: #475569; }
+        
+        QLabel { font-weight: 800; color: #1e293b; font-size: 13px; }
     )");
 }
 
@@ -168,7 +219,7 @@ void DuelTaskWindow::setTask(const cppforge::entities::CodingTask &task)
 
     timeLeft_ = 600;
     currentScore_ = 1000;
-    labelScore_->setText("SCORE: 1000");
+    labelScore_->setText("WIN: +10 | LOSS: -5");
 
     testOutput_->clear();
     testOutput_->append("<b style='color:#3498db;'>[DUEL]</b> Task received. Start solving!");
@@ -181,21 +232,30 @@ void DuelTaskWindow::onTick()
     if (timeLeft_ > 0)
     {
         timeLeft_--;
-        int m = timeLeft_ / 60;
-        int s = timeLeft_ % 60;
-        labelTimer_->setText(QString("TIME: %1:%2").arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0')));
+        int min = timeLeft_ / 60;
+        int sec = timeLeft_ % 60;
+        labelTimer_->setText(QString("%1:%2").arg(min, 2, 10, QChar('0')).arg(sec, 2, 10, QChar('0')));
+
+        if (timeLeft_ < 60)
+        {
+            labelTimer_->setStyleSheet("color: #ef4444; background: transparent;");
+        }
+        else
+        {
+            labelTimer_->setStyleSheet("color: #ffffff; background: transparent;");
+        }
 
         if (timeLeft_ % 5 == 0 && currentScore_ > 50)
         {
             currentScore_ -= 1;
-            labelScore_->setText(QString("SCORE: %1").arg(currentScore_));
         }
     }
     else
     {
         duelTimer_->stop();
         labelTimer_->setText("TIME'S UP!");
-        onSubmitClicked();
+        if (duelManager_)
+            duelManager_->finishDuel(0);
     }
 }
 
@@ -321,6 +381,23 @@ void DuelTaskWindow::showFinalResult(const QString &winnerName, int score)
     if (duelTimer_)
         duelTimer_->stop();
     codeEditor_->setReadOnly(true);
+
+    btnRun_->setEnabled(false);
+    btnSubmit_->setEnabled(false);
+    btnSurrender_->setVisible(false);
+    btnExit_->setVisible(true);
+}
+
+void DuelTaskWindow::onSurrenderClicked()
+{
+    if (duelManager_)
+        duelManager_->surrender();
+}
+
+void DuelTaskWindow::onExitClicked()
+{
+    emit sessionClosed();
+    this->close();
 }
 
 bool DuelTaskWindow::eventFilter(QObject *obj, QEvent *event)
