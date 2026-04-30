@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../entities/CodingTask.hpp"
-#include "TaskManager.hpp"
 
 #include <QJsonObject>
 #include <QObject>
@@ -70,6 +69,11 @@ namespace cppforge::services
          * @param score The current user's earned score.
          */
         void finishDuel(int score);
+
+        /**
+         * @brief Signals that the current user surrenders.
+         */
+        void surrender();
 
         /**
          * @brief Starts a local TCP server to create a duel room.
