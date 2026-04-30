@@ -58,6 +58,8 @@ private:
     QLabel *completedLessonsLabel = nullptr;
     QLabel *achievementsLabel = nullptr;
     QLabel *totalSubmissionsLabel = nullptr;
+    QLabel *duelPointsLabel = nullptr;
+    QLabel *winRateLabel = nullptr;
     QLabel *streakLabel = nullptr;
 
     QWidget *achievementsContainer = nullptr;
