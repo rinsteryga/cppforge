@@ -38,6 +38,9 @@ public:
      */
     void setUserService(cppforge::services::UserService *service) { userService_ = service; }
 
+signals:
+    void secretTaskTriggered();
+
 private slots:
     void onChangeAvatarClicked();
     void onAboutClicked();

@@ -58,6 +58,9 @@ TaskWindow::~TaskWindow() = default;
 void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
 {
     currentTask_ = task;
+    hasCodingTask_ = true;
+    currentModuleParentId_ = -1;
+
     customTitleBar_->setTitle(task.getTitle());
 
     if (practiceEdit_)
@@ -66,7 +69,34 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
         applyTextFormatting(practiceEdit_);
     }
 
-    codeEditor_->setPlainText(task.getInitialCode());
+    if (theoryEdit_)
+    {
+        theoryEdit_->setPlainText("Для этого задания теоретический материал не предусмотрен.");
+        applyTextFormatting(theoryEdit_);
+    }
+
+    if (codeEditor_)
+    {
+        codeEditor_->setPlainText(task.getInitialCode());
+        codeEditor_->setReadOnly(false);
+    }
+
+    if (btnRun_)
+    {
+        btnRun_->setVisible(true);
+    }
+
+    if (btnSubmit_)
+    {
+        btnSubmit_->setEnabled(true);
+        btnSubmit_->setText("Submit");
+        btnSubmit_->setStyleSheet("");
+    }
+
+    if (testOutput_)
+    {
+        testOutput_->clear();
+    }
 }
 
 void TaskWindow::loadModule(int lessonId)
@@ -190,6 +220,22 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
 {
     if (currentUserId_ <= 0 || !userService_)
     {
+        return;
+    }
+
+    if (currentModuleParentId_ == -1)
+    {
+        if (success)
+        {
+            if (btnSubmit_)
+            {
+                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+            }
+            if (currentTask_.getId() == 9999)
+            {
+                emit customAchievementUnlocked("Easter Egg Finder");
+            }
+        }
         return;
     }
 

@@ -8,9 +8,11 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QKeySequence>
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
+#include <QShortcut>
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QtSql/QSqlError>
@@ -77,6 +79,9 @@ ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
 {
     setupUI();
     applyStyles();
+
+    auto *secretShortcut = new QShortcut(QKeySequence("Alt+L, B"), this);
+    connect(secretShortcut, &QShortcut::activated, this, &ProfilePage::secretTaskTriggered);
 }
 
 void ProfilePage::setUserData(uint64_t userId, const QString &name, const QString &avatarPath)

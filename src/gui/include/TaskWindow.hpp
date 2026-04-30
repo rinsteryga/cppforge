@@ -45,6 +45,7 @@ signals:
     void moduleProgressUpdated(int id, int progress);
     void lessonCompleted(int lessonId);
     void windowClosed();
+    void customAchievementUnlocked(const QString &name);
 
 protected:
     void showEvent(QShowEvent *event) override;

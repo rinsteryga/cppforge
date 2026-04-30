@@ -17,6 +17,7 @@
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
+#include <QApplication>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -253,6 +254,18 @@ void MainWindow::fadeOut()
                         connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this,
                                 &MainWindow::updateModuleProgress);
                         connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
+                        connect(taskWindow_.get(), &TaskWindow::customAchievementUnlocked, this,
+                                [this](const QString &name)
+                                {
+                                    if (m_achievementService && m_userService && m_currentUserId > 0)
+                                    {
+                                        auto userOpt = m_userService->findById(m_currentUserId);
+                                        if (userOpt)
+                                        {
+                                            m_achievementService->awardCustomEvent(*userOpt, name);
+                                        }
+                                    }
+                                });
                     }
                     taskWindow_->setUserId(m_currentUserId);
                     taskWindow_->loadModule(pendingModuleId_);
@@ -468,6 +481,8 @@ void MainWindow::setupUI()
 
     contentStack = std::make_unique<QStackedWidget>();
     profilePage = new ProfilePage(this);
+    connect(profilePage, &ProfilePage::secretTaskTriggered, this, &MainWindow::onSecretTaskTriggered);
+
     learningPage = new QWidget();
     duelPage = new DuelPage(this);
 
@@ -691,8 +706,14 @@ void MainWindow::onLogoutClicked()
 void MainWindow::onAchievementUnlocked(cppforge::entities::Achievement achievement)
 {
     qDebug() << "[MainWindow] Slot achievementUnlocked triggered for:" << achievement.getName();
+    QWidget *activeWin = QApplication::activeWindow();
+    if (!activeWin)
+    {
+        activeWin = this;
+    }
+
     auto *notif = new cppforge::gui::AchievementNotification(achievement.getName(), achievement.getDescription(),
-                                                             achievement.getIconPath());
+                                                             achievement.getIconPath(), activeWin);
     notif->showAnimated();
 
     if (contentStack->currentWidget() == profilePage)
@@ -700,4 +721,78 @@ void MainWindow::onAchievementUnlocked(cppforge::entities::Achievement achieveme
         qDebug() << "[MainWindow] Refreshing profile page...";
         onProfileButtonClicked();
     }
+}
+
+void MainWindow::onSecretTaskTriggered()
+{
+    qDebug() << "[MainWindow] Secret task triggered!";
+
+    QString desc =
+        "ОАО \"Экскаваторный завод 'Ковровец'\"\n\n"
+        "Некоторые заготовки завода изготавливаются в заготовительном цехе на раскройном оборудовании с ЧПУ.\n"
+        "Отдел главного конструктора создает чертежи деталей и сохраняет их в формате dxf. "
+        "После этого чертежи передаются по сети в отдел главного металлурга, там формируют размещение "
+        "набора деталей на листе (раскрой), вычисляют коэффициент использования металла (КИМ, то есть отношение "
+        "массы детали к массе заготовки). После этого по сети чертежи попадают в бюро ЧПУ заготовительного цеха, "
+        "где разрабатываются программы для раскроя. По сети программа передается оператору станка.\n\n"
+        "Требуется:\n"
+        "- максимально возможный КИМ (по базе раскроя);\n"
+        "- сколько полученных чертежей не обработано отделом главного металлурга.\n\n"
+        "Формат ввода:\n"
+        "N (количество чертежей)\n"
+        "Для каждого чертежа строка: <Статус> <Масса детали> <Масса заготовки>\n"
+        "Статусы: 'Создан', 'Обработан', 'В_бюро_ЧПУ'. Необработанные чертежи имеют статус 'Создан'.\n\n"
+        "Формат вывода:\n"
+        "1 строка: максимальный КИМ (округленный до 2 знаков после запятой, например, 0.85). Если нет обработанных, "
+        "вывести 0.00.\n"
+        "2 строка: количество необработанных чертежей.\n";
+
+    QString initCode = "#include <iostream>\n#include <string>\n#include <vector>\n#include <iomanip>\n\n"
+                       "using namespace std;\n\n"
+                       "int main() {\n"
+                       "    // Ваше решение\n"
+                       "    return 0;\n"
+                       "}\n";
+    std::set<cppforge::entities::TestCase> testCases;
+    testCases.emplace(1, "3\nСоздан 10.0 15.0\nОбработан 12.0 15.0\nВ_бюро_ЧПУ 8.0 10.0\n", "0.80\n1", true);
+    testCases.emplace(2, "2\nСоздан 5.0 10.0\nСоздан 3.0 4.0\n", "0.00\n2", true);
+    testCases.emplace(3, "4\nОбработан 9.9 10.0\nОбработан 5.0 5.5\nВ_бюро_ЧПУ 100.0 101.0\nСоздан 1.0 2.0\n",
+                      "0.99\n1", true);
+
+    cppforge::entities::CodingTask secretTask(9999, std::nullopt, "Секретное задание: ОАО «Ковровец»", desc, initCode,
+                                              testCases, 1000, 256);
+
+    if (!taskWindow_)
+    {
+        taskWindow_ = std::make_unique<TaskWindow>();
+        if (m_userService)
+        {
+            taskWindow_->setUserService(m_userService);
+        }
+        if (m_courseService)
+        {
+            taskWindow_->setCourseService(m_courseService);
+        }
+        connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this, &MainWindow::updateModuleProgress);
+        connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
+        connect(taskWindow_.get(), &TaskWindow::customAchievementUnlocked, this,
+                [this](const QString &name)
+                {
+                    if (m_achievementService && m_userService && m_currentUserId > 0)
+                    {
+                        auto userOpt = m_userService->findById(m_currentUserId);
+                        if (userOpt)
+                        {
+                            m_achievementService->awardCustomEvent(*userOpt, name);
+                        }
+                    }
+                });
+    }
+
+    taskWindow_->setUserId(m_currentUserId);
+    taskWindow_->setTask(secretTask);
+
+    this->hide();
+    taskWindow_->show();
+    taskWindow_->fadeIn();
 }

@@ -102,9 +102,10 @@ namespace cppforge::services
 
                 if (process.waitForFinished(2000))
                 {
-                    QString output = QString::fromLocal8Bit(process.readAll().trimmed());
+                    QString output = QString::fromLocal8Bit(process.readAll().trimmed()).replace("\r\n", "\n");
+                    QString expected = test.getExpectedOutput().trimmed().replace("\r\n", "\n");
 
-                    if (output == test.getExpectedOutput().trimmed())
+                    if (output == expected)
                     {
                         passedCount++;
                     }
