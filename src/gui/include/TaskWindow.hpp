@@ -2,7 +2,9 @@
 
 #include "../../core/include/entities/CodingTask.hpp"
 #include "../../core/include/services/CodeRunner.hpp"
+#include "../../core/include/services/CourseService.hpp"
 #include "../../core/include/services/StaticAnalyzer.hpp"
+#include "../../core/include/services/UserService.hpp"
 #include "CustomTitleBar.hpp"
 
 #include <QDateTime>
@@ -32,6 +34,9 @@ public:
     void setUserId(int64_t id);
     void loadModule(int lessonId);
     void setTask(const cppforge::entities::CodingTask &task);
+
+    void setUserService(cppforge::services::UserService *service) { userService_ = service; }
+    void setCourseService(cppforge::services::CourseService *service) { courseService_ = service; }
 
     void fadeIn();
     void fadeOut();
@@ -79,6 +84,9 @@ private:
 
     std::unique_ptr<cppforge::services::CodeRunner> runner_;
     std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
+
+    cppforge::services::UserService *userService_{nullptr};
+    cppforge::services::CourseService *courseService_{nullptr};
 
     cppforge::entities::CodingTask currentTask_;
 

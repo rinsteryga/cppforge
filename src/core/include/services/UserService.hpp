@@ -34,6 +34,13 @@ namespace cppforge::services
         std::optional<entities::User> getUser(const QString &username) const;
 
         /**
+         * @brief Retrieves a full User entity by their unique ID.
+         * @param id The ID to search for.
+         * @return An optional containing the User if found.
+         */
+        std::optional<entities::User> findById(uint64_t userId) const;
+
+        /**
          * @brief Retrieves the total number of unique coding tasks solved by a user.
          * @param userId The ID of the user.
          * @return The count of unique successfully solved coding tasks.
@@ -60,6 +67,34 @@ namespace cppforge::services
          * @return The current streak in days.
          */
         int getStreak(uint64_t userId) const;
+
+        /**
+         * @brief Updates the user's avatar path.
+         * @param userId The ID of the user to update.
+         * @param avatarPath The new path to the avatar image.
+         */
+        void updateAvatar(uint64_t userId, const QString &avatarPath);
+
+        /**
+         * @brief Saves or updates the progression state of a lesson.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param lessonId The ID of the lesson.
+         * @param isCompleted True if the user successfully completed the lesson.
+         * @return True if saved successfully.
+         */
+        bool saveLessonProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted);
+
+        /**
+         * @brief Records a user's code submission for a task.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param taskId The ID of the coding task.
+         * @param code The source code submitted.
+         * @param isSuccess True if the submission passed all tests.
+         * @return True if saved successfully.
+         */
+        bool saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code, bool isSuccess);
 
         /**
          * @brief Retrieves the total number of submissions made by a user.
