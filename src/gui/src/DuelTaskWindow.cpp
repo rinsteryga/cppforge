@@ -99,6 +99,7 @@ void DuelTaskWindow::setupUI()
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
+    codeEditor_->setLineWrapMode(QTextEdit::WidgetWidth);
     QFont codeFont("Consolas", 13);
     codeEditor_->setFont(codeFont);
 
@@ -404,10 +405,52 @@ bool DuelTaskWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == codeEditor_ && event->type() == QEvent::KeyPress)
     {
-        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        auto *keyEvent = dynamic_cast<QKeyEvent *>(event);
         if (keyEvent->key() == Qt::Key_Tab)
         {
             codeEditor_->insertPlainText("    ");
+            return true;
+        }
+
+        if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter)
+        {
+            QString currentLine = codeEditor_->textCursor().block().text();
+            QString indent;
+            for (QChar c : currentLine)
+            {
+                if (c.isSpace())
+                    indent += c;
+                else
+                    break;
+            }
+
+            if (currentLine.trimmed().endsWith('{'))
+            {
+                codeEditor_->insertPlainText("\n" + indent + "    ");
+            }
+            else
+            {
+                codeEditor_->insertPlainText("\n" + indent);
+            }
+            return true;
+        }
+
+        struct BracketPair
+        {
+            QChar open;
+            QChar close;
+        };
+        static const QMap<int, BracketPair> pairs = {{Qt::Key_ParenLeft, {'(', ')'}},
+                                                     {Qt::Key_BracketLeft, {'[', ']'}},
+                                                     {Qt::Key_BraceLeft, {'{', '}'}},
+                                                     {Qt::Key_QuoteDbl, {'"', '"'}},
+                                                     {Qt::Key_QuoteLeft, {'\'', '\''}}};
+
+        if (pairs.contains(keyEvent->key()))
+        {
+            const auto &p = pairs[keyEvent->key()];
+            codeEditor_->insertPlainText(QString(p.open) + p.close);
+            codeEditor_->moveCursor(QTextCursor::Left);
             return true;
         }
     }
