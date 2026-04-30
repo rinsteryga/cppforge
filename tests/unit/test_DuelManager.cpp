@@ -1,4 +1,3 @@
-#include "../../src/core/include/entities/CodingTask.hpp"
 #include "../../src/core/include/services/DuelManager.hpp"
 
 #include <QSignalSpy>
