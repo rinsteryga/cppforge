@@ -8,21 +8,38 @@
 #include <QLineEdit>
 #include <QPropertyAnimation>
 #include <QPushButton>
-#include <QSqlError>
-#include <QSqlQuery>
 #include <QVBoxLayout>
 #include <QWidget>
 
 #include <memory>
 
+/**
+ * @brief The login and authentication window.
+ *
+ * AuthWindow provides the initial entry point for users to log into their
+ * accounts or navigate to the registration screen. It leverages AuthManager
+ * for secure credential verification and session management.
+ */
 class AuthWindow : public QWidget
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a new AuthWindow instance.
+     * @param authManager Shared pointer to the authentication manager service.
+     * @param parent The parent QWidget.
+     */
     explicit AuthWindow(std::shared_ptr<cppforge::services::AuthManager> authManager, QWidget *parent = nullptr);
+
+    /**
+     * @brief Default destructor.
+     */
     ~AuthWindow();
 
+    /**
+     * @brief Triggers a fade-in animation for the window.
+     */
     void fadeIn();
 
 signals:
