@@ -444,7 +444,7 @@ cppforge::entities::CodingTask TaskManager::getRandomDuelTaskFromDb()
 
         QSqlQuery testQuery;
         testQuery.prepare("SELECT input, expected_output FROM test_cases WHERE coding_task_id = ?");
-        testQuery.addBindValue(id);
+        testQuery.addBindValue(static_cast<qulonglong>(id));
 
         if (testQuery.exec())
         {
