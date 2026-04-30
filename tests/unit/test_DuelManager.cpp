@@ -13,7 +13,7 @@ class TestDuelManager : public QObject
     Q_OBJECT
 
 private slots:
-    void initTestCase() 
+    void initTestCase()
     {
         qRegisterMetaType<CodingTask>("CodingTask");
         qRegisterMetaType<DuelProgress>("DuelProgress");

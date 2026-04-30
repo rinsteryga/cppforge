@@ -10,7 +10,8 @@
 
 namespace cppforge::services
 {
-    DuelManager::DuelManager(QObject *parent) : QObject(parent), socket_(nullptr)
+    DuelManager::DuelManager(QString localName, QObject *parent)
+        : QObject(parent), socket_(nullptr), m_localPlayerName(std::move(localName)) 
     {
         qRegisterMetaType<cppforge::services::DuelProgress>("cppforge::services::DuelProgress");
         qRegisterMetaType<cppforge::entities::CodingTask>("cppforge::entities::CodingTask");

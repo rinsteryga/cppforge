@@ -39,12 +39,22 @@ namespace cppforge::services
          * @brief Конструктор DuelManager.
          * @param parent Родительский QObject (опционально).
          */
-        explicit DuelManager(QObject *parent = nullptr);
+        explicit DuelManager(QString localName = "Player", QObject *parent = nullptr);
 
         /**
          * @brief Деструктор DuelManager. Гарантирует закрытие всех соединений.
          */
         ~DuelManager() override;
+
+        /**
+         * @brief Возвращает имя локального игрока.
+         */
+        QString getLocalPlayerName() const { return m_localPlayerName; }
+
+        /**
+         * @brief Возвращает имя оппонента, полученное по сети.
+         */
+        QString getOpponentName() const { return m_opponentName; }
 
         /**
          * @brief Выбирает случайную задачу из базы данных и инициирует дуэль.
