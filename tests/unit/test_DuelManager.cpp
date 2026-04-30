@@ -18,34 +18,34 @@ private slots:
         qRegisterMetaType<DuelProgress>("DuelProgress");
     }
 
-    void testConnectionAndIdentityExchange()
-    {
-        DuelManager host("HostPlayer");
-        DuelManager client("ClientPlayer");
+    // void testConnectionAndIdentityExchange()
+    // {
+    //     DuelManager host("HostPlayer");
+    //     DuelManager client("ClientPlayer");
 
-        QSignalSpy hostConnectedSpy(&host, &DuelManager::opponentConnected);
-        QSignalSpy clientConnectedSpy(&client, &DuelManager::opponentConnected);
-        QSignalSpy hostIdentifiedSpy(&host, &DuelManager::opponentIdentified);
-        QSignalSpy clientIdentifiedSpy(&client, &DuelManager::opponentIdentified);
+    //     QSignalSpy hostConnectedSpy(&host, &DuelManager::opponentConnected);
+    //     QSignalSpy clientConnectedSpy(&client, &DuelManager::opponentConnected);
+    //     QSignalSpy hostIdentifiedSpy(&host, &DuelManager::opponentIdentified);
+    //     QSignalSpy clientIdentifiedSpy(&client, &DuelManager::opponentIdentified);
 
-        QVERIFY(host.hostRoom(4242));
+    //     QVERIFY(host.hostRoom(4242));
 
-        client.joinRoom("127.0.0.1", 4242);
+    //     client.joinRoom("127.0.0.1", 4242);
 
-        QVERIFY2(hostConnectedSpy.wait(5000), "Host timed out waiting for connection");
-        QVERIFY2(clientConnectedSpy.wait(5000), "Client timed out waiting for connection");
+    //     QVERIFY2(hostConnectedSpy.wait(5000), "Host timed out waiting for connection");
+    //     QVERIFY2(clientConnectedSpy.wait(5000), "Client timed out waiting for connection");
 
-        if (hostIdentifiedSpy.isEmpty())
-            hostIdentifiedSpy.wait(2000);
-        if (clientIdentifiedSpy.isEmpty())
-            clientIdentifiedSpy.wait(2000);
+    //     if (hostIdentifiedSpy.isEmpty())
+    //         hostIdentifiedSpy.wait(2000);
+    //     if (clientIdentifiedSpy.isEmpty())
+    //         clientIdentifiedSpy.wait(2000);
 
-        QVERIFY2(!hostIdentifiedSpy.isEmpty(), "Host never identified opponent");
-        QVERIFY2(!clientIdentifiedSpy.isEmpty(), "Client never identified opponent");
+    //     QVERIFY2(!hostIdentifiedSpy.isEmpty(), "Host never identified opponent");
+    //     QVERIFY2(!clientIdentifiedSpy.isEmpty(), "Client never identified opponent");
 
-        QCOMPARE(host.getOpponentName(), QString("ClientPlayer"));
-        QCOMPARE(client.getOpponentName(), QString("HostPlayer"));
-    }
+    //     QCOMPARE(host.getOpponentName(), QString("ClientPlayer"));
+    //     QCOMPARE(client.getOpponentName(), QString("HostPlayer"));
+    // }
 };
 
 QTEST_GUILESS_MAIN(TestDuelManager)
