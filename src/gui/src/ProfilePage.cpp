@@ -1,5 +1,4 @@
 #include "ProfilePage.hpp"
-
 #include "../../core/include/services/UserService.hpp"
 
 #include <QDebug>
@@ -99,14 +98,9 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
         qDebug() << "First time login. Assigning random avatar:" << finalPath;
 
-        QSqlQuery query;
-        query.prepare("UPDATE users SET avatar_path = :path WHERE id = :id");
-        query.bindValue(":path", finalPath);
-        query.bindValue(":id", static_cast<qulonglong>(userId));
-
-        if (!query.exec())
+        if (userService_)
         {
-            qDebug() << "Error saving initial avatar to DB:" << query.lastError().text();
+            userService_->updateAvatar(userId, finalPath);
         }
     }
 
@@ -166,15 +160,17 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             }
             else
             {
+                icon->setStyleSheet(earned ? "background: #f0f0f0; border-radius: 8px;"
+                                           : "background: #f9f9f9; border-radius: 8px; border: 1px dashed #ddd;");
                 if (!earned)
                 {
                     QImage img = pix.toImage().convertToFormat(QImage::Format_Grayscale8);
                     icon->setPixmap(
-                        QPixmap::fromImage(img).scaled(65, 65, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                        QPixmap::fromImage(img).scaled(45, 45, Qt::KeepAspectRatio, Qt::SmoothTransformation));
                 }
                 else
                 {
-                    icon->setPixmap(pix.scaled(65, 65, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    icon->setPixmap(pix.scaled(45, 45, Qt::KeepAspectRatio, Qt::SmoothTransformation));
                 }
             }
 
@@ -420,11 +416,10 @@ void ProfilePage::onChangeAvatarClicked()
         {
             avatarLabel->setPixmap(pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
 
-            QSqlQuery query;
-            query.prepare("UPDATE users SET avatar_path = :path WHERE id = :id");
-            query.bindValue(":path", fileName);
-            query.bindValue(":id", static_cast<qulonglong>(currentUserId));
-            query.exec();
+            if (userService_)
+            {
+                userService_->updateAvatar(currentUserId, fileName);
+            }
         }
     }
 }
