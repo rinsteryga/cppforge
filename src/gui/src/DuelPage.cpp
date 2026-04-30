@@ -301,21 +301,18 @@ void DuelPage::applyStyles()
             font-weight: bold;
         }
 
-        /* Кнопка СОЗДАТЬ: Состояние по умолчанию + Зеленый ховер */
         #btnCreate[state="default"]:hover {
             border-color: #2E8B57;
             color: #2E8B57;
             background-color: #F0FFF4;
         }
 
-        /* Кнопка СОЗДАТЬ: Состояние ACTIVE (фиксированный красный) */
         #btnCreate[state="active"] {
             background-color: #FEF2F2;
             border-color: #E74C3C;
             color: #991B1B;
         }
 
-        /* Мгновенный эффект нажатия */
         #btnCreate:pressed {
             background-color: #FDEDEC;
         }
