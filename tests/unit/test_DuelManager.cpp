@@ -19,9 +19,8 @@ private slots:
         qRegisterMetaType<DuelProgress>("DuelProgress");
     }
 
-    void TestDuelManager::testConnectionAndIdentityExchange()
+    void testConnectionAndIdentityExchange()
     {
-        // Используем уникальные имена, чтобы проверить передачу ника
         auto host = std::make_unique<DuelManager>("HostPlayer", this);
         auto client = std::make_unique<DuelManager>("ClientPlayer", this);
 
@@ -30,6 +29,7 @@ private slots:
 
         QVERIFY(host->hostRoom(4242));
 
+        // Даем время ОС на поднятие сокета
         QTest::qWait(500);
 
         client->joinRoom("127.0.0.1", 4242);
@@ -45,7 +45,7 @@ private slots:
         QCOMPARE(hostConnectedSpy.count(), 1);
         QCOMPARE(clientConnectedSpy.count(), 1);
     }
-}
+};
 
 QTEST_GUILESS_MAIN(TestDuelManager)
 #include "test_DuelManager.moc"
