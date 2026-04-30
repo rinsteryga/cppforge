@@ -109,7 +109,7 @@ QFrame *DuelPage::createProfileHeader()
     m_lblAvatar->setFixedSize(55, 55);
     m_lblAvatar->setStyleSheet("background-color: #2E8B57; border-radius: 27px;");
 
-    m_lblUsername = new QLabel("Загрузка...");
+    m_lblUsername = new QLabel("Loading...");
     m_lblUsername->setFont(QFont("Roboto", 16, QFont::Bold));
 
     m_lblRating = new QLabel("0");
@@ -132,21 +132,21 @@ QFrame *DuelPage::createActionPanel()
     layout->setContentsMargins(50, 40, 50, 40);
     layout->setSpacing(20);
 
-    auto title = new QLabel("ЛИГА");
+    auto title = new QLabel("LEAGUE");
     title->setAlignment(Qt::AlignCenter);
     title->setObjectName("sectionTitle");
 
-    m_btnCreateLobby = new QPushButton("Создать лобби");
+    m_btnCreateLobby = new QPushButton("Create Lobby");
     m_btnCreateLobby->setObjectName("btnCreate");
     m_btnCreateLobby->setProperty("state", "default");
     m_btnCreateLobby->setFixedHeight(65);
     m_btnCreateLobby->setCursor(Qt::PointingHandCursor);
 
-    m_btnJoinLobby = new QPushButton("Присоединиться");
+    m_btnJoinLobby = new QPushButton("Join Lobby");
     m_btnJoinLobby->setFixedHeight(65);
     m_btnJoinLobby->setCursor(Qt::PointingHandCursor);
 
-    m_btnStartDuel = new QPushButton("НАЧАТЬ ДУЭЛЬ");
+    m_btnStartDuel = new QPushButton("START DUEL");
     m_btnStartDuel->setObjectName("btnStart");
     m_btnStartDuel->setFixedHeight(65);
     m_btnStartDuel->setCursor(Qt::PointingHandCursor);
@@ -167,17 +167,17 @@ QFrame *DuelPage::createActionPanel()
     connect(m_btnStartDuel, &QPushButton::clicked, this,
             [this]()
             {
-                qDebug() << "[UI] Нажата кнопка запуска дуэли";
+                qDebug() << "[UI] Duel start button clicked";
 
                 if (m_duelManager)
                 {
-                    qDebug() << "[UI] Запрос случайной задачи через DuelManager...";
+                    qDebug() << "[UI] Requesting random task via DuelManager...";
                     m_duelManager->startRandomDuel();
                 }
                 else
                 {
-                    qCritical() << "[UI] КРИТИЧЕСКАЯ ОШИБКА: m_duelManager не инициализирован!";
-                    QMessageBox::warning(this, "Ошибка", "Связь с менеджером дуэлей потеряна. Пересоздайте лобби.");
+                    qCritical() << "[UI] CRITICAL ERROR: m_duelManager not initialized!";
+                    QMessageBox::warning(this, "Error", "Connection to duel manager lost. Please recreate the lobby.");
                 }
             });
 
@@ -191,7 +191,7 @@ QFrame *DuelPage::createLeaderboard()
     auto layout = new QVBoxLayout(frame);
     layout->setContentsMargins(15, 20, 15, 20);
 
-    auto title = new QLabel("УЧАСТНИКИ ЛОББИ");
+    auto title = new QLabel("LOBBY PARTICIPANTS");
     title->setAlignment(Qt::AlignCenter);
     title->setObjectName("leaderboardTitle");
     layout->addWidget(title);
@@ -222,7 +222,7 @@ void DuelPage::addLeaderboardEntry(const QString &name, bool isHost)
     avatar->setFixedSize(32, 32);
     avatar->setStyleSheet(QString("background: %1; border-radius: 16px;").arg(isHost ? "#00FA9A" : "#2E8B57"));
 
-    auto lblName = new QLabel(name + (isHost ? " (Вы)" : ""));
+    auto lblName = new QLabel(name + (isHost ? " (You)" : ""));
     lblName->setFont(QFont("Roboto", 10, isHost ? QFont::Bold : QFont::Normal));
 
     layout->addWidget(avatar);
@@ -251,7 +251,7 @@ void DuelPage::onCreateLobbyClicked()
                 &DuelPage::handleConnectionError);
 
         m_isHosting = false;
-        m_btnCreateLobby->setText("Создать лобби");
+        m_btnCreateLobby->setText("Create Lobby");
         m_btnCreateLobby->setProperty("state", "default");
         m_btnJoinLobby->setEnabled(true);
         m_btnStartDuel->setVisible(false);
@@ -262,7 +262,7 @@ void DuelPage::onCreateLobbyClicked()
         m_isHosting = true;
         clearLobbyList();
         addLeaderboardEntry(m_lblUsername->text(), true);
-        m_btnCreateLobby->setText("Отменить лобби");
+        m_btnCreateLobby->setText("Cancel Lobby");
         m_btnCreateLobby->setProperty("state", "active");
         m_btnJoinLobby->setEnabled(false);
     }
@@ -274,7 +274,7 @@ void DuelPage::onCreateLobbyClicked()
 void DuelPage::onJoinLobbyClicked()
 {
     bool ok;
-    QString ip = QInputDialog::getText(this, "Поиск", "IP Хоста:", QLineEdit::Normal, "127.0.0.1", &ok);
+    QString ip = QInputDialog::getText(this, "Search", "Host IP:", QLineEdit::Normal, "127.0.0.1", &ok);
     if (ok && !ip.isEmpty())
     {
         m_duelManager->joinRoom(ip, 4242);
@@ -295,7 +295,7 @@ void DuelPage::handleOpponentConnected(const QString &ip)
         m_btnStartDuel->setVisible(true);
     }
 
-    QMessageBox::information(this, "Дуэль", "Противник подключился!");
+    QMessageBox::information(this, "Duel", "Opponent connected!");
 }
 
 void DuelPage::handleTaskReceived(const cppforge::entities::CodingTask &task)
@@ -305,10 +305,10 @@ void DuelPage::handleTaskReceived(const cppforge::entities::CodingTask &task)
 
 void DuelPage::handleConnectionError(const QString &error)
 {
-    QMessageBox::critical(this, "Ошибка", error);
+    QMessageBox::critical(this, "Error", error);
     m_isHosting = false;
     m_btnCreateLobby->setEnabled(true);
-    m_btnCreateLobby->setText("Создать лобби");
+    m_btnCreateLobby->setText("Create Lobby");
     m_btnCreateLobby->setProperty("state", "default");
     m_btnJoinLobby->setEnabled(true);
     m_btnStartDuel->setVisible(false);
