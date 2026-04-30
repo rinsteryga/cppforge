@@ -164,6 +164,38 @@ namespace cppforge
              */
             virtual bool saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code,
                                         bool isSuccess) = 0;
+
+            /**
+             * @brief Retrieves the source code of the most recent submission for a task.
+             * @param userId The ID of the user.
+             * @param taskId The ID of the coding task.
+             * @return The source code if found, std::nullopt otherwise.
+             */
+            virtual std::optional<QString> getLastSubmission(uint64_t userId, uint64_t taskId) const = 0;
+
+            /**
+             * @brief Checks if a specific user has completed a specific lesson.
+             * @param userId The ID of the user.
+             * @param lessonId The ID of the lesson.
+             * @return True if completed.
+             */
+            virtual bool isLessonCompleted(uint64_t userId, uint64_t lessonId) const = 0;
+
+            /**
+             * @brief Retrieves the IDs of all lessons completed by a user in a module.
+             * @param userId The ID of the user.
+             * @param moduleId The ID of the module.
+             * @return A vector of completed lesson IDs.
+             */
+            virtual std::vector<uint64_t> getCompletedLessonIds(uint64_t userId, uint64_t moduleId) const = 0;
+
+            /**
+             * @brief Calculates the completion progress percentage for a specific module.
+             * @param userId The ID of the user.
+             * @param moduleId The ID of the module.
+             * @return The completion percentage (0-100).
+             */
+            virtual int getModuleProgress(uint64_t userId, uint64_t moduleId) const = 0;
         };
     } // namespace repositories
 } // namespace cppforge
