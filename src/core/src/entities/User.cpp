@@ -124,6 +124,33 @@ namespace cppforge::entities
         lastLevelSolvedAt_ = timestamp;
     }
 
+    int User::getDuelPoints() const
+    {
+        return duelPoints_;
+    }
+    void User::setDuelPoints(int points)
+    {
+        duelPoints_ = points;
+    }
+
+    int User::getDuelWins() const
+    {
+        return duelWins_;
+    }
+    void User::setDuelWins(int wins)
+    {
+        duelWins_ = wins;
+    }
+
+    int User::getDuelLosses() const
+    {
+        return duelLosses_;
+    }
+    void User::setDuelLosses(int losses)
+    {
+        duelLosses_ = losses;
+    }
+
     void User::addAvailableLevel(uint64_t levelId)
     {
         availableLevelsIds_.insert(levelId);

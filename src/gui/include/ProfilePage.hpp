@@ -38,6 +38,9 @@ public:
      */
     void setUserService(cppforge::services::UserService *service) { userService_ = service; }
 
+signals:
+    void secretTaskTriggered();
+
 private slots:
     void onChangeAvatarClicked();
     void onAboutClicked();
@@ -55,6 +58,8 @@ private:
     QLabel *completedLessonsLabel = nullptr;
     QLabel *achievementsLabel = nullptr;
     QLabel *totalSubmissionsLabel = nullptr;
+    QLabel *duelPointsLabel = nullptr;
+    QLabel *winRateLabel = nullptr;
     QLabel *streakLabel = nullptr;
 
     QWidget *achievementsContainer = nullptr;

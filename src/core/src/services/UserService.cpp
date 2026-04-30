@@ -66,6 +66,30 @@ namespace cppforge::services
         return userRepository_.getTotalSubmissionsCount(userId);
     }
 
+    bool UserService::recordDuelResult(uint64_t userId, bool isWin)
+    {
+        auto userOpt = userRepository_.findById(userId);
+        if (!userOpt)
+        {
+            return false;
+        }
+
+        auto &user = *userOpt;
+        if (isWin)
+        {
+            user.setDuelWins(user.getDuelWins() + 1);
+            user.setDuelPoints(user.getDuelPoints() + 10);
+        }
+        else
+        {
+            user.setDuelLosses(user.getDuelLosses() + 1);
+            int newPoints = std::max(0, user.getDuelPoints() - 5);
+            user.setDuelPoints(newPoints);
+        }
+
+        return userRepository_.save(user);
+    }
+
     std::vector<UserService::Activity> UserService::getRecentActivity(uint64_t userId, int limit) const
     {
         return userRepository_.getRecentActivity(userId, limit);

@@ -60,11 +60,12 @@ public:
     void setLocalNickname(const QString &name);
 
     /**
-     * @brief Displays a modal window or panel with finished duel results.
-     * @param winnerName Winner's name.
-     * @param score Winner's final score.
+     * @brief Signals that the duel window is closed and main window should return.
      */
     void showFinalResult(const QString &winnerName, int score);
+
+signals:
+    void sessionClosed();
 
 protected:
     /**
@@ -93,6 +94,16 @@ private slots:
      */
     void onSubmitClicked();
 
+    /**
+     * @brief Signals that the user surrenders the duel.
+     */
+    void onSurrenderClicked();
+
+    /**
+     * @brief Closes the duel window and returns to the main interface.
+     */
+    void onExitClicked();
+
 private:
     /** @brief Initializes UI components and their layout. */
     void setupUI();
@@ -109,6 +120,11 @@ private:
     QTextEdit *codeEditor_{nullptr};
     QTextEdit *testOutput_{nullptr};
     QTextEdit *practiceEdit_{nullptr};
+
+    QPushButton *btnRun_{nullptr};
+    QPushButton *btnSubmit_{nullptr};
+    QPushButton *btnSurrender_{nullptr};
+    QPushButton *btnExit_{nullptr};
 
     QLabel *labelTimer_{nullptr};
     QLabel *labelScore_{nullptr};

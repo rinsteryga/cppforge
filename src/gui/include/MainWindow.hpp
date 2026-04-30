@@ -152,6 +152,7 @@ private slots:
      * @param achievement Earned achievement object.
      */
     void onAchievementUnlocked(cppforge::entities::Achievement achievement);
+    void onSecretTaskTriggered();
 
 private:
     /** @brief Initializes UI structure and creates pages. */

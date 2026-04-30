@@ -56,8 +56,9 @@ namespace cppforge::repositories
         }
 
         QSqlQuery query(database_);
-        query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, created_at, "
-                      "current_streak_days, last_level_solved_at FROM users WHERE id = :id");
+        query.prepare(
+            "SELECT id, username, email, password_hash, salt, avatar_path, bio, created_at, "
+            "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses FROM users WHERE id = :id");
         query.bindValue(":id", QVariant::fromValue(id));
 
         if (!query.exec() || !query.next())
@@ -73,6 +74,9 @@ namespace cppforge::repositories
         user.setBio(query.value("bio").toString());
         user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
         user.setLastLevelSolvedAt(qDateTimeToChrono(query.value("last_level_solved_at").toDateTime()));
+        user.setDuelPoints(query.value("duel_points").toInt());
+        user.setDuelWins(query.value("duel_wins").toInt());
+        user.setDuelLosses(query.value("duel_losses").toInt());
 
         loadUserAchievements(user);
         loadUserCompletedLevels(user);
@@ -89,7 +93,8 @@ namespace cppforge::repositories
 
         QSqlQuery query(database_);
         query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, created_at, "
-                      "current_streak_days, last_level_solved_at FROM users WHERE email = :email");
+                      "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses FROM users WHERE "
+                      "email = :email");
         query.bindValue(":email", email);
 
         if (!query.exec() || !query.next())
@@ -105,6 +110,9 @@ namespace cppforge::repositories
         user.setBio(query.value("bio").toString());
         user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
         user.setLastLevelSolvedAt(qDateTimeToChrono(query.value("last_level_solved_at").toDateTime()));
+        user.setDuelPoints(query.value("duel_points").toInt());
+        user.setDuelWins(query.value("duel_wins").toInt());
+        user.setDuelLosses(query.value("duel_losses").toInt());
 
         loadUserAchievements(user);
         loadUserCompletedLevels(user);
@@ -121,7 +129,8 @@ namespace cppforge::repositories
 
         QSqlQuery query(database_);
         query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, created_at, "
-                      "current_streak_days, last_level_solved_at FROM users WHERE username = :username");
+                      "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses FROM users WHERE "
+                      "username = :username");
         query.bindValue(":username", username);
 
         if (!query.exec() || !query.next())
@@ -137,6 +146,9 @@ namespace cppforge::repositories
         user.setBio(query.value("bio").toString());
         user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
         user.setLastLevelSolvedAt(qDateTimeToChrono(query.value("last_level_solved_at").toDateTime()));
+        user.setDuelPoints(query.value("duel_points").toInt());
+        user.setDuelWins(query.value("duel_wins").toInt());
+        user.setDuelLosses(query.value("duel_losses").toInt());
 
         loadUserAchievements(user);
         loadUserCompletedLevels(user);
@@ -155,15 +167,17 @@ namespace cppforge::repositories
         if (user.getId() == 0)
         {
             query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_path, bio, created_at, "
-                          "current_streak_days, last_level_solved_at) "
+                          "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses) "
                           "VALUES (:username, :email, :password_hash, :salt, :avatar_path, :bio, :reg_date, "
-                          ":streak, :solved_at) RETURNING id");
+                          ":streak, :solved_at, :duel_points, :duel_wins, :duel_losses) RETURNING id");
         }
         else
         {
-            query.prepare("UPDATE users SET username = :username, email = :email, password_hash = :password_hash, "
-                          "salt = :salt, avatar_path = :avatar_path, bio = :bio, "
-                          "current_streak_days = :streak, last_level_solved_at = :solved_at WHERE id = :id");
+            query.prepare(
+                "UPDATE users SET username = :username, email = :email, password_hash = :password_hash, "
+                "salt = :salt, avatar_path = :avatar_path, bio = :bio, "
+                "current_streak_days = :streak, last_level_solved_at = :solved_at, "
+                "duel_points = :duel_points, duel_wins = :duel_wins, duel_losses = :duel_losses WHERE id = :id");
             query.bindValue(":id", QVariant::fromValue(user.getId()));
         }
 
@@ -176,6 +190,9 @@ namespace cppforge::repositories
         query.bindValue(":reg_date", chronoToQDateTime(user.getCreatedAt()));
         query.bindValue(":streak", user.getCurrentStreakDays());
         query.bindValue(":solved_at", chronoToQDateTime(user.getLastLevelSolvedAt()));
+        query.bindValue(":duel_points", user.getDuelPoints());
+        query.bindValue(":duel_wins", user.getDuelWins());
+        query.bindValue(":duel_losses", user.getDuelLosses());
 
         if (!query.exec())
         {

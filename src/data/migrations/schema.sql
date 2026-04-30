@@ -26,6 +26,9 @@ CREATE TABLE users (
     avatar_path TEXT,
     bio TEXT,
     current_streak_days INT DEFAULT 0,
+    duel_points INT DEFAULT 0,
+    duel_wins INT DEFAULT 0,
+    duel_losses INT DEFAULT 0,
     last_level_solved_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
