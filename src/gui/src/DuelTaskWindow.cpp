@@ -171,7 +171,7 @@ void DuelTaskWindow::setTask(const cppforge::entities::CodingTask &task)
     labelScore_->setText("SCORE: 1000");
 
     testOutput_->clear();
-    testOutput_->append("<b style='color:#3498db;'>[DUEL]</b> Задача получена. Приступайте к решению!");
+    testOutput_->append("<b style='color:#3498db;'>[DUEL]</b> Task received. Start solving!");
 
     duelTimer_->start(1000);
 }
@@ -206,7 +206,7 @@ void DuelTaskWindow::onRunClicked()
 
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
-    testOutput_->append("<b style='color:#3498db;'>[RUN]</b> Компиляция...");
+    testOutput_->append("<b style='color:#3498db;'>[RUN]</b> Compiling...");
 
     std::vector<cppforge::entities::TestCase> runTests;
     if (!currentTask_.getTestCases().empty())
@@ -223,14 +223,14 @@ void DuelTaskWindow::onRunClicked()
                 {
                     if (result.getErrors().isEmpty())
                     {
-                        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Вывод программы:</span>");
+                        testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Program Output:</span>");
                         testOutput_->append("<pre style='background:#f4f4f4; padding:10px;'>" + result.getOutput() +
                                             "</pre>");
                     }
                     else
                     {
                         testOutput_->append(
-                            "<span style='color:#e74c3c; font-weight:bold;'>Ошибка компиляции/выполнения:</span>");
+                            "<span style='color:#e74c3c; font-weight:bold;'>Compilation/Execution Error:</span>");
                         testOutput_->append("<pre style='color:#c0392b;'>" + result.getErrors() + "</pre>");
                     }
                 }
@@ -244,12 +244,12 @@ void DuelTaskWindow::onSubmitClicked()
 {
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
-    testOutput_->append("<b style='color:#f39c12;'>[SUBMIT]</b> Финальная проверка всех тестов...");
+    testOutput_->append("<b style='color:#f39c12;'>[SUBMIT]</b> Final verification of all tests...");
 
     auto violation = analyzer_->analyze(currentTask_, code);
     if (violation.has_value())
     {
-        testOutput_->append("<span style='color:#e74c3c;'>[Анализ] " + violation.value() + "</span>");
+        testOutput_->append("<span style='color:#e74c3c;'>[Analysis] " + violation.value() + "</span>");
         return;
     }
 
@@ -266,8 +266,8 @@ void DuelTaskWindow::onSubmitClicked()
                     duelTimer_->stop();
                     codeEditor_->setReadOnly(true);
 
-                    testOutput_->append("<h2 style='color:#27ae60;'>✔ ТЕСТЫ ПРОЙДЕНЫ!</h2>");
-                    testOutput_->append("<p>Результаты отправляются на сервер...</p>");
+                    testOutput_->append("<h2 style='color:#27ae60;'>✔ TESTS PASSED!</h2>");
+                    testOutput_->append("<p>Sending results to server...</p>");
 
                     if (duelManager_)
                     {
@@ -276,7 +276,7 @@ void DuelTaskWindow::onSubmitClicked()
                 }
                 else
                 {
-                    testOutput_->append("<h3 style='color:#e74c3c;'>✘ Решение не принято</h3>");
+                    testOutput_->append("<h3 style='color:#e74c3c;'>✘ Solution rejected</h3>");
                     if (!result.getErrors().isEmpty())
                     {
                         testOutput_->append("<pre style='color:red;'>" + result.getErrors() + "</pre>");
@@ -309,12 +309,12 @@ void DuelTaskWindow::showFinalResult(const QString &winnerName, int score)
 
     if (isMe)
     {
-        labelScore_->setText(QString("ПОБЕДА! Ваш счет: %1").arg(score));
+        labelScore_->setText(QString("VICTORY! Your score: %1").arg(score));
         labelScore_->setStyleSheet("color: #2ecc71; font-weight: bold; font-size: 20px;");
     }
     else
     {
-        labelScore_->setText(QString("ПОРАЖЕНИЕ. Победил %1").arg(cleanWinner));
+        labelScore_->setText(QString("DEFEAT. Winner: %1").arg(cleanWinner));
         labelScore_->setStyleSheet("color: #e74c3c; font-weight: bold; font-size: 20px;");
     }
 
