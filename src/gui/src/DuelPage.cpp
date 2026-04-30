@@ -18,7 +18,7 @@
 
 DuelPage::DuelPage(QWidget *parent) : QWidget(parent)
 {
-    m_duelManager = std::make_unique<cppforge::services::DuelManager>(this);
+    m_duelManager = std::make_unique<cppforge::services::DuelManager>("Player", this);
 
     setupUI();
     applyStyles();
@@ -161,19 +161,25 @@ QFrame *DuelPage::createActionPanel()
     layout->addStretch();
 
     connect(m_btnCreateLobby, &QPushButton::clicked, this, &DuelPage::onCreateLobbyClicked);
+
+    // 2. Кнопка присоединения к лобби
     connect(m_btnJoinLobby, &QPushButton::clicked, this, &DuelPage::onJoinLobbyClicked);
+
+    // 3. Кнопка СТАРТ (исправленная лямбда с защитой от null и логами)
     connect(m_btnStartDuel, &QPushButton::clicked, this,
             [this]()
             {
-                qDebug() << "--- КНОПКА НАЖАТА ---";
+                qDebug() << "[UI] Нажата кнопка запуска дуэли";
+
                 if (m_duelManager)
                 {
-                    qDebug() << "Менеджер активен, запрашиваю задачу...";
+                    qDebug() << "[UI] Запрос случайной задачи через DuelManager...";
                     m_duelManager->startRandomDuel();
                 }
                 else
                 {
-                    qDebug() << "ОШИБКА: m_duelManager ис null!";
+                    qCritical() << "[UI] КРИТИЧЕСКАЯ ОШИБКА: m_duelManager не инициализирован!";
+                    QMessageBox::warning(this, "Ошибка", "Связь с менеджером дуэлей потеряна. Пересоздайте лобби.");
                 }
             });
 
@@ -238,7 +244,7 @@ void DuelPage::onCreateLobbyClicked()
 {
     if (m_isHosting)
     {
-        m_duelManager = std::make_unique<cppforge::services::DuelManager>(this);
+        m_duelManager = std::make_unique<cppforge::services::DuelManager>("Player", this);
         connect(m_duelManager.get(), &cppforge::services::DuelManager::opponentConnected, this,
                 &DuelPage::handleOpponentConnected);
         connect(m_duelManager.get(), &cppforge::services::DuelManager::taskReceived, this,
@@ -331,23 +337,6 @@ void DuelPage::applyStyles()
             font-weight: bold;
         }
 
-<<<<<<< HEAD
-=======
-        /* Кнопка НАЧАТЬ (Акцентная) */
-        #btnStart {
-            background-color: #2E8B57;
-            color: white;
-            border: none;
-        }
-        #btnStart:hover {
-            background-color: #3CB371;
-        }
-        #btnStart:pressed {
-            background-color: #228B22;
-        }
-
-        /* Кнопка СОЗДАТЬ: Состояние по умолчанию + Зеленый ховер */
->>>>>>> 6b30106 (ui: integrate duel flow and add Doxygen documentation)
         #btnCreate[state="default"]:hover {
             border-color: #2E8B57;
             color: #2E8B57;
