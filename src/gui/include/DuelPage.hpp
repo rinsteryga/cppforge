@@ -55,10 +55,11 @@ public:
     /**
      * @brief Updates current user profile stats.
      * @param username User name.
-     * @param rating Current rating.
+     * @param rating Current rating (points).
+     * @param winrate Current winrate percentage.
      * @param avatarPath Path to the avatar image file.
      */
-    void updateUserStats(const QString &username, int rating, const QString &avatarPath);
+    void updateUserStats(const QString &username, int rating, double winrate, const QString &avatarPath);
 
     /**
      * @brief Returns a pointer to the network interaction manager.
@@ -104,6 +105,17 @@ private slots:
      */
     void handleConnectionError(const QString &error);
 
+    /**
+     * @brief Handles receiving the opponent's nickname.
+     * @param name Opponent's name.
+     */
+    void handleOpponentIdentified(const QString &name);
+
+    /**
+     * @brief Resets the lobby state and disconnects.
+     */
+    void resetLobby();
+
 private:
     /** @brief Initializes and arranges UI controls. */
     void setupUI();
@@ -139,6 +151,7 @@ private:
     QLabel *m_lblAvatar{nullptr};
     QLabel *m_lblUsername{nullptr};
     QLabel *m_lblRating{nullptr};
+    QLabel *m_lblWinrate{nullptr};
 
     QPushButton *m_btnCreateLobby{nullptr};
     QPushButton *m_btnStartDuel = nullptr;
