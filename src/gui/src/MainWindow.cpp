@@ -9,6 +9,7 @@
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
+#include "WindowStateManager.hpp"
 #include "services/AchievementService.hpp"
 #include "services/DuelManager.hpp"
 
@@ -48,7 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupUI();
     setWindowOpacity(0.0);
 
-    QTimer::singleShot(50, this, &MainWindow::centerWindow);
+    WindowStateManager::instance().applyGeometry(this, QSize(1400, 950));
+
     QTimer::singleShot(100, this, &MainWindow::fadeIn);
 }
 
@@ -180,7 +182,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
 void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
-    this->show();
+    WindowStateManager::instance().applyState(this, QSize(1400, 950));
     loadAllModulesProgress();
 
     if (m_currentOpenModuleId != -1)
@@ -283,8 +285,9 @@ void MainWindow::fadeOut()
                     }
                     taskWindow_->setUserId(m_currentUserId);
                     taskWindow_->loadModule(pendingModuleId_);
+                    WindowStateManager::instance().captureState(this);
                     this->hide();
-                    taskWindow_->show();
+                    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1300, 900));
                     taskWindow_->fadeIn();
                     pendingModuleId_ = -1;
                     isTransitioning_ = false;
@@ -299,7 +302,7 @@ void MainWindow::setupWindowProperties()
     resize(1400, 950);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
-    setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
     setAttribute(Qt::WA_TranslucentBackground, false);
     setObjectName("MainWindow");
 }
@@ -522,7 +525,7 @@ void MainWindow::setupUI()
                 connect(m_duelTaskWindow, &DuelTaskWindow::sessionClosed, this,
                         [this]()
                         {
-                            this->show();
+                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
                             this->fadeIn();
                         });
 
@@ -530,12 +533,13 @@ void MainWindow::setupUI()
                         [this]()
                         {
                             m_duelTaskWindow = nullptr;
-                            this->show();
+                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
                             this->fadeIn();
                         });
 
+                WindowStateManager::instance().captureState(this);
                 this->hide();
-                m_duelTaskWindow->show();
+                WindowStateManager::instance().applyState(m_duelTaskWindow, QSize(1300, 900));
             });
 
     roadmapPage = new QWidget();
