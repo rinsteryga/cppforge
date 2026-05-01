@@ -215,6 +215,7 @@ namespace cppforge::services
         QString m_localPlayerName;
         QString m_opponentName;
         bool m_isHost = false;
+        bool m_isIntentionalDisconnect = false;
     };
 } // namespace cppforge::services
 
