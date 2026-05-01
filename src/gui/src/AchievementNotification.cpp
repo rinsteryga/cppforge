@@ -39,12 +39,13 @@ namespace cppforge::gui
         }
         else
         {
-            iconLabel->setPixmap(pix.scaled(60, 60, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            iconLabel->setPixmap(pix.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            iconLabel->setAlignment(Qt::AlignCenter);
         }
         layout->addWidget(iconLabel);
 
         auto *textLayout = new QVBoxLayout();
-        auto *titleLabel = new QLabel("Достижение получено!");
+        auto *titleLabel = new QLabel("Achievement Unlocked!");
         titleLabel->setStyleSheet("color: #62639b; font-weight: bold; font-size: 12px;");
         auto *nameLabel = new QLabel(name);
         nameLabel->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");

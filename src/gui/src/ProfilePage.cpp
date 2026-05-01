@@ -164,8 +164,8 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         {
             auto *achWidget = new QWidget();
             auto *v = new QVBoxLayout(achWidget);
-            v->setContentsMargins(5, 5, 5, 5);
-            v->setSpacing(5);
+            v->setContentsMargins(5, 8, 5, 8);
+            v->setSpacing(8);
 
             auto *icon = new QLabel();
             icon->setFixedSize(65, 65);
@@ -189,22 +189,23 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
                 {
                     QImage img = pix.toImage().convertToFormat(QImage::Format_Grayscale8);
                     icon->setPixmap(
-                        QPixmap::fromImage(img).scaled(45, 45, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                        QPixmap::fromImage(img).scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
                 }
                 else
                 {
-                    icon->setPixmap(pix.scaled(45, 45, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    icon->setPixmap(pix.scaled(40, 40, Qt::KeepAspectRatio, Qt::SmoothTransformation));
                 }
             }
 
             v->addWidget(icon, 0, Qt::AlignCenter);
             auto *name = new QLabel(ach.getName());
             name->setAlignment(Qt::AlignCenter);
-            name->setStyleSheet(earned ? "font-size: 10px; font-weight: bold; color: #333;"
-                                       : "font-size: 10px; color: #999;");
+            name->setStyleSheet(earned ? "font-size: 10px; font-weight: bold; color: #333; background: transparent;"
+                                       : "font-size: 10px; color: #777; background: transparent;");
             name->setWordWrap(true);
-            name->setFixedWidth(80);
-            v->addWidget(name);
+            name->setContentsMargins(0, 0, 0, 0);
+            v->addWidget(name, 0, Qt::AlignCenter);
+            v->addStretch();
 
             achWidget->setToolTip(ach.getName() + (earned ? "" : " (Locked)") + ": " + ach.getDescription());
 
@@ -230,7 +231,7 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
             auto *typeTag = new QLabel(act.type);
             typeTag->setStyleSheet(
-                act.type == "Урок"
+                act.type == "Lesson"
                     ? "background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 10px; font-size: 11px;"
                     : "background: #e8f5e9; color: #388e3c; padding: 2px 8px; border-radius: 10px; font-size: 11px;");
 
@@ -348,7 +349,7 @@ void ProfilePage::setupUI()
 
         auto *content = new QWidget();
         QLayout *contentLayout = nullptr;
-        if (titleText == "ДОСТИЖЕНИЯ")
+        if (titleText == "ACHIEVEMENTS")
         {
             contentLayout = new QGridLayout(content);
         }
@@ -433,7 +434,7 @@ void ProfilePage::applyStyles()
 
 void ProfilePage::onChangeAvatarClicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Выберите аватар", "", "Images (*.png *.jpg *.jpeg)");
+    QString fileName = QFileDialog::getOpenFileName(this, "Select Avatar", "", "Images (*.png *.jpg *.jpeg)");
     if (!fileName.isEmpty())
     {
         QPixmap pix(fileName);
@@ -452,27 +453,27 @@ void ProfilePage::onChangeAvatarClicked()
 void ProfilePage::onAboutClicked()
 {
     QString aboutText =
-        "cppforge — это образовательная платформа для изучения языков программирования C и C++. "
-        "Наш курс ведет от основ операционных систем к системному программированию и современным стандартам C++, "
-        "включая PvP-режим и практические задачи.\n\n"
-        "Команда разработчиков проекта состоит из выпускников КМПО РАНХиГС, которые воплотили идею по-настоящему "
-        "крутой платформы для обучения.";
-    InfoDialog dlg("О cppforge", aboutText, this);
+        "cppforge is an educational platform for learning C and C++ programming languages. "
+        "Our course takes you from operating system basics to system programming and modern C++ standards, "
+        "including PvP mode and practical tasks.\n\n"
+        "The development team consists of RANEPA college graduates who brought the idea of a truly "
+        "cool learning platform to life.";
+    InfoDialog dlg("About cppforge", aboutText, this);
     dlg.exec();
 }
 
 void ProfilePage::onContactsClicked()
 {
-    InfoDialog dlg("Контакты", "rinsterr@yandex.ru — по всем вопросам и предложениям", this);
+    InfoDialog dlg("Contacts", "rinsterr@yandex.ru — for all questions and suggestions", this);
     dlg.exec();
 }
 
 void ProfilePage::onPrivacyClicked()
 {
     QString privacyText =
-        "Мы ценим Вашу конфиденциальность. Приложение хранит Ваши данные исключительно локально на Вашем устройстве "
-        "и не передает их третьим лицам.\n\n"
-        "Используя cppforge, Вы соглашаетесь с локальным хранением прогресса обучения и настроек профиля.";
-    InfoDialog dlg("Конфиденциальность", privacyText, this);
+        "We value your privacy. The application stores your data exclusively locally on your device "
+        "and does not transfer it to third parties.\n\n"
+        "By using cppforge, you agree to the local storage of learning progress and profile settings.";
+    InfoDialog dlg("Privacy Policy", privacyText, this);
     dlg.exec();
 }

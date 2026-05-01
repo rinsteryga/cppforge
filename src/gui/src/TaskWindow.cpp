@@ -404,6 +404,7 @@ void TaskWindow::setupUI()
     codeEditor_ = new QTextEdit();
     new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
+    codeEditor_->setLineWrapMode(QTextEdit::WidgetWidth);
 
     QFont codeFont("Consolas", 13);
     codeEditor_->setFont(codeFont);
@@ -483,7 +484,7 @@ void TaskWindow::onRunClicked()
 
     QString code = codeEditor_->toPlainText();
     testOutput_->clear();
-    testOutput_->append("<b style='color:#3498db;'>[RUN]</b> Компиляция и запуск...");
+    testOutput_->append("<b style='color:#3498db;'>[RUN]</b> Compiling and running...");
 
     std::vector<cppforge::entities::TestCase> runTests;
     if (!currentTask_.getTestCases().empty())
@@ -607,6 +608,48 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
         if (keyEvent->key() == Qt::Key_Tab)
         {
             editor->insertPlainText("    ");
+            return true;
+        }
+
+        if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter)
+        {
+            QString currentLine = editor->textCursor().block().text();
+            QString indent;
+            for (QChar c : currentLine)
+            {
+                if (c.isSpace())
+                    indent += c;
+                else
+                    break;
+            }
+
+            if (currentLine.trimmed().endsWith('{'))
+            {
+                editor->insertPlainText("\n" + indent + "    ");
+            }
+            else
+            {
+                editor->insertPlainText("\n" + indent);
+            }
+            return true;
+        }
+
+        struct BracketPair
+        {
+            QChar open;
+            QChar close;
+        };
+        static const QMap<int, BracketPair> pairs = {{Qt::Key_ParenLeft, {'(', ')'}},
+                                                     {Qt::Key_BracketLeft, {'[', ']'}},
+                                                     {Qt::Key_BraceLeft, {'{', '}'}},
+                                                     {Qt::Key_QuoteDbl, {'"', '"'}},
+                                                     {Qt::Key_QuoteLeft, {'\'', '\''}}};
+
+        if (pairs.contains(keyEvent->key()))
+        {
+            const auto &p = pairs[keyEvent->key()];
+            editor->insertPlainText(QString(p.open) + p.close);
+            editor->moveCursor(QTextCursor::Left);
             return true;
         }
     }
