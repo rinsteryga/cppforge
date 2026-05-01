@@ -199,7 +199,8 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             icon->setAlignment(Qt::AlignCenter);
 
             bool earned = ach.getDateEarned().time_since_epoch().count() > 0;
-            QString iconPath = ach.getIconPath();
+            QString iconPath = ach.getIconPath().trimmed();
+            qDebug() << "[Achievement] Attempting to load icon for" << ach.getName() << "path: [" << iconPath << "]";
             QPixmap pix(iconPath);
 
             if (pix.isNull())
