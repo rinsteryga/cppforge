@@ -25,6 +25,8 @@ DuelPage::DuelPage(QWidget *parent) : QWidget(parent)
 
     connect(m_duelManager.get(), &cppforge::services::DuelManager::opponentConnected, this,
             &DuelPage::handleOpponentConnected);
+    connect(m_duelManager.get(), &cppforge::services::DuelManager::opponentIdentified, this,
+            &DuelPage::handleOpponentIdentified);
     connect(m_duelManager.get(), &cppforge::services::DuelManager::taskReceived, this, &DuelPage::handleTaskReceived);
     connect(m_duelManager.get(), &cppforge::services::DuelManager::connectionError, this,
             &DuelPage::handleConnectionError);
@@ -51,7 +53,19 @@ void DuelPage::handleDuelFinished(const QString &winner, int score)
     }
 
     bool isMe = (winner == m_lblUsername->text());
-    m_userService->recordDuelResult(m_currentUserId, isMe);
+    m_userService->recordDuelResult(m_currentUserId, isMe, score);
+
+    auto userOpt = m_userService->findById(m_currentUserId);
+    if (userOpt)
+    {
+        double winrate = 0.0;
+        int total = userOpt->getDuelWins() + userOpt->getDuelLosses();
+        if (total > 0)
+        {
+            winrate = (static_cast<double>(userOpt->getDuelWins()) / total) * 100.0;
+        }
+        updateUserStats(userOpt->getUsername(), userOpt->getDuelPoints(), winrate, userOpt->getAvatarPath());
+    }
 }
 
 void DuelPage::setCircularAvatar(const QString &path)
@@ -134,14 +148,20 @@ QFrame *DuelPage::createProfileHeader()
     m_lblUsername = new QLabel("Loading...");
     m_lblUsername->setFont(QFont("Roboto", 16, QFont::Bold));
 
-    m_lblRating = new QLabel("0");
+    m_lblRating = new QLabel("PTS: 0");
     m_lblRating->setFont(QFont("Roboto", 14, QFont::Bold));
-    m_lblRating->setStyleSheet("color: #444;");
+    m_lblRating->setStyleSheet("color: #3b82f6;");
+
+    m_lblWinrate = new QLabel("WR: 0%");
+    m_lblWinrate->setFont(QFont("Roboto", 14, QFont::Bold));
+    m_lblWinrate->setStyleSheet("color: #10b981;");
 
     layout->addWidget(m_lblAvatar);
     layout->addWidget(m_lblUsername);
     layout->addStretch();
     layout->addWidget(m_lblRating);
+    layout->addSpacing(20);
+    layout->addWidget(m_lblWinrate);
 
     return frame;
 }
@@ -261,31 +281,25 @@ void DuelPage::addLeaderboardEntry(const QString &name, bool isHost)
     m_leaderListLayout->addWidget(item);
 }
 
+void DuelPage::handleOpponentIdentified(const QString &name)
+{
+    clearLobbyList();
+    addLeaderboardEntry(m_lblUsername->text(), true);
+    addLeaderboardEntry(name, false);
+}
+
 void DuelPage::onCreateLobbyClicked()
 {
     if (m_isHosting)
     {
-        m_duelManager = std::make_unique<cppforge::services::DuelManager>("Player", this);
-        connect(m_duelManager.get(), &cppforge::services::DuelManager::opponentConnected, this,
-                &DuelPage::handleOpponentConnected);
-        connect(m_duelManager.get(), &cppforge::services::DuelManager::taskReceived, this,
-                &DuelPage::handleTaskReceived);
-        connect(m_duelManager.get(), &cppforge::services::DuelManager::connectionError, this,
-                &DuelPage::handleConnectionError);
-
-        m_isHosting = false;
-        m_btnCreateLobby->setText("Create Lobby");
-        m_btnCreateLobby->setProperty("state", "default");
-        m_btnJoinLobby->setEnabled(true);
-        m_btnStartDuel->setVisible(false);
-        clearLobbyList();
+        resetLobby();
     }
     else if (m_duelManager->hostRoom(4242))
     {
         m_isHosting = true;
         clearLobbyList();
         addLeaderboardEntry(m_lblUsername->text(), true);
-        m_btnCreateLobby->setText("Cancel Lobby");
+        m_btnCreateLobby->setText("CANCEL LOBBY");
         m_btnCreateLobby->setProperty("state", "active");
         m_btnJoinLobby->setEnabled(false);
     }
@@ -294,8 +308,26 @@ void DuelPage::onCreateLobbyClicked()
     m_btnCreateLobby->style()->polish(m_btnCreateLobby);
 }
 
+void DuelPage::resetLobby()
+{
+    m_duelManager->disconnectAll();
+    m_isHosting = false;
+    m_btnCreateLobby->setText("CREATE LOBBY");
+    m_btnCreateLobby->setProperty("state", "default");
+    m_btnJoinLobby->setEnabled(true);
+    m_btnJoinLobby->setText("JOIN LOBBY");
+    m_btnStartDuel->setVisible(false);
+    clearLobbyList();
+}
+
 void DuelPage::onJoinLobbyClicked()
 {
+    if (m_btnJoinLobby->text() == "LEAVE LOBBY")
+    {
+        resetLobby();
+        return;
+    }
+
     bool ok;
     QString ip = QInputDialog::getText(this, "Connect", "Host IP Address:", QLineEdit::Normal, "127.0.0.1", &ok);
     if (ok && !ip.isEmpty())
@@ -303,6 +335,9 @@ void DuelPage::onJoinLobbyClicked()
         m_duelManager->joinRoom(ip, 4242);
         clearLobbyList();
         addLeaderboardEntry(m_lblUsername->text(), false);
+
+        m_btnJoinLobby->setText("LEAVE LOBBY");
+        m_btnCreateLobby->setEnabled(false);
     }
 }
 
@@ -331,17 +366,7 @@ void DuelPage::handleTaskReceived(const cppforge::entities::CodingTask &task)
 void DuelPage::handleConnectionError(const QString &error)
 {
     QMessageBox::critical(this, "Error", error);
-    m_isHosting = false;
-    m_btnCreateLobby->setEnabled(true);
-    m_btnCreateLobby->setText("Create Lobby");
-    m_btnCreateLobby->setProperty("state", "default");
-    m_btnJoinLobby->setEnabled(true);
-    m_btnStartDuel->setVisible(false);
-
-    m_btnCreateLobby->style()->unpolish(m_btnCreateLobby);
-    m_btnCreateLobby->style()->polish(m_btnCreateLobby);
-
-    clearLobbyList();
+    resetLobby();
 }
 
 void DuelPage::applyStyles()
@@ -414,10 +439,17 @@ void DuelPage::applyStyles()
     )");
 }
 
-void DuelPage::updateUserStats(const QString &username, int rating, const QString &avatarPath)
+void DuelPage::updateUserStats(const QString &username, int rating, double winrate, const QString &avatarPath)
 {
     m_lblUsername->setText(username);
-    m_lblRating->setText(QString::number(rating));
+    m_lblRating->setText(QString("PTS: %1").arg(rating));
+    m_lblWinrate->setText(QString("WR: %1%").arg(winrate, 0, 'f', 1));
+
+    if (m_duelManager)
+    {
+        m_duelManager->sendIdentity(username);
+    }
+
     if (!avatarPath.isEmpty())
     {
         setCircularAvatar(avatarPath);
