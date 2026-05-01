@@ -110,7 +110,7 @@ void DuelTaskWindow::setupUI()
 
     auto codeActions = new QHBoxLayout();
     btnRun_ = new QPushButton("Run");
-    btnSubmit_ = new QPushButton("FINISH DUEL");
+    btnSubmit_ = new QPushButton("SUBMIT");
     btnSurrender_ = new QPushButton("SURRENDER");
     btnExit_ = new QPushButton("EXIT");
 
@@ -219,8 +219,8 @@ void DuelTaskWindow::setTask(const cppforge::entities::CodingTask &task)
     codeEditor_->setPlainText(task.getInitialCode());
 
     timeLeft_ = 600;
-    currentScore_ = 1000;
-    labelScore_->setText("WIN: +10 | LOSS: -5");
+    currentScore_ = 10;
+    labelScore_->setText("WIN: +10 | BONUS: +10");
 
     testOutput_->clear();
     testOutput_->append("<b style='color:#3498db;'>[DUEL]</b> Task received. Start solving!");
@@ -246,9 +246,10 @@ void DuelTaskWindow::onTick()
             labelTimer_->setStyleSheet("color: #ffffff; background: transparent;");
         }
 
-        if (timeLeft_ % 5 == 0 && currentScore_ > 50)
+        if (timeLeft_ % 6 == 0 && currentScore_ < 20)
         {
-            currentScore_ -= 1;
+            currentScore_ = 10 + (timeLeft_ / 60);
+            labelScore_->setText(QString("WIN: +10 | BONUS: +%1").arg(timeLeft_ / 60));
         }
     }
     else
