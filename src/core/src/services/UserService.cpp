@@ -66,7 +66,7 @@ namespace cppforge::services
         return userRepository_.getTotalSubmissionsCount(userId);
     }
 
-    bool UserService::recordDuelResult(uint64_t userId, bool isWin)
+    bool UserService::recordDuelResult(uint64_t userId, bool isWin, std::optional<int> score)
     {
         auto userOpt = userRepository_.findById(userId);
         if (!userOpt)
@@ -78,12 +78,14 @@ namespace cppforge::services
         if (isWin)
         {
             user.setDuelWins(user.getDuelWins() + 1);
-            user.setDuelPoints(user.getDuelPoints() + 10);
+            int pointsToAdd = score.value_or(10);
+            user.setDuelPoints(user.getDuelPoints() + pointsToAdd);
         }
         else
         {
             user.setDuelLosses(user.getDuelLosses() + 1);
-            int newPoints = std::max(0, user.getDuelPoints() - 5);
+            int pointsToSub = score.value_or(5);
+            int newPoints = std::max(0, user.getDuelPoints() - pointsToSub);
             user.setDuelPoints(newPoints);
         }
 
