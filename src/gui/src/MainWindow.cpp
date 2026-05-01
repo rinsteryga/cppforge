@@ -102,7 +102,15 @@ void MainWindow::setUserId(int id)
             {
                 duelPage->setUserId(id);
                 duelPage->setUserService(m_userService);
-                duelPage->updateUserStats(m_currentUsername, 0, avatar);
+
+                double winrate = 0.0;
+                int total = userOpt->getDuelWins() + userOpt->getDuelLosses();
+                if (total > 0)
+                {
+                    winrate = (static_cast<double>(userOpt->getDuelWins()) / total) * 100.0;
+                }
+
+                duelPage->updateUserStats(m_currentUsername, userOpt->getDuelPoints(), winrate, avatar);
             }
         }
     }
