@@ -32,11 +32,11 @@ namespace
 
     cppforge::entities::ConditionType stringToConditionType(const QString &str)
     {
-        if (str == "LevelsCompleted")
+        if (str == "LEVELS_COMPLETED")
         {
             return cppforge::entities::ConditionType::LevelsCompleted;
         }
-        if (str == "StreakDays")
+        if (str == "STREAK_DAYS")
         {
             return cppforge::entities::ConditionType::StreakDays;
         }
