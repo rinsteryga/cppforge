@@ -1,5 +1,7 @@
 #include "CustomTitleBar.hpp"
 
+#include "WindowStateManager.hpp"
+
 #include <QApplication>
 #include <QDebug>
 #include <QFont>
@@ -19,6 +21,8 @@ CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
         parent->installEventFilter(this);
     }
 }
+
+CustomTitleBar::~CustomTitleBar() = default;
 
 void CustomTitleBar::setupUI()
 {
@@ -135,6 +139,10 @@ void CustomTitleBar::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton)
     {
         isResizing_ = false;
+        if (!window()->isMaximized() && !window()->isMinimized())
+        {
+            WindowStateManager::instance().captureState(window());
+        }
     }
     QWidget::mouseReleaseEvent(event);
 }
@@ -178,7 +186,6 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
     {
-        isResizing_ = true;
         onMaximizeRestoreClicked();
         event->accept();
     }
@@ -186,12 +193,28 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
 
 bool CustomTitleBar::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == window() && event->type() == QEvent::WindowStateChange)
+    if (obj == window())
     {
-        if (maximizeRestoreButton_)
+        if (event->type() == QEvent::WindowStateChange)
         {
-            maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
+            updateButtonIcons();
+
+            QTimer::singleShot(0, this,
+                               [this]()
+                               {
+                                   if (window())
+                                   {
+                                       WindowStateManager::instance().captureState(window());
+                                   }
+                               });
         }
     }
     return QWidget::eventFilter(obj, event);
+}
+void CustomTitleBar::updateButtonIcons()
+{
+    if (maximizeRestoreButton_ && window())
+    {
+        maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
+    }
 }
