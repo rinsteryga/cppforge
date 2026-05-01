@@ -104,13 +104,14 @@ namespace cppforge::services
         int getTotalSubmissionsCount(uint64_t userId) const;
 
         /**
-         * @brief Updates the user's duel stats based on a win or loss.
+         * @brief Records a user's duel stats based on a win or loss.
          *
          * @param userId The ID of the user.
          * @param isWin True if the user won the duel, false otherwise.
+         * @param score Optional score earned in the duel. If not provided, default values (+10/-5) are used.
          * @return True if the update was successfully persisted.
          */
-        bool recordDuelResult(uint64_t userId, bool isWin);
+        bool recordDuelResult(uint64_t userId, bool isWin, std::optional<int> score = std::nullopt);
 
         using Activity = repositories::IUserRepository::Activity;
 
