@@ -191,7 +191,7 @@ namespace cppforge::services
 
         else if (type == "SURRENDER")
         {
-            emit duelFinished(m_localPlayerName, 1000);
+            emit duelFinished(m_localPlayerName, 10);
         }
         else if (type == "WIN" || type == "FINISH")
         {
