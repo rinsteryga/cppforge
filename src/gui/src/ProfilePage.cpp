@@ -4,10 +4,12 @@
 
 #include <QDebug>
 #include <QDialog>
+#include <QDir>
 #include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QImageReader>
 #include <QKeySequence>
 #include <QLabel>
 #include <QPixmap>
@@ -97,12 +99,24 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
     if (finalPath.isEmpty() || finalPath == "NULL")
     {
-        static std::random_device rd;
-        static std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(1, 4);
-        finalPath = QString(":/images/default_avatar%1.png").arg(dis(gen));
+        QDir imagesDir(":/images");
+        QStringList filters;
+        filters << "default_avatar*.png";
+        QStringList availableAvatars = imagesDir.entryList(filters, QDir::Files);
 
-        qDebug() << "First time login. Assigning random avatar:" << finalPath;
+        if (!availableAvatars.isEmpty())
+        {
+            static std::random_device rd;
+            static std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(0, availableAvatars.size() - 1);
+            finalPath = ":/images/" + availableAvatars[dis(gen)];
+        }
+        else
+        {
+            finalPath = ":/images/default_avatar1.png";
+        }
+
+        qDebug() << "Assigned random avatar from resources:" << finalPath;
 
         if (userService_)
         {
@@ -143,11 +157,15 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         auto clearLayout = [](QLayout *layout)
         {
             if (!layout)
+            {
                 return;
+            }
             while (auto item = layout->takeAt(0))
             {
                 if (item->widget())
+                {
                     delete item->widget();
+                }
                 delete item;
             }
         };
@@ -434,7 +452,14 @@ void ProfilePage::applyStyles()
 
 void ProfilePage::onChangeAvatarClicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Select Avatar", "", "Images (*.png *.jpg *.jpeg)");
+    QStringList formats;
+    for (const QByteArray &format : QImageReader::supportedImageFormats())
+    {
+        formats << "*." + QString(format).toLower();
+    }
+    QString filter = QString("Images (%1)").arg(formats.join(" "));
+
+    QString fileName = QFileDialog::getOpenFileName(this, "Select Avatar", "", filter);
     if (!fileName.isEmpty())
     {
         QPixmap pix(fileName);
