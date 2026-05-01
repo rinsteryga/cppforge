@@ -2,6 +2,7 @@
 
 #include "../include/CppHighlighter.hpp"
 #include "../include/CustomTitleBar.hpp"
+#include "../include/WindowStateManager.hpp"
 
 #include <QDebug>
 #include <QFrame>
@@ -302,7 +303,8 @@ void TaskWindow::onPrevTask()
 void TaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setFixedSize(1300, 900);
+    setMinimumSize(900, 600);
+    resize(1300, 900);
     setObjectName("TaskWindow");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
 
@@ -737,6 +739,7 @@ void TaskWindow::fadeOut()
     connect(transitionAnimation_.get(), &QPropertyAnimation::finished, this,
             [this]()
             {
+                WindowStateManager::instance().captureState(this);
                 this->hide();
                 emit windowClosed();
             });

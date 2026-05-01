@@ -66,6 +66,8 @@ void DuelPage::handleDuelFinished(const QString &winner, int score)
         }
         updateUserStats(userOpt->getUsername(), userOpt->getDuelPoints(), winrate, userOpt->getAvatarPath());
     }
+
+    resetLobby();
 }
 
 void DuelPage::setCircularAvatar(const QString &path)

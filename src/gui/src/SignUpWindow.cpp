@@ -1,6 +1,7 @@
 #include "SignUpWindow.hpp"
 
 #include "CustomTitleBar.hpp"
+#include "WindowStateManager.hpp"
 
 #include <QApplication>
 #include <QDebug>
@@ -22,7 +23,8 @@ SignUpWindow::SignUpWindow(std::shared_ptr<cppforge::services::AuthManager> auth
     : QWidget(parent, Qt::Window), passwordVisible_(false), authManager_(authManager)
 {
     setupUI();
-    QTimer::singleShot(50, this, &SignUpWindow::centerWindow);
+
+    WindowStateManager::instance().applyGeometry(this, QSize(1280, 900));
 }
 
 SignUpWindow::~SignUpWindow() = default;
@@ -76,7 +78,8 @@ void SignUpWindow::setupUI()
 
 void SignUpWindow::setupWindowProperties()
 {
-    setFixedSize(1280, 900);
+    setMinimumSize(900, 600);
+    resize(1280, 900);
     setWindowTitle("Sign Up - cppforge");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
@@ -273,6 +276,7 @@ void SignUpWindow::onSignUpButtonClicked()
     if (authManager_ && authManager_->registerUser(usernameInput_->text(), emailInput_->text(), passwordInput_->text()))
     {
         QMessageBox::information(this, "Success", "Account created successfully!");
+        WindowStateManager::instance().captureState(this);
         this->hide();
         emit switchToLogin();
     }
@@ -286,6 +290,7 @@ void SignUpWindow::onBackToLoginClicked()
 {
     if (transitionAnimation_)
         transitionAnimation_->stop();
+    WindowStateManager::instance().captureState(this);
     this->hide();
     emit switchToLogin();
 }

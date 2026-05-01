@@ -2,6 +2,7 @@
 
 #include "../../core/include/services/SessionManager.hpp"
 #include "SignUpWindow.hpp"
+#include "WindowStateManager.hpp"
 
 #include <QApplication>
 #include <QDebug>
@@ -23,7 +24,9 @@ AuthWindow::AuthWindow(std::shared_ptr<cppforge::services::AuthManager> authMana
 {
     setupUI();
     setWindowOpacity(0.0);
-    QTimer::singleShot(50, this, &AuthWindow::centerWindow);
+
+    WindowStateManager::instance().applyGeometry(this, QSize(1280, 900));
+
     QTimer::singleShot(100, this, &AuthWindow::fadeIn);
 }
 
@@ -39,7 +42,8 @@ void AuthWindow::paintEvent(QPaintEvent *event)
 
 void AuthWindow::setupWindowProperties()
 {
-    setFixedSize(1280, 900);
+    setMinimumSize(900, 600);
+    resize(1280, 900);
     setWindowTitle("cppforge Log in");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
@@ -239,6 +243,7 @@ void AuthWindow::onLoginClicked()
         if (transitionAnimation_)
             transitionAnimation_->stop();
 
+        WindowStateManager::instance().captureState(this);
         this->hide();
         emit switchToMainMenu(usernameInput_->text(), userId);
     }
@@ -261,11 +266,12 @@ void AuthWindow::openSignUpWindow()
         connect(signUpWindow_.get(), &SignUpWindow::switchToLogin,
                 [this]()
                 {
-                    this->show();
+                    WindowStateManager::instance().applyState(this, QSize(1280, 900));
                     this->fadeIn();
                 });
     }
+    WindowStateManager::instance().captureState(this);
     this->hide();
-    signUpWindow_->show();
+    WindowStateManager::instance().applyState(signUpWindow_.get(), QSize(1280, 900));
     signUpWindow_->fadeIn();
 }

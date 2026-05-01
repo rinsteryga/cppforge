@@ -2,6 +2,7 @@
 
 #include "../../core/include/services/DuelManager.hpp"
 #include "../include/CppHighlighter.hpp"
+#include "../include/WindowStateManager.hpp"
 
 #include <QDebug>
 #include <QFont>
@@ -31,7 +32,8 @@ DuelTaskWindow::DuelTaskWindow(cppforge::services::DuelManager *manager, QWidget
 void DuelTaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setFixedSize(1300, 900);
+    setMinimumSize(900, 600);
+    resize(1300, 900);
     setObjectName("DuelEditorWindow");
 
     auto rootLayout = new QVBoxLayout(this);
@@ -398,6 +400,7 @@ void DuelTaskWindow::onSurrenderClicked()
 
 void DuelTaskWindow::onExitClicked()
 {
+    WindowStateManager::instance().captureState(this);
     emit sessionClosed();
     this->close();
 }

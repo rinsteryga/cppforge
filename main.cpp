@@ -1,5 +1,6 @@
 #include "AuthWindow.hpp"
 #include "MainWindow.hpp"
+#include "WindowStateManager.hpp"
 #include "repositories/PgAchievementRepository.hpp"
 #include "repositories/PgCodingTaskRepository.hpp"
 #include "repositories/PgLessonRepository.hpp"
@@ -75,15 +76,8 @@ int main(int argc, char *argv[])
         mainWindow.setCurrentUser(username);
         mainWindow.setUserId(userId);
 
-        QScreen *screen = QGuiApplication::primaryScreen();
-        if (screen)
-        {
-            QRect geom = screen->availableGeometry();
-            mainWindow.move(geom.center() - mainWindow.rect().center());
-        }
-
         authWindow.hide();
-        mainWindow.show();
+        WindowStateManager::instance().applyState(&mainWindow, QSize(1400, 950));
         mainWindow.fadeIn();
     };
 
@@ -112,7 +106,7 @@ int main(int argc, char *argv[])
 
     if (!autoLoginValid)
     {
-        authWindow.show();
+        WindowStateManager::instance().applyState(&authWindow, QSize(1280, 900));
     }
 
     return app.exec();
