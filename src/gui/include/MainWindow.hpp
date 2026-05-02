@@ -22,6 +22,7 @@ namespace cppforge::services
     class UserService;
     class AchievementService;
     class CourseService;
+    class ThemeService;
 } // namespace cppforge::services
 
 class QFrame;
@@ -87,6 +88,12 @@ public:
      * @param service Pointer to CourseService.
      */
     void setCourseService(cppforge::services::CourseService *service);
+
+    /**
+     * @brief Injects the theme service dependency.
+     * @param service Pointer to ThemeService.
+     */
+    void setThemeService(cppforge::services::ThemeService *service);
 
 protected:
     /**
@@ -214,6 +221,7 @@ private:
     QPushButton *ratingBtn{nullptr};
     QPushButton *profileBtn{nullptr};
     QPushButton *logoutBtn{nullptr};
+    QLabel *sideBarLogo_{nullptr};
 
     ModuleRoadmapWidget *roadmapWidget{nullptr};
 
@@ -224,6 +232,7 @@ private:
     cppforge::services::UserService *m_userService{nullptr};
     cppforge::services::AchievementService *m_achievementService{nullptr};
     cppforge::services::CourseService *m_courseService{nullptr};
+    cppforge::services::ThemeService *m_themeService{nullptr};
 
     std::unique_ptr<QFrame> sideBar;
     std::unique_ptr<QFrame> eventCard;

@@ -1,11 +1,18 @@
 #pragma once
 
 #include "../../core/include/entities/Achievement.hpp"
+#include "../../core/include/services/ThemeService.hpp"
 #include "../../core/include/services/UserService.hpp"
 
 #include <QWidget>
 
 class QLabel;
+class QComboBox;
+
+namespace cppforge::services
+{
+    class AchievementService;
+}
 
 /**
  * @brief Represents the user profile and statistics page.
@@ -38,6 +45,13 @@ public:
      */
     void setUserService(cppforge::services::UserService *service) { userService_ = service; }
 
+    /**
+     * @brief Injects the theme service for data retrieval and updating.
+     * @param service Pointer to the ThemeService implementation.
+     */
+    void setAchievementService(cppforge::services::AchievementService *service);
+    void setThemeService(cppforge::services::ThemeService *service);
+
 signals:
     void secretTaskTriggered();
 
@@ -46,6 +60,7 @@ private slots:
     void onAboutClicked();
     void onContactsClicked();
     void onPrivacyClicked();
+    void onThemeChanged(int index);
 
 private:
     void setupUI();
@@ -66,4 +81,7 @@ private:
     QWidget *activityContainer = nullptr;
 
     cppforge::services::UserService *userService_ = nullptr;
+    cppforge::services::AchievementService *achievementService_ = nullptr;
+    cppforge::services::ThemeService *themeService_ = nullptr;
+    QComboBox *themeCombo_ = nullptr;
 };

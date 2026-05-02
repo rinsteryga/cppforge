@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../core/include/services/AuthManager.hpp"
+#include "../../core/include/services/ThemeService.hpp"
 
 #include <QFont>
 #include <QLabel>
@@ -23,6 +24,7 @@ public:
     ~SignUpWindow();
 
     void fadeIn();
+    void setThemeService(cppforge::services::ThemeService *service);
 
 signals:
     void switchToLogin();
@@ -46,6 +48,7 @@ protected:
     void setupSignUpButton();
     void setupBackToLoginLink();
     void setupLayout();
+    void setupStyles();
     void setupConnections();
 
     void showFallbackLogo();
@@ -64,6 +67,7 @@ protected:
 
     std::unique_ptr<QVBoxLayout> mainLayout_;
 
+    cppforge::services::ThemeService *themeService_ = nullptr;
     std::shared_ptr<cppforge::services::AuthManager> authManager_;
     bool passwordVisible_ = false;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;

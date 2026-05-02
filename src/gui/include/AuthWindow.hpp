@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../core/include/services/AuthManager.hpp"
+#include "../../core/include/services/ThemeService.hpp"
 #include "CustomTitleBar.hpp"
 #include "SignUpWindow.hpp"
 
@@ -41,6 +42,7 @@ public:
      * @brief Triggers a fade-in animation for the window.
      */
     void fadeIn();
+    void setThemeService(cppforge::services::ThemeService *service);
 
 signals:
     void loginSuccessful();
@@ -56,6 +58,7 @@ private:
     void setupLoginButton();
     void setupCreateAccountLink();
     void setupLayout();
+    void setupStyles();
     void showFallbackLogo();
     void centerWindow();
     void togglePasswordVisibility();
@@ -81,6 +84,7 @@ protected:
     std::unique_ptr<SignUpWindow> signUpWindow_;
     std::unique_ptr<QVBoxLayout> mainLayout_;
 
+    cppforge::services::ThemeService *themeService_ = nullptr;
     std::shared_ptr<cppforge::services::AuthManager> authManager_;
     bool passwordVisible_ = false;
     std::unique_ptr<QPropertyAnimation> transitionAnimation_;

@@ -3,6 +3,7 @@
 #include "../../core/include/entities/CodingTask.hpp"
 #include "../../core/include/services/CodeRunner.hpp"
 #include "../../core/include/services/StaticAnalyzer.hpp"
+#include "../../core/include/services/ThemeService.hpp"
 #include "CppHighlighter.hpp"
 #include "CustomTitleBar.hpp"
 
@@ -58,6 +59,7 @@ public:
      * @param name User's nickname.
      */
     void setLocalNickname(const QString &name);
+    void setThemeService(cppforge::services::ThemeService *service);
 
     /**
      * @brief Signals that the duel window is closed and main window should return.
@@ -72,6 +74,7 @@ protected:
      * @brief Overridden window show event. Used for starting animations or the timer.
      */
     void showEvent(QShowEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 
     /**
      * @brief Event filter for handling specific key presses in the editor (e.g., Tab).
@@ -134,6 +137,8 @@ private:
     int currentScore_{1000};
 
     cppforge::entities::CodingTask currentTask_;
+    cppforge::services::ThemeService *themeService_{nullptr};
+    std::unique_ptr<CppHighlighter> highlighter_;
     std::unique_ptr<cppforge::services::CodeRunner> runner_;
     std::unique_ptr<cppforge::services::StaticAnalyzer> analyzer_;
 };

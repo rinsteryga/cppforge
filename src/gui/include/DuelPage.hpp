@@ -109,7 +109,7 @@ private slots:
      * @brief Handles receiving the opponent's nickname.
      * @param name Opponent's name.
      */
-    void handleOpponentIdentified(const QString &name);
+    void handleOpponentIdentified(const QString &name, const QString &avatarPath);
 
     /**
      * @brief Resets the lobby state and disconnects.
@@ -137,7 +137,7 @@ private:
      * @param name Player name.
      * @param isHost Flag indicating if the player is the room creator.
      */
-    void addLeaderboardEntry(const QString &name, bool isHost = false);
+    void addLeaderboardEntry(const QString &name, bool isHost = false, const QString &avatarPath = "");
 
     /** @brief Creates the top panel with the user profile. */
     QFrame *createProfileHeader();
@@ -165,4 +165,5 @@ private:
     cppforge::services::UserService *m_userService{nullptr};
     bool m_isHosting{false};
     uint64_t m_currentUserId{0};
+    QString m_currentAvatarPath;
 };

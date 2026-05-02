@@ -27,41 +27,40 @@ CustomTitleBar::~CustomTitleBar() = default;
 void CustomTitleBar::setupUI()
 {
     setFixedHeight(40);
-    setStyleSheet("background-color: white; border-bottom: 1px solid #e0e0e0;");
+    setStyleSheet("background-color: palette(window); border-bottom: 1px solid; border-bottom-color: palette(mid); "
+                  "border-top-left-radius: 19px; border-top-right-radius: 19px;");
 
     layout_ = new QHBoxLayout(this);
-    layout_->setContentsMargins(10, 0, 0, 0);
-    layout_->setSpacing(0);
+    layout_->setContentsMargins(15, 0, 0, 0);
+    layout_->setSpacing(10);
 
     iconLabel_ = new QLabel(this);
-    iconLabel_->setFixedSize(24, 24);
+    iconLabel_->setFixedSize(22, 22);
     iconLabel_->setScaledContents(true);
+    iconLabel_->setStyleSheet("background: transparent; border: none;");
 
     titleLabel_ = new QLabel(this);
-    titleLabel_->setFont(QFont("Roboto", 10, QFont::Bold));
-    titleLabel_->setStyleSheet("color: #000000; padding-left: 8px; border: none;");
+    titleLabel_->setStyleSheet("color: palette(text); font-weight: bold; font-family: 'Roboto'; font-size: 13px; "
+                               "background: transparent; border: none;");
 
     minimizeButton_ = new QPushButton("-", this);
     maximizeRestoreButton_ = new QPushButton("□", this);
     closeButton_ = new QPushButton("✕", this);
 
-    const QString buttonStyle = "QPushButton { "
-                                "background-color: transparent; border: none; font-size: 18px; "
-                                "color: #5f6368; "
-                                "} "
-                                "QPushButton:hover { background-color: #e8eaed; }";
+    const QString buttonStyle =
+        "QPushButton { border: none; background: transparent; padding: 5px; color: palette(window-text); font-size: "
+        "16px; } "
+        "QPushButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }";
 
-    const QString closeStyle = "QPushButton { "
-                               "background-color: transparent; border: none; font-size: 18px; "
-                               "color: #5f6368; "
-                               "} "
+    const QString closeStyle = "QPushButton { border: none; background: transparent; padding: 5px; color: "
+                               "palette(window-text); font-size: 16px; } "
                                "QPushButton:hover { background-color: #e81123; color: white; }";
 
-    minimizeButton_->setFixedSize(60, 40);
+    minimizeButton_->setFixedSize(50, 40);
     minimizeButton_->setStyleSheet(buttonStyle);
-    maximizeRestoreButton_->setFixedSize(60, 40);
+    maximizeRestoreButton_->setFixedSize(50, 40);
     maximizeRestoreButton_->setStyleSheet(buttonStyle);
-    closeButton_->setFixedSize(60, 40);
+    closeButton_->setFixedSize(50, 40);
     closeButton_->setStyleSheet(closeStyle);
 
     layout_->addWidget(iconLabel_);

@@ -138,17 +138,16 @@ namespace cppforge::services
         }
     }
 
-    void DuelManager::sendIdentity(const QString &myName)
+    void DuelManager::sendIdentity(const QString &myName, const QString &avatarPath)
     {
         m_localPlayerName = myName;
-
         QJsonObject json;
         json["type"] = "IDENTIFY";
         QJsonObject payload;
         payload["nickname"] = myName;
+        payload["avatar"] = avatarPath;
         payload["isHost"] = m_isHost;
         json["payload"] = payload;
-
         sendMessage(json);
     }
 
@@ -181,7 +180,8 @@ namespace cppforge::services
         if (type == "IDENTIFY")
         {
             m_opponentName = payload["nickname"].toString();
-            emit opponentIdentified(m_opponentName);
+            QString avatar = payload["avatar"].toString();
+            emit opponentIdentified(m_opponentName, avatar);
         }
 
         else if (type == "TASK")

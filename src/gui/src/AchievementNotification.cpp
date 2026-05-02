@@ -35,7 +35,7 @@ namespace cppforge::gui
         {
             iconLabel->setText("🏆");
             iconLabel->setAlignment(Qt::AlignCenter);
-            iconLabel->setStyleSheet("font-size: 30px; background: #333; border-radius: 5px;");
+            iconLabel->setStyleSheet("font-size: 30px; background: palette(alternate-base); border-radius: 5px;");
         }
         else
         {
@@ -46,11 +46,11 @@ namespace cppforge::gui
 
         auto *textLayout = new QVBoxLayout();
         auto *titleLabel = new QLabel("Achievement Unlocked!");
-        titleLabel->setStyleSheet("color: #62639b; font-weight: bold; font-size: 12px;");
+        titleLabel->setStyleSheet("color: palette(highlight); font-weight: bold; font-size: 12px;");
         auto *nameLabel = new QLabel(name);
-        nameLabel->setStyleSheet("color: white; font-weight: bold; font-size: 16px;");
+        nameLabel->setStyleSheet("color: palette(text); font-weight: bold; font-size: 16px;");
         auto *descLabel = new QLabel(desc);
-        descLabel->setStyleSheet("color: #ccc; font-size: 13px;");
+        descLabel->setStyleSheet("color: palette(window-text); font-size: 13px;");
         descLabel->setWordWrap(true);
 
         descLabel->setWordWrap(true);
@@ -68,8 +68,8 @@ namespace cppforge::gui
     {
         setStyleSheet(R"(
         QFrame {
-            background-color: #1a1a1a;
-            border: 2px solid #62639b;
+            background-color: palette(window);
+            border: 2px solid palette(highlight);
             border-radius: 10px;
         }
     )");

@@ -4,7 +4,9 @@
 #include "../../core/include/services/CodeRunner.hpp"
 #include "../../core/include/services/CourseService.hpp"
 #include "../../core/include/services/StaticAnalyzer.hpp"
+#include "../../core/include/services/ThemeService.hpp"
 #include "../../core/include/services/UserService.hpp"
+#include "CppHighlighter.hpp"
 #include "CustomTitleBar.hpp"
 
 #include <QDateTime>
@@ -37,6 +39,7 @@ public:
 
     void setUserService(cppforge::services::UserService *service) { userService_ = service; }
     void setCourseService(cppforge::services::CourseService *service) { courseService_ = service; }
+    void setThemeService(cppforge::services::ThemeService *service);
 
     void fadeIn();
     void fadeOut();
@@ -88,6 +91,9 @@ private:
 
     cppforge::services::UserService *userService_{nullptr};
     cppforge::services::CourseService *courseService_{nullptr};
+    cppforge::services::ThemeService *themeService_{nullptr};
+
+    std::unique_ptr<CppHighlighter> highlighter_;
 
     cppforge::entities::CodingTask currentTask_;
 
