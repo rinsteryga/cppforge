@@ -6,6 +6,7 @@
 class QWidget;
 
 /**
+ * @class WindowStateManager
  * @brief Singleton that centralizes window geometry and maximized state.
  *
  * When any managed window changes its state (maximized, normal, or resized),
