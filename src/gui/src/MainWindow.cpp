@@ -158,6 +158,7 @@ void MainWindow::setThemeService(cppforge::services::ThemeService *service)
                 if (customTitleBar_)
                 {
                     customTitleBar_->setIcon(QIcon(iconPath));
+                    customTitleBar_->setThemeService(m_themeService);
                 }
                 if (sideBarLogo_)
                 {
@@ -177,6 +178,7 @@ void MainWindow::setThemeService(cppforge::services::ThemeService *service)
         if (customTitleBar_)
         {
             customTitleBar_->setIcon(QIcon(initIcon));
+            customTitleBar_->setThemeService(m_themeService);
         }
         if (sideBarLogo_)
         {
@@ -555,6 +557,24 @@ void MainWindow::setupUI()
     contentStack = std::make_unique<QStackedWidget>();
     profilePage = new ProfilePage(this);
     connect(profilePage, &ProfilePage::secretTaskTriggered, this, &MainWindow::onSecretTaskTriggered);
+    connect(profilePage, &ProfilePage::avatarChanged, this,
+            [this](const QString &path)
+            {
+                if (duelPage)
+                {
+                    auto userOpt = m_userService->getUser(m_currentUsername);
+                    if (userOpt)
+                    {
+                        double winrate = 0.0;
+                        int total = userOpt->getDuelWins() + userOpt->getDuelLosses();
+                        if (total > 0)
+                        {
+                            winrate = (static_cast<double>(userOpt->getDuelWins()) / total) * 100.0;
+                        }
+                        duelPage->updateUserStats(m_currentUsername, userOpt->getDuelPoints(), winrate, path);
+                    }
+                }
+            });
 
     learningPage = new QWidget();
     duelPage = new DuelPage();
@@ -644,27 +664,60 @@ void MainWindow::setupUI()
 
 void MainWindow::setupStyles()
 {
-    setStyleSheet(R"(
+    bool isDark = false;
+    if (m_themeService)
+    {
+        isDark = (m_themeService->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+
+    QString hoverColor, accentColor;
+    QString hoverText = "white";
+
+    if (isDark)
+    {
+        hoverColor = "#0e639c";
+        accentColor = "#0e639c";
+    }
+    else
+    {
+        hoverColor = "#f3e8ff";
+        accentColor = "#62639b";
+        hoverText = "black";
+    }
+
+    setStyleSheet(QString(R"(
         QWidget { background-color: palette(alternate-base); font-family: 'Roboto'; color: palette(text); }
         #MainWindow { background-color: palette(base); border: 1px solid palette(mid); }
         
         QFrame#sideBar { background-color: palette(base); border: 1px solid palette(mid); }
         
-        /* Anti-aliasing fix for all labels */
         QLabel { background-color: transparent; border: none; }
 
         QPushButton#navButton { background-color: transparent; border: none; color: palette(window-text); text-align: left; padding-left: 20px; }
-        QPushButton#navButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }
+        QPushButton#navButton:hover { background-color: %1; color: %2; }
         
         QFrame[class="card"] { background-color: palette(base); border: 1px solid palette(mid); border-radius: 8px; }
         
         QProgressBar { background: palette(alternate-base); border: 1px solid palette(mid); text-align: center; color: palette(text); border-radius: 4px; }
-        QProgressBar::chunk { background: palette(button); border-radius: 4px; }
+        QProgressBar::chunk { background: %3; border-radius: 4px; }
         
-        QPushButton { background: palette(button); color: palette(button-text); border-radius: 4px; padding: 5px 15px; font-weight: bold; }
-        QPushButton:hover { background: palette(link); }
+        QPushButton { background: palette(button); color: palette(button-text); border: 1px solid palette(mid); border-radius: 4px; padding: 5px 15px; font-weight: bold; }
+        QPushButton:hover { background: %1; color: %2; }
+        QPushButton#logoutButton:hover { background: palette(link); color: palette(highlighted-text); }
         QPushButton:disabled { background: palette(disabled, button); color: palette(disabled, button-text); }
-    )");
+    )")
+                      .arg(hoverColor)
+                      .arg(hoverText)
+                      .arg(accentColor));
+
+    style()->unpolish(this);
+    style()->polish(this);
+    update();
 }
 
 void MainWindow::onModuleButtonClicked()
