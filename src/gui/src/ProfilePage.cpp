@@ -18,6 +18,7 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSettings>
 #include <QShortcut>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -91,6 +92,8 @@ ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
     connect(secretShortcut, &QShortcut::activated, this, &ProfilePage::secretTaskTriggered);
 }
 
+ProfilePage::~ProfilePage() = default;
+
 void ProfilePage::setUserData(uint64_t userId, const QString &name, const QString &avatarPath)
 {
     currentUserId = userId;
@@ -130,27 +133,7 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         }
     }
 
-    QPixmap pix(finalPath);
-    if (pix.isNull())
-    {
-        qDebug() << "[Avatar] Failed to load from:" << finalPath;
-        avatarLabel->setText("👤");
-        avatarLabel->setAlignment(Qt::AlignCenter);
-        avatarLabel->setStyleSheet("background-color: palette(button); border-radius: 100px;");
-    }
-    else
-    {
-        QPixmap rounded(200, 200);
-        rounded.fill(Qt::transparent);
-        QPainter painter(&rounded);
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setRenderHint(QPainter::SmoothPixmapTransform);
-        QPainterPath path;
-        path.addEllipse(0, 0, 200, 200);
-        painter.setClipPath(path);
-        painter.drawPixmap(0, 0, pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
-        avatarLabel->setPixmap(rounded);
-    }
+    updateAvatarDisplay(finalPath);
 
     if (userService_)
     {
@@ -491,7 +474,29 @@ void ProfilePage::setupUI()
 
 void ProfilePage::applyStyles()
 {
-    setStyleSheet(R"(
+    bool isDark = false;
+    if (themeService_)
+    {
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+    QString hoverColor, hoverText;
+    if (isDark)
+    {
+        hoverColor = "#0e639c";
+        hoverText = "white";
+    }
+    else
+    {
+        hoverColor = "#f3e8ff";
+        hoverText = "black";
+    }
+
+    setStyleSheet(QString(R"(
         #UserNameLabel { font-size: 28px; font-weight: bold; color: palette(text); }
         #StatTitle { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; }
         #AvatarSquare { 
@@ -516,6 +521,7 @@ void ProfilePage::applyStyles()
             border-top-right-radius: 18px;
         }
         #GreenValue { color: #4CAF50; font-size: 24px; font-weight: bold; }
+        #GreenValue:hover { color: #4CAF50; }
         #StreakLabel { font-size: 26px; font-weight: bold; }
         #FooterLinks { color: palette(window-text); font-size: 13px; line-height: 1.5; }
         #FooterBtn {
@@ -526,7 +532,7 @@ void ProfilePage::applyStyles()
             padding: 2px 5px;
             text-align: right;
         }
-        #FooterBtn:hover { color: palette(button); text-decoration: underline; }
+        #FooterBtn:hover { color: %1; text-decoration: underline; background: transparent; }
         #ChangeAvatarBtn {
             background-color: palette(button); 
             color: palette(button-text); 
@@ -535,7 +541,7 @@ void ProfilePage::applyStyles()
             padding: 8px 16px; 
             font-weight: 600;
         }
-        #ChangeAvatarBtn:hover { background-color: palette(highlight); color: palette(highlighted-text); }
+        #ChangeAvatarBtn:hover { background-color: %1; color: %2; }
         #BoxContent { 
             background: transparent; 
             border: none; 
@@ -551,16 +557,18 @@ void ProfilePage::applyStyles()
             min-width: 100px;
             color: palette(text);
         }
-        QComboBox:hover { border-color: palette(highlight); }
+        QComboBox:hover { border-color: %1; }
         QComboBox::drop-down { border: none; width: 30px; }
         QComboBox::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid palette(text); margin-right: 10px; }
         QComboBox QAbstractItemView {
             background-color: palette(base);
             border: 1px solid palette(mid);
-            selection-background-color: palette(highlight);
-            color: palette(text);
+            selection-background-color: %1;
+            color: %2;
         }
-    )");
+    )")
+                      .arg(hoverColor)
+                      .arg(hoverText));
 }
 
 void ProfilePage::setThemeService(cppforge::services::ThemeService *service)
@@ -598,16 +606,41 @@ void ProfilePage::onChangeAvatarClicked()
     QString fileName = QFileDialog::getOpenFileName(this, "Select Avatar", "", filter);
     if (!fileName.isEmpty())
     {
-        QPixmap pix(fileName);
-        if (!pix.isNull())
-        {
-            avatarLabel->setPixmap(pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
+        updateAvatarDisplay(fileName);
 
-            if (userService_)
-            {
-                userService_->updateAvatar(currentUserId, fileName);
-            }
+        if (userService_)
+        {
+            userService_->updateAvatar(currentUserId, fileName);
         }
+        emit avatarChanged(fileName);
+    }
+}
+
+void ProfilePage::updateAvatarDisplay(const QString &path)
+{
+    if (!avatarLabel)
+        return;
+
+    QPixmap pix(path);
+    if (pix.isNull())
+    {
+        qDebug() << "[Avatar] Failed to load from:" << path;
+        avatarLabel->setText("👤");
+        avatarLabel->setAlignment(Qt::AlignCenter);
+        avatarLabel->setStyleSheet("background-color: palette(button); border-radius: 100px;");
+    }
+    else
+    {
+        QPixmap rounded(200, 200);
+        rounded.fill(Qt::transparent);
+        QPainter painter(&rounded);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+        QPainterPath clipPath;
+        clipPath.addEllipse(0, 0, 200, 200);
+        painter.setClipPath(clipPath);
+        painter.drawPixmap(0, 0, pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
+        avatarLabel->setPixmap(rounded);
     }
 }
 
