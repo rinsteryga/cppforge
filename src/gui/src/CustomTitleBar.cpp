@@ -1,5 +1,6 @@
 #include "CustomTitleBar.hpp"
 
+#include "../../core/include/services/ThemeService.hpp"
 #include "WindowStateManager.hpp"
 
 #include <QApplication>
@@ -11,6 +12,7 @@
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QScreen>
+#include <QSettings>
 #include <QTimer>
 
 CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
@@ -47,21 +49,11 @@ void CustomTitleBar::setupUI()
     maximizeRestoreButton_ = new QPushButton("□", this);
     closeButton_ = new QPushButton("✕", this);
 
-    const QString buttonStyle =
-        "QPushButton { border: none; background: transparent; padding: 5px; color: palette(window-text); font-size: "
-        "16px; } "
-        "QPushButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }";
-
-    const QString closeStyle = "QPushButton { border: none; background: transparent; padding: 5px; color: "
-                               "palette(window-text); font-size: 16px; } "
-                               "QPushButton:hover { background-color: #e81123; color: white; }";
+    updateStyles();
 
     minimizeButton_->setFixedSize(50, 40);
-    minimizeButton_->setStyleSheet(buttonStyle);
     maximizeRestoreButton_->setFixedSize(50, 40);
-    maximizeRestoreButton_->setStyleSheet(buttonStyle);
     closeButton_->setFixedSize(50, 40);
-    closeButton_->setStyleSheet(closeStyle);
 
     layout_->addWidget(iconLabel_);
     layout_->addWidget(titleLabel_);
@@ -149,34 +141,16 @@ void CustomTitleBar::mouseReleaseEvent(QMouseEvent *event)
 void CustomTitleBar::mouseMoveEvent(QMouseEvent *event)
 {
     if (isResizing_)
-    {
-        event->accept();
         return;
-    }
 
     if (event->buttons() & Qt::LeftButton)
     {
-        QWidget *win = window();
-        if (!win)
+        if (window()->isMaximized())
+        {
             return;
-
-        if (win->isMaximized())
-        {
-            double relativeX = (double)event->pos().x() / win->width();
-
-            win->showNormal();
-
-            int newX = event->globalPos().x() - (win->width() * relativeX);
-            int newY = event->globalPos().y() - event->pos().y();
-
-            win->move(newX, qMax(0, newY));
-
-            dragPosition_ = event->globalPos() - win->frameGeometry().topLeft();
         }
-        else
-        {
-            win->move(event->globalPos() - dragPosition_);
-        }
+
+        window()->move(event->globalPos() - dragPosition_);
         event->accept();
     }
 }
@@ -186,7 +160,6 @@ void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton)
     {
         onMaximizeRestoreClicked();
-        event->accept();
     }
 }
 
@@ -197,7 +170,9 @@ bool CustomTitleBar::eventFilter(QObject *obj, QEvent *event)
         if (event->type() == QEvent::WindowStateChange)
         {
             updateButtonIcons();
-
+        }
+        else if (event->type() == QEvent::Resize || event->type() == QEvent::Move)
+        {
             QTimer::singleShot(0, this,
                                [this]()
                                {
@@ -210,10 +185,64 @@ bool CustomTitleBar::eventFilter(QObject *obj, QEvent *event)
     }
     return QWidget::eventFilter(obj, event);
 }
+
 void CustomTitleBar::updateButtonIcons()
 {
     if (maximizeRestoreButton_ && window())
     {
         maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
+    }
+}
+
+void CustomTitleBar::setThemeService(cppforge::services::ThemeService *service)
+{
+    themeService_ = service;
+    if (themeService_)
+    {
+        connect(themeService_, &cppforge::services::ThemeService::themeChanged, this, &CustomTitleBar::updateStyles);
+        updateStyles();
+    }
+}
+
+void CustomTitleBar::updateStyles()
+{
+    bool isDark = false;
+    if (themeService_)
+    {
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+
+    QString hoverColor = isDark ? "#0e639c" : "#f3e8ff";
+    QString hoverText = isDark ? "white" : "black";
+
+    const QString buttonStyle = QString("QPushButton { border: none; background: transparent; color: "
+                                        "palette(window-text); font-size: 16px; } "
+                                        "QPushButton:hover { background-color: %1; color: %2; border-radius: 0; }")
+                                    .arg(hoverColor)
+                                    .arg(hoverText);
+
+    const QString closeStyle = "QPushButton { border: none; background: transparent; color: palette(window-text); "
+                               "font-size: 16px; } "
+                               "QPushButton:hover { background-color: #e81123; color: white; border-radius: 0; }";
+
+    if (minimizeButton_)
+    {
+        minimizeButton_->setStyleSheet(buttonStyle);
+        minimizeButton_->update();
+    }
+    if (maximizeRestoreButton_)
+    {
+        maximizeRestoreButton_->setStyleSheet(buttonStyle);
+        maximizeRestoreButton_->update();
+    }
+    if (closeButton_)
+    {
+        closeButton_->setStyleSheet(closeStyle);
+        closeButton_->update();
     }
 }
