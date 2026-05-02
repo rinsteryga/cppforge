@@ -2,7 +2,14 @@
 
 CppHighlighter::CppHighlighter(QTextDocument *parent) : QSyntaxHighlighter(parent)
 {
-    keywordFormat.setForeground(Qt::darkBlue);
+    setTheme(false);
+}
+
+void CppHighlighter::setTheme(bool isDark)
+{
+    highlightingRules.clear();
+
+    keywordFormat.setForeground(isDark ? QColor(86, 156, 214) : QColor(0, 0, 255));
     keywordFormat.setFontWeight(QFont::Bold);
     QStringList keywordPatterns;
     keywordPatterns << "\\bchar\\b" << "\\bclass\\b" << "\\bconst\\b" << "\\bdouble\\b" << "\\benum\\b"
@@ -18,19 +25,21 @@ CppHighlighter::CppHighlighter(QTextDocument *parent) : QSyntaxHighlighter(paren
         highlightingRules.append({QRegularExpression(pattern), keywordFormat});
     }
 
-    preprocessorFormat.setForeground(QColor(200, 100, 0));
+    preprocessorFormat.setForeground(isDark ? QColor(197, 134, 192) : QColor(128, 0, 128));
     highlightingRules.append({QRegularExpression("^\\s*#\\s*[a-zA-Z]+"), preprocessorFormat});
 
-    quotationFormat.setForeground(Qt::darkRed);
+    quotationFormat.setForeground(isDark ? QColor(206, 145, 120) : QColor(163, 21, 21));
     highlightingRules.append({QRegularExpression("\".*\""), quotationFormat});
 
     functionFormat.setFontItalic(true);
-    functionFormat.setForeground(Qt::blue);
+    functionFormat.setForeground(isDark ? QColor(220, 220, 170) : QColor(121, 94, 38));
     highlightingRules.append({QRegularExpression("\\b[A-Za-z0-9_]+(?=\\()"), functionFormat});
 
-    commentFormat.setForeground(Qt::darkGray);
+    commentFormat.setForeground(isDark ? QColor(106, 153, 85) : QColor(0, 128, 0));
     highlightingRules.append({QRegularExpression("//.*"), commentFormat});
     highlightingRules.append({QRegularExpression("/\\*.*\\*/"), commentFormat});
+
+    rehighlight();
 }
 
 void CppHighlighter::highlightBlock(const QString &text)

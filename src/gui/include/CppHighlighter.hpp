@@ -11,6 +11,7 @@ class CppHighlighter : public QSyntaxHighlighter
 
 public:
     explicit CppHighlighter(QTextDocument *parent = nullptr);
+    void setTheme(bool isDark);
 
 protected:
     void highlightBlock(const QString &text) override;
