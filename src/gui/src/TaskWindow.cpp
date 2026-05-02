@@ -18,6 +18,7 @@
 #include <QScreen>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSettings>
 #include <QSplitter>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -167,7 +168,7 @@ void TaskWindow::loadModule(int lessonId)
             testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>[Status] This task has already been "
                                 "completed correctly.</span>");
             if (btnSubmit_)
-                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+                btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold;");
         }
 
         codeEditor_->setReadOnly(false);
@@ -197,12 +198,12 @@ void TaskWindow::loadModule(int lessonId)
                     testOutput_->append(
                         "<span style='color:#27ae60; font-weight:bold;'>[Status] Theory studied.</span>");
                 btnSubmit_->setEnabled(true);
-                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+                btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold;");
             }
             else
             {
                 btnSubmit_->setEnabled(false);
-                btnSubmit_->setStyleSheet("background-color: #f0f0f0; color: #888;");
+                btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold; opacity: 0.7;");
             }
         }
     }
@@ -230,7 +231,7 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
         {
             if (btnSubmit_)
             {
-                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+                btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold;");
             }
             if (currentTask_.getId() == 9999)
             {
@@ -253,7 +254,7 @@ void TaskWindow::saveTaskProgress(bool success, const QString &code)
         {
             if (btnSubmit_)
             {
-                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+                btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold;");
             }
             if (btnNext_)
             {
@@ -670,7 +671,7 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
             if (vBar->value() >= vBar->maximum() - 20)
             {
                 btnSubmit_->setEnabled(true);
-                btnSubmit_->setStyleSheet("background-color: #b8e2c8; color: #2d5a3d; font-weight: bold;");
+                btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold;");
             }
         }
     }
@@ -711,15 +712,29 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 
 void TaskWindow::setupStyles()
 {
-    setStyleSheet(R"(
-        #TaskWindow { 
-            background-color: palette(window); 
-            border: 1px solid palette(mid); 
+    bool isDark = false;
+    if (themeService_)
+    {
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+
+    QString hoverColor = isDark ? "#0e639c" : "#f3e8ff";
+    QString accentColor = isDark ? "#0e639c" : "#62639b";
+    QString hoverBorder = isDark ? "#3b82f6" : "#8b5cf6";
+    QString hoverText = isDark ? "white" : "black";
+
+    QString cssStyle = R"(
         #TaskWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }
         #tabHeader { background-color: palette(alternate-base); border-bottom: 2px solid palette(mid); border-top-left-radius: 19px; border-top-right-radius: 19px; }
         
         QPushButton#tabButton { border: none; background: transparent; padding: 0 25px; color: palette(window-text); }
-        QPushButton#tabButton:checked { border-bottom: 4px solid palette(highlight); color: palette(highlight); }
+        QPushButton#tabButton:checked { border-bottom: 4px solid )" +
+                       accentColor + R"(; color: )" + accentColor + R"(; }
         
         QTextEdit { background-color: palette(base); color: palette(text); border: none; padding: 25px; }
         
@@ -730,7 +745,8 @@ void TaskWindow::setupStyles()
             font-size: 24px;
             border: 1px solid palette(mid);
         }
-        QPushButton#backButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }
+        QPushButton#backButton:hover { border-color: )" +
+                       hoverBorder + R"(; background-color: palette(base); }
 
         QPushButton#navButton {
             background-color: palette(alternate-base);
@@ -739,7 +755,8 @@ void TaskWindow::setupStyles()
             border-radius: 8px;
             font-weight: bold;
         }
-        QPushButton#navButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }
+        QPushButton#navButton:hover { border-color: )" +
+                       hoverBorder + R"(; background-color: palette(base); }
         
         QFrame#editorFrame, QFrame#testFrame { background-color: palette(base); border: 1px solid palette(mid); border-radius: 12px; }
         
@@ -750,19 +767,28 @@ void TaskWindow::setupStyles()
             font-weight: 600; 
             color: palette(text);
         }
-        QPushButton#runButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }
+        QPushButton#runButton:hover { border-color: )" +
+                       hoverBorder + R"(; background-color: palette(alternate-base); }
         
         QPushButton#submitButton { 
-            background-color: #b8e2c8; 
+            background-color: )" +
+                       accentColor + R"(; 
             border-radius: 6px; 
             font-weight: 600; 
             border: none; 
-            color: #2d5a3d; 
+            color: white; 
         }
-        QPushButton#submitButton:hover { background-color: #a5d6b7; }
+        QPushButton#submitButton:hover { background-color: )" +
+                       hoverColor + R"(; color: )" + hoverText + R"(; }
         
         QLabel { color: palette(text); font-size: 14px; }
-    )");
+    )";
+
+    setStyleSheet(cssStyle);
+
+    style()->unpolish(this);
+    style()->polish(this);
+    update();
 }
 
 void TaskWindow::setThemeService(cppforge::services::ThemeService *service)
@@ -778,6 +804,11 @@ void TaskWindow::setThemeService(cppforge::services::ThemeService *service)
                         QString iconPath = (theme == cppforge::services::Theme::Dark) ? ":/icons/main_logo_dark.ico"
                                                                                       : ":/icons/main_logo.ico";
                         customTitleBar_->setIcon(QIcon(iconPath));
+                        customTitleBar_->setThemeService(themeService_);
+                    }
+                    if (highlighter_)
+                    {
+                        highlighter_->setTheme(theme == cppforge::services::Theme::Dark);
                     }
                     setupStyles();
                 });
@@ -786,12 +817,13 @@ void TaskWindow::setThemeService(cppforge::services::ThemeService *service)
             highlighter_->setTheme(themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
         }
 
-        QString iconPath = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
-                               ? ":/icons/main_logo_dark.ico"
-                               : ":/icons/main_logo.ico";
         if (customTitleBar_)
         {
+            QString iconPath = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
+                                   ? ":/icons/main_logo_dark.ico"
+                                   : ":/icons/main_logo.ico";
             customTitleBar_->setIcon(QIcon(iconPath));
+            customTitleBar_->setThemeService(themeService_);
         }
         setupStyles();
     }
