@@ -1,5 +1,6 @@
 #include "DuelPage.hpp"
 
+#include "../../core/include/services/ThemeService.hpp"
 #include "entities/CodingTask.hpp"
 #include "services/DuelManager.hpp"
 
@@ -13,6 +14,7 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSettings>
 #include <QStyle>
 #include <QVBoxLayout>
 
@@ -397,9 +399,33 @@ void DuelPage::handleConnectionError(const QString &error)
     resetLobby();
 }
 
+void DuelPage::setThemeService(cppforge::services::ThemeService *service)
+{
+    m_themeService = service;
+    if (m_themeService)
+    {
+        connect(m_themeService, &cppforge::services::ThemeService::themeChanged, this, &DuelPage::applyStyles);
+        applyStyles();
+    }
+}
+
 void DuelPage::applyStyles()
 {
-    setStyleSheet(R"(
+    bool isDark = false;
+    if (m_themeService)
+    {
+        isDark = (m_themeService->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+
+    QString hoverColor = isDark ? "#0e639c" : "#f3e8ff";
+    QString hoverText = isDark ? "white" : "black";
+
+    setStyleSheet(QString(R"(
         DuelPage { background-color: palette(alternate-base); }
         #card { 
             background-color: palette(base); 
@@ -418,8 +444,8 @@ void DuelPage::applyStyles()
             font-size: 14px; 
             font-weight: 800; 
             color: palette(window-text); 
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
         }
         
         QPushButton {
@@ -464,7 +490,13 @@ void DuelPage::applyStyles()
         #lobbyItem {
             margin: 2px 0;
         }
-    )");
+    )")
+                      .arg(hoverColor)
+                      .arg(hoverText));
+
+    style()->unpolish(this);
+    style()->polish(this);
+    update();
 }
 
 void DuelPage::updateUserStats(const QString &username, int rating, double winrate, const QString &avatarPath)
