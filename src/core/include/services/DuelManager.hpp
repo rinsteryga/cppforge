@@ -101,6 +101,11 @@ namespace cppforge::services
          */
         void sendProgress(const cppforge::services::DuelProgress &progress);
 
+        /**
+         * @brief Sends the local player's identity (name and avatar) to the opponent.
+         * @param myName The local player's nickname.
+         * @param avatarPath Path to the local player's avatar image.
+         */
         void sendIdentity(const QString &myName, const QString &avatarPath = "");
 
         /**
@@ -150,6 +155,11 @@ namespace cppforge::services
          */
         void duelFinished(const QString &winner, int score);
 
+        /**
+         * @brief Signals that the opponent's identity has been received and verified.
+         * @param name Opponent's nickname.
+         * @param avatarPath Path to the opponent's avatar image.
+         */
         void opponentIdentified(const QString &name, const QString &avatarPath);
 
     private slots:
