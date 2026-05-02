@@ -57,7 +57,7 @@ public:
     /**
      * @brief Destructor. Ensures proper resource release.
      */
-    ~MainWindow();
+    ~MainWindow() override;
 
     /**
      * @brief Sets the current authorized username for UI display.
@@ -98,16 +98,19 @@ public:
 protected:
     /**
      * @brief Overridden paint handler for custom backgrounds or effects.
+     * @param event Paint event.
      */
     void paintEvent(QPaintEvent *event) override;
 
     /**
      * @brief Window show event handler. Used for initializing start animations.
+     * @param event Show event.
      */
     void showEvent(QShowEvent *event) override;
 
     /**
      * @brief Handles window state changes (e.g., language or system theme changes).
+     * @param event Change event.
      */
     void changeEvent(QEvent *event) override;
 
@@ -129,19 +132,29 @@ public slots:
     void openTaskWindow(int lessonId);
 
 private slots:
-    /** @brief Module card click handler. */
+    /**
+     * @brief Module card click handler.
+     */
     void onModuleButtonClicked();
 
-    /** @brief Switches the interface to the main learning page. */
+    /**
+     * @brief Switches the interface to the main learning page.
+     */
     void onLearnButtonClicked();
 
-    /** @brief Switches the interface to the user profile page. */
+    /**
+     * @brief Switches the interface to the user profile page.
+     */
     void onProfileButtonClicked();
 
-    /** @brief Called when the task window is closed to return to the main interface. */
+    /**
+     * @brief Called when the task window is closed to return to the main interface.
+     */
     void onTaskWindowClosed();
 
-    /** @brief Handles user logout. */
+    /**
+     * @brief Handles user logout.
+     */
     void onLogoutClicked();
 
     /**
@@ -151,7 +164,9 @@ private slots:
      */
     void updateModuleProgress(int moduleId, int progress);
 
-    /** @brief Returns from detailed module view to the module list. */
+    /**
+     * @brief Returns from detailed module view to the module list.
+     */
     void onBackToModulesClicked();
 
     /**
@@ -159,31 +174,51 @@ private slots:
      * @param achievement Earned achievement object.
      */
     void onAchievementUnlocked(cppforge::entities::Achievement achievement);
+
+    /**
+     * @brief Secret shortcut trigger handler.
+     */
     void onSecretTaskTriggered();
 
 private:
-    /** @brief Initializes UI structure and creates pages. */
+    /**
+     * @brief Initializes UI structure and creates pages.
+     */
     void setupUI();
 
-    /** @brief Configures window flags (borders, transparency, custom title). */
+    /**
+     * @brief Configures window flags (borders, transparency, custom title).
+     */
     void setupWindowProperties();
 
-    /** @brief Configures the custom title bar. */
+    /**
+     * @brief Configures the custom title bar.
+     */
     void setupTitleBar();
 
-    /** @brief Initializes the left navigation panel. */
+    /**
+     * @brief Initializes the left navigation panel.
+     */
     void setupLeftPanel();
 
-    /** @brief Initializes the central content area (QStackedWidget). */
+    /**
+     * @brief Initializes the central content area (QStackedWidget).
+     */
     void setupCenterPanel();
 
-    /** @brief Initializes the right info panel. */
+    /**
+     * @brief Initializes the right info panel.
+     */
     void setupRightPanel();
 
-    /** @brief Applies global QSS styles to all window elements. */
+    /**
+     * @brief Applies global QSS styles to all window elements.
+     */
     void setupStyles();
 
-    /** @brief Centers the application window on the screen. */
+    /**
+     * @brief Centers the application window on the screen.
+     */
     void centerWindow();
 
     /**
@@ -192,10 +227,15 @@ private:
      */
     void animateToTaskWindow(int moduleId);
 
-    /** @brief Verifies user data in the DB before page initialization. */
+    /**
+     * @brief Verifies user data in the DB before page initialization.
+     * @return true if user exists, false otherwise.
+     */
     bool validateUserExists();
 
-    /** @brief Loads progress for all available modules from the DB. */
+    /**
+     * @brief Loads progress for all available modules from the DB.
+     */
     void loadAllModulesProgress();
 
     /**
@@ -204,48 +244,47 @@ private:
      */
     void loadRoadmapForModule(int moduleId);
 
-    std::unique_ptr<CustomTitleBar> customTitleBar_;
-    std::unique_ptr<QPropertyAnimation> transitionAnimation_;
-    std::unique_ptr<QVBoxLayout> centerPanelLayout_;
-    std::unique_ptr<TaskWindow> taskWindow_;
+    std::unique_ptr<CustomTitleBar> customTitleBar_;          ///< Custom title bar.
+    std::unique_ptr<QPropertyAnimation> transitionAnimation_; ///< Transition animation.
+    std::unique_ptr<QVBoxLayout> centerPanelLayout_;          ///< Main center layout.
+    std::unique_ptr<TaskWindow> taskWindow_;                  ///< Task execution window.
+    std::unique_ptr<QStackedWidget> contentStack;             ///< Stack of central pages.
 
-    std::unique_ptr<QStackedWidget> contentStack;
+    ProfilePage *profilePage{nullptr};          ///< User profile page.
+    QWidget *learningPage{nullptr};             ///< Main learning dashboard.
+    QWidget *roadmapPage{nullptr};              ///< Module roadmap view.
+    DuelPage *duelPage{nullptr};                ///< Duels/Network lobby page.
+    DuelTaskWindow *m_duelTaskWindow = nullptr; ///< Active duel window.
 
-    ProfilePage *profilePage{nullptr};
-    QWidget *learningPage{nullptr};
-    QWidget *roadmapPage{nullptr};
-    DuelPage *duelPage{nullptr};
-    DuelTaskWindow *m_duelTaskWindow = nullptr;
+    QPushButton *learnBtn{nullptr};   ///< Sidebar learn button.
+    QPushButton *ratingBtn{nullptr};  ///< Sidebar duels button.
+    QPushButton *profileBtn{nullptr}; ///< Sidebar profile button.
+    QPushButton *logoutBtn{nullptr};  ///< Sidebar logout button.
+    QLabel *sideBarLogo_{nullptr};    ///< Sidebar logo.
 
-    QPushButton *learnBtn{nullptr};
-    QPushButton *ratingBtn{nullptr};
-    QPushButton *profileBtn{nullptr};
-    QPushButton *logoutBtn{nullptr};
-    QLabel *sideBarLogo_{nullptr};
+    ModuleRoadmapWidget *roadmapWidget{nullptr}; ///< Roadmap visual widget.
 
-    ModuleRoadmapWidget *roadmapWidget{nullptr};
+    QString m_currentUsername;     ///< Current authenticated username.
+    int m_currentUserId{-1};       ///< Current user numeric ID.
+    int m_currentOpenModuleId{-1}; ///< Currently active module.
 
-    QString m_currentUsername;
-    int m_currentUserId{-1};
-    int m_currentOpenModuleId{-1};
+    cppforge::services::UserService *m_userService{nullptr};               ///< User data service.
+    cppforge::services::AchievementService *m_achievementService{nullptr}; ///< Achievement service.
+    cppforge::services::CourseService *m_courseService{nullptr};           ///< Course/content service.
+    cppforge::services::ThemeService *m_themeService{nullptr};             ///< Theme service.
 
-    cppforge::services::UserService *m_userService{nullptr};
-    cppforge::services::AchievementService *m_achievementService{nullptr};
-    cppforge::services::CourseService *m_courseService{nullptr};
-    cppforge::services::ThemeService *m_themeService{nullptr};
+    std::unique_ptr<QFrame> sideBar;                ///< Sidebar container.
+    std::unique_ptr<QFrame> eventCard;              ///< UI card for events.
+    std::unique_ptr<QFrame> dailyTaskCard;          ///< UI card for daily tasks.
+    std::unique_ptr<QScrollArea> modulesScrollArea; ///< Scroll area for module list.
+    std::unique_ptr<QWidget> modulesContainer;      ///< Container for module cards.
+    std::unique_ptr<QVBoxLayout> modulesLayout;     ///< Layout for module cards.
 
-    std::unique_ptr<QFrame> sideBar;
-    std::unique_ptr<QFrame> eventCard;
-    std::unique_ptr<QFrame> dailyTaskCard;
-    std::unique_ptr<QScrollArea> modulesScrollArea;
-    std::unique_ptr<QWidget> modulesContainer;
-    std::unique_ptr<QVBoxLayout> modulesLayout;
+    std::vector<std::unique_ptr<QFrame>> moduleCards; ///< List of module visual cards.
+    QList<QLabel *> moduleProgressLabels;             ///< Labels for module percentage.
+    QList<QProgressBar *> moduleProgressBars;         ///< Bars for module percentage.
+    QList<QPushButton *> moduleButtons;               ///< Buttons to enter modules.
 
-    std::vector<std::unique_ptr<QFrame>> moduleCards;
-    QList<QLabel *> moduleProgressLabels;
-    QList<QProgressBar *> moduleProgressBars;
-    QList<QPushButton *> moduleButtons;
-
-    bool isTransitioning_{false};
-    int pendingModuleId_{-1};
+    bool isTransitioning_{false}; ///< Animation state flag.
+    int pendingModuleId_{-1};     ///< Module waiting for animation end.
 };
