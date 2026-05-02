@@ -12,8 +12,11 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QPainter>
 #include <QScrollBar>
 #include <QSplitter>
+#include <QStyle>
+#include <QStyleOption>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
@@ -48,8 +51,10 @@ void DuelTaskWindow::setupUI()
     duelHeader->setObjectName("duelHeader");
     duelHeader->setStyleSheet(R"(
         #duelHeader {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0f172a, stop:1 #334155);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: palette(alternate-base);
+            border-bottom: 1px solid palette(mid);
+            border-top-left-radius: 19px;
+            border-top-right-radius: 19px;
         }
     )");
 
@@ -58,13 +63,11 @@ void DuelTaskWindow::setupUI()
 
     labelTimer_ = new QLabel("TIME: 10:00");
     labelScore_ = new QLabel("WIN: +10 | LOSS: -5");
+    labelTimer_->setObjectName("labelTimer");
+    labelScore_->setObjectName("labelScore");
 
     labelTimer_->setFont(QFont("Outfit", 20, QFont::Black));
     labelScore_->setFont(QFont("Outfit", 12, QFont::Bold));
-
-    labelTimer_->setStyleSheet("color: #ffffff; background: transparent;");
-    labelScore_->setStyleSheet(
-        "color: #94a3b8; background: transparent; text-transform: uppercase; letter-spacing: 1px;");
 
     duelLayout->addWidget(labelTimer_);
     duelLayout->addStretch();
@@ -80,9 +83,9 @@ void DuelTaskWindow::setupUI()
     practiceEdit_->setFont(QFont("Inter", 12));
     practiceEdit_->setStyleSheet(R"(
         padding: 30px; 
-        background-color: #ffffff; 
-        border-right: 1px solid #e2e8f0;
-        color: #334155;
+        background-color: palette(base); 
+        border-right: 1px solid palette(mid);
+        color: palette(text);
         line-height: 1.6;
     )");
     practiceEdit_->installEventFilter(this);
@@ -99,8 +102,14 @@ void DuelTaskWindow::setupUI()
     codeLayout->addWidget(new QLabel("<\\> DUEL EDITOR"));
 
     codeEditor_ = new QTextEdit();
-    new CppHighlighter(codeEditor_->document());
     codeEditor_->setObjectName("codeEditor");
+    codeEditor_->setFont(QFont("Consolas", 12));
+
+    highlighter_ = std::make_unique<CppHighlighter>(codeEditor_->document());
+    if (themeService_)
+    {
+        highlighter_->setTheme(themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
     codeEditor_->setLineWrapMode(QTextEdit::WidgetWidth);
     QFont codeFont("Consolas", 13);
     codeEditor_->setFont(codeFont);
@@ -162,35 +171,79 @@ void DuelTaskWindow::setupUI()
     connect(btnExit_, &QPushButton::clicked, this, &DuelTaskWindow::onExitClicked);
 }
 
+void DuelTaskWindow::setThemeService(cppforge::services::ThemeService *service)
+{
+    themeService_ = service;
+    if (themeService_)
+    {
+        connect(themeService_, &cppforge::services::ThemeService::themeChanged, this,
+                [this](cppforge::services::Theme theme)
+                {
+                    if (highlighter_)
+                    {
+                        highlighter_->setTheme(theme == cppforge::services::Theme::Dark);
+                    }
+                    if (customTitleBar_)
+                    {
+                        QString iconPath = (theme == cppforge::services::Theme::Dark) ? ":/icons/main_logo_dark.ico"
+                                                                                      : ":/icons/main_logo.ico";
+                        customTitleBar_->setIcon(QIcon(iconPath));
+                    }
+                    setupStyles();
+                });
+
+        if (highlighter_)
+        {
+            highlighter_->setTheme(themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+        }
+
+        QString iconPath = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
+                               ? ":/icons/main_logo_dark.ico"
+                               : ":/icons/main_logo.ico";
+        if (customTitleBar_)
+        {
+            customTitleBar_->setIcon(QIcon(iconPath));
+        }
+        setupStyles();
+    }
+}
+
 void DuelTaskWindow::setupStyles()
 {
     setStyleSheet(R"(
-        #DuelEditorWindow { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+        #DuelEditorWindow { 
+            background-color: palette(window); 
+            border: 1px solid palette(mid); 
+            border-radius: 20px; 
+        }
         #editorFrame, #testFrame { 
-            background-color: white; 
-            border: 1px solid #e2e8f0; 
+            background-color: palette(base); 
+            border: 1px solid palette(mid); 
             border-radius: 16px;
         }
-        #codeEditor, #testOutput { background-color: transparent; border: none; padding: 10px; }
+        #codeEditor, #testOutput { background-color: transparent; border: none; padding: 10px; color: palette(text); }
         
         QPushButton#runButton { 
-            background-color: #ffffff; 
-            border: 1px solid #e2e8f0;
+            background-color: palette(base); 
+            border: 1px solid palette(mid);
             border-radius: 12px; 
             font-weight: 800; 
-            color: #475569;
+            color: palette(text);
         }
-        QPushButton#runButton:hover { background-color: #f1f5f9; border-color: #cbd5e1; }
+        QPushButton#runButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }
         
         QPushButton#submitButton { 
-            background-color: #3b82f6; 
+            background-color: palette(button); 
             border-radius: 12px; 
             font-weight: 800; 
-            border: none; 
-            color: white; 
+            border: 1px solid palette(mid); 
+            color: palette(button-text); 
         }
-        QPushButton#submitButton:hover { background-color: #2563eb; }
+        QPushButton#submitButton:hover { background-color: palette(highlight); color: palette(highlighted-text); }
         
+        #labelTimer { color: #ef4444; font-weight: 800; }
+        #labelScore { color: palette(window-text); font-weight: 800; }
+
         QPushButton#surrenderButton { 
             background-color: #ef4444; 
             color: white; 
@@ -205,12 +258,22 @@ void DuelTaskWindow::setupStyles()
             color: white; 
             border-radius: 12px; 
             font-weight: 800; 
-            border: none; 
+            border: 1px solid palette(mid); 
         }
         QPushButton#exitButton:hover { background-color: #475569; }
         
-        QLabel { font-weight: 800; color: #1e293b; font-size: 13px; }
+        QLabel { font-weight: 800; color: palette(text); font-size: 13px; }
+        #labelTimer { color: #ef4444; font-size: 24px; font-weight: bold; }
+        #labelScore { font-size: 14px; font-weight: bold; color: palette(text); }
     )");
+}
+
+void DuelTaskWindow::paintEvent(QPaintEvent *event)
+{
+    QStyleOption opt;
+    opt.initFrom(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
 
 void DuelTaskWindow::setTask(const cppforge::entities::CodingTask &task)
@@ -288,8 +351,8 @@ void DuelTaskWindow::onRunClicked()
                     if (result.getErrors().isEmpty())
                     {
                         testOutput_->append("<span style='color:#27ae60; font-weight:bold;'>Program Output:</span>");
-                        testOutput_->append("<pre style='background:#f4f4f4; padding:10px;'>" + result.getOutput() +
-                                            "</pre>");
+                        testOutput_->append("<pre style='background:transparent; padding:10px; color:palette(text);'>" +
+                                            result.getOutput() + "</pre>");
                     }
                     else
                     {
