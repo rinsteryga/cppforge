@@ -53,8 +53,51 @@ void AuthWindow::setupWindowProperties()
 
 void AuthWindow::setupStyles()
 {
-    setStyleSheet("#AuthWindow, #SignUpWindow { background-color: palette(window); border: 1px solid palette(mid); "
-                  "border-radius: 20px; }");
+    bool isDark = false;
+    if (themeService_)
+    {
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+
+    QString btnColor = isDark ? "#0e639c" : "#62639b";
+    QString btnHover = isDark ? "#1177bb" : "#f3e8ff";
+    QString btnText = "white";
+    QString hoverText = isDark ? "white" : "black";
+    QString linkColor = isDark ? "#3794ff" : "#4f46e5";
+
+    setStyleSheet(QString(R"(
+        #AuthWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }
+        
+        QPushButton#loginButton { 
+            background-color: %1; 
+            color: %3; 
+            border-radius: 12px; 
+            font-size: 24px; 
+            font-weight: bold; 
+            border: none; 
+        }
+        QPushButton#loginButton:hover { background-color: %2; color: %4; }
+        
+        QPushButton#createAccountButton { 
+            color: %5; 
+            font-size: 18px; 
+            background: transparent; 
+            border: none; 
+            border-bottom: 1px solid transparent; 
+            padding: 15px; 
+        }
+        QPushButton#createAccountButton:hover { border-bottom: 1px solid %5; }
+    )")
+                      .arg(btnColor)
+                      .arg(btnHover)
+                      .arg(btnText)
+                      .arg(hoverText)
+                      .arg(linkColor));
 }
 
 void AuthWindow::setupTitleBar()
@@ -162,7 +205,7 @@ void AuthWindow::setupInputFields()
     usernameInput_->setFixedSize(500, 65);
     usernameInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); "
                                   "padding: 18px 20px; border: 2px solid palette(mid); border-radius: 10px; "
-                                  "font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); }");
+                                  "font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; }");
 
     passwordInput_ = std::make_unique<QLineEdit>();
     passwordInput_->setPlaceholderText("Password");
@@ -170,7 +213,7 @@ void AuthWindow::setupInputFields()
     passwordInput_->setFixedSize(500, 65);
     passwordInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); "
                                   "padding: 18px 50px 18px 20px; border: 2px solid palette(mid); border-radius: "
-                                  "10px; font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); }");
+                                  "10px; font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; }");
 
     passwordToggleButton_ = std::make_unique<QPushButton>();
     passwordToggleButton_->setFixedSize(32, 32);
@@ -195,9 +238,7 @@ void AuthWindow::setupLoginButton()
     loginButton_ = std::make_unique<QPushButton>("Log in");
     loginButton_->setFixedSize(500, 85);
     loginButton_->setCursor(Qt::PointingHandCursor);
-    loginButton_->setStyleSheet("QPushButton { background-color: palette(button); color: palette(button-text); "
-                                "border-radius: 12px; font-size: 24px; font-weight: "
-                                "bold; } QPushButton:hover { background-color: palette(highlight); }");
+    loginButton_->setObjectName("loginButton");
 }
 
 void AuthWindow::setupCreateAccountLink()
@@ -205,9 +246,7 @@ void AuthWindow::setupCreateAccountLink()
     createAccountButton_ = std::make_unique<QPushButton>("New to cppforge? Create an account");
     createAccountButton_->setFlat(true);
     createAccountButton_->setCursor(Qt::PointingHandCursor);
-    createAccountButton_->setStyleSheet(
-        "QPushButton { color: palette(link); font-size: 18px; background: transparent; } "
-        "QPushButton:hover { text-decoration: underline; }");
+    createAccountButton_->setObjectName("createAccountButton");
 }
 
 void AuthWindow::setupLayout()
@@ -311,6 +350,10 @@ void AuthWindow::setThemeService(cppforge::services::ThemeService *service)
                 {
                     setupLogo();
                     setupStyles();
+                    if (customTitleBar_)
+                    {
+                        customTitleBar_->setThemeService(themeService_);
+                    }
                     if (signUpWindow_)
                     {
                         signUpWindow_->setThemeService(themeService_);
@@ -320,6 +363,10 @@ void AuthWindow::setThemeService(cppforge::services::ThemeService *service)
 
         setupLogo();
         setupStyles();
+        if (customTitleBar_)
+        {
+            customTitleBar_->setThemeService(themeService_);
+        }
         if (signUpWindow_)
         {
             signUpWindow_->setThemeService(themeService_);
