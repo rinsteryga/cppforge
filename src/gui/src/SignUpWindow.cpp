@@ -15,6 +15,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QScreen>
+#include <QSettings>
 #include <QSizePolicy>
 #include <QStyleOption>
 #include <QTimer>
@@ -89,8 +90,51 @@ void SignUpWindow::setupWindowProperties()
 
 void SignUpWindow::setupStyles()
 {
-    setStyleSheet(
-        "#SignUpWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }");
+    bool isDark = false;
+    if (themeService_)
+    {
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+
+    QString btnColor = isDark ? "#0e639c" : "#62639b";
+    QString btnHover = isDark ? "#1177bb" : "#f3e8ff";
+    QString btnText = "white";
+    QString hoverText = isDark ? "white" : "black";
+    QString linkColor = isDark ? "#3794ff" : "#4f46e5";
+
+    setStyleSheet(QString(R"(
+        #SignUpWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }
+        
+        QPushButton#signUpButton { 
+            background-color: %1; 
+            color: %3; 
+            border-radius: 12px; 
+            font-size: 24px; 
+            font-weight: bold; 
+            border: none; 
+        }
+        QPushButton#signUpButton:hover { background-color: %2; color: %4; }
+        
+        QPushButton#backToLoginButton { 
+            color: %5; 
+            background-color: transparent; 
+            border: none; 
+            border-bottom: 1px solid transparent; 
+            font-size: 18px; 
+            padding: 15px; 
+        }
+        QPushButton#backToLoginButton:hover { border-bottom: 1px solid %5; }
+    )")
+                      .arg(btnColor)
+                      .arg(btnHover)
+                      .arg(btnText)
+                      .arg(hoverText)
+                      .arg(linkColor));
 }
 
 void SignUpWindow::setupTitleBar()
@@ -161,7 +205,7 @@ void SignUpWindow::setupInputFields()
     usernameInput_->setStyleSheet(
         "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 18px 20px; border: 2px "
         "solid palette(mid); border-radius: 10px; "
-        "font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); outline: none; } "
+        "font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; outline: none; } "
         "QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     emailInput_ = std::make_unique<QLineEdit>();
@@ -171,7 +215,7 @@ void SignUpWindow::setupInputFields()
     emailInput_->setFont(inputFont);
     emailInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: "
                                "18px 20px; border: 2px solid palette(mid); border-radius: 10px; "
-                               "font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); outline: none; } "
+                               "font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; outline: none; } "
                                "QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     passwordInput_ = std::make_unique<QLineEdit>();
@@ -183,7 +227,7 @@ void SignUpWindow::setupInputFields()
     passwordInput_->setStyleSheet(
         "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 18px 50px 18px 20px; "
         "border: 2px solid palette(mid); border-radius: "
-        "10px; font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); outline: "
+        "10px; font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; outline: "
         "none; } QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     passwordToggleButton_ = std::make_unique<QPushButton>();
@@ -222,10 +266,7 @@ void SignUpWindow::setupSignUpButton()
     QFont buttonFont("Roboto", 22, QFont::Bold);
     signUpButton_->setFont(buttonFont);
     signUpButton_->setCursor(Qt::PointingHandCursor);
-    signUpButton_->setStyleSheet("QPushButton { background-color: palette(button); color: palette(button-text); "
-                                 "border-radius: 12px; font-size: 24px; font-weight: "
-                                 "bold; } QPushButton:hover { background-color: palette(highlight); } "
-                                 "QPushButton:pressed { background-color: palette(highlight); }");
+    signUpButton_->setObjectName("signUpButton");
 }
 
 void SignUpWindow::setupBackToLoginLink()
@@ -234,9 +275,7 @@ void SignUpWindow::setupBackToLoginLink()
     backToLoginButton_->setFlat(true);
     backToLoginButton_->setFont(QFont("Roboto", 16));
     backToLoginButton_->setCursor(Qt::PointingHandCursor);
-    backToLoginButton_->setStyleSheet("QPushButton { color: palette(link); background-color: transparent; border: "
-                                      "none; font-size: 18px; padding: 15px; } "
-                                      "QPushButton:hover { text-decoration: underline; }");
+    backToLoginButton_->setObjectName("backToLoginButton");
 }
 
 void SignUpWindow::setupLayout()
@@ -327,9 +366,17 @@ void SignUpWindow::setThemeService(cppforge::services::ThemeService *service)
                 {
                     setupLogo();
                     setupStyles();
+                    if (customTitleBar_)
+                    {
+                        customTitleBar_->setThemeService(themeService_);
+                    }
                     update();
                 });
         setupLogo();
         setupStyles();
+        if (customTitleBar_)
+        {
+            customTitleBar_->setThemeService(themeService_);
+        }
     }
 }
