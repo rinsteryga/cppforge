@@ -83,9 +83,14 @@ void SignUpWindow::setupWindowProperties()
     setWindowTitle("Sign Up - cppforge");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setAttribute(Qt::WA_TranslucentBackground);
     setObjectName("SignUpWindow");
-    setStyleSheet("#SignUpWindow { background-color: white; border: 1px solid #cccccc; }");
+    setupStyles();
+}
+
+void SignUpWindow::setupStyles()
+{
+    setStyleSheet(
+        "#SignUpWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }");
 }
 
 void SignUpWindow::setupTitleBar()
@@ -97,20 +102,31 @@ void SignUpWindow::setupTitleBar()
 
 void SignUpWindow::setupLogo()
 {
-    iconLabel_ = std::make_unique<QLabel>();
-    iconLabel_->setAlignment(Qt::AlignCenter);
-    iconLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-    QPixmap logoPixmap(":/icons/main_logo.ico");
-    if (!logoPixmap.isNull())
+    if (!iconLabel_)
     {
-        logoPixmap = logoPixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        iconLabel_->setPixmap(logoPixmap);
+        iconLabel_ = std::make_unique<QLabel>(this);
         iconLabel_->setFixedSize(200, 200);
+    }
+
+    QString logoPath = ":/icons/main_logo.ico";
+    if (themeService_ && themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
+    {
+        logoPath = ":/icons/main_logo_dark.ico";
+    }
+
+    QPixmap pixmap(logoPath);
+    if (pixmap.isNull())
+    {
+        showFallbackLogo();
     }
     else
     {
-        showFallbackLogo();
+        iconLabel_->setPixmap(pixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+    iconLabel_->setAlignment(Qt::AlignCenter);
+    if (customTitleBar_)
+    {
+        customTitleBar_->setIcon(QIcon(logoPath));
     }
 }
 
@@ -129,7 +145,7 @@ void SignUpWindow::setupTitle()
     QFont titleFont("Roboto", 32, QFont::Bold);
     titleLabel_->setFont(titleFont);
     titleLabel_->setAlignment(Qt::AlignCenter);
-    titleLabel_->setStyleSheet("color: #000000; padding: 10px;");
+    titleLabel_->setStyleSheet("color: palette(text); padding: 10px;");
     titleLabel_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
@@ -142,18 +158,21 @@ void SignUpWindow::setupInputFields()
 
     QFont inputFont("Roboto", 16);
     usernameInput_->setFont(inputFont);
-    usernameInput_->setStyleSheet("QLineEdit { padding: 18px 20px; border: 2px solid #cccccc; border-radius: 10px; "
-                                  "font-size: 18px; } QLineEdit:focus { border: 3px solid #4285f4; outline: none; } "
-                                  "QLineEdit::placeholder { font-size: 18px; color: #888888; }");
+    usernameInput_->setStyleSheet(
+        "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 18px 20px; border: 2px "
+        "solid palette(mid); border-radius: 10px; "
+        "font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); outline: none; } "
+        "QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     emailInput_ = std::make_unique<QLineEdit>();
     emailInput_->setPlaceholderText("Email address");
     emailInput_->setFixedHeight(65);
     emailInput_->setFixedWidth(500);
     emailInput_->setFont(inputFont);
-    emailInput_->setStyleSheet("QLineEdit { padding: 18px 20px; border: 2px solid #cccccc; border-radius: 10px; "
-                               "font-size: 18px; } QLineEdit:focus { border: 3px solid #4285f4; outline: none; } "
-                               "QLineEdit::placeholder { font-size: 18px; color: #888888; }");
+    emailInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: "
+                               "18px 20px; border: 2px solid palette(mid); border-radius: 10px; "
+                               "font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); outline: none; } "
+                               "QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     passwordInput_ = std::make_unique<QLineEdit>();
     passwordInput_->setPlaceholderText("Password");
@@ -161,9 +180,11 @@ void SignUpWindow::setupInputFields()
     passwordInput_->setFixedHeight(65);
     passwordInput_->setFixedWidth(500);
     passwordInput_->setFont(inputFont);
-    passwordInput_->setStyleSheet("QLineEdit { padding: 18px 50px 18px 20px; border: 2px solid #cccccc; border-radius: "
-                                  "10px; font-size: 18px; } QLineEdit:focus { border: 3px solid #4285f4; outline: "
-                                  "none; } QLineEdit::placeholder { font-size: 18px; color: #888888; }");
+    passwordInput_->setStyleSheet(
+        "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 18px 50px 18px 20px; "
+        "border: 2px solid palette(mid); border-radius: "
+        "10px; font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); outline: "
+        "none; } QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     passwordToggleButton_ = std::make_unique<QPushButton>();
     passwordToggleButton_->setFixedSize(32, 32);
@@ -201,9 +222,10 @@ void SignUpWindow::setupSignUpButton()
     QFont buttonFont("Roboto", 22, QFont::Bold);
     signUpButton_->setFont(buttonFont);
     signUpButton_->setCursor(Qt::PointingHandCursor);
-    signUpButton_->setStyleSheet(
-        "QPushButton { background-color: #62639b; color: white; border-radius: 12px; font-size: 24px; font-weight: "
-        "bold; } QPushButton:hover { background-color: #7677B3; } QPushButton:pressed { background-color: #4B4C76; }");
+    signUpButton_->setStyleSheet("QPushButton { background-color: palette(button); color: palette(button-text); "
+                                 "border-radius: 12px; font-size: 24px; font-weight: "
+                                 "bold; } QPushButton:hover { background-color: palette(highlight); } "
+                                 "QPushButton:pressed { background-color: palette(highlight); }");
 }
 
 void SignUpWindow::setupBackToLoginLink()
@@ -212,9 +234,9 @@ void SignUpWindow::setupBackToLoginLink()
     backToLoginButton_->setFlat(true);
     backToLoginButton_->setFont(QFont("Roboto", 16));
     backToLoginButton_->setCursor(Qt::PointingHandCursor);
-    backToLoginButton_->setStyleSheet(
-        "QPushButton { color: #4285f4; background-color: transparent; border: none; font-size: 18px; padding: 15px; } "
-        "QPushButton:hover { color: #3367d6; text-decoration: underline; }");
+    backToLoginButton_->setStyleSheet("QPushButton { color: palette(link); background-color: transparent; border: "
+                                      "none; font-size: 18px; padding: 15px; } "
+                                      "QPushButton:hover { text-decoration: underline; }");
 }
 
 void SignUpWindow::setupLayout()
@@ -293,4 +315,21 @@ void SignUpWindow::onBackToLoginClicked()
     WindowStateManager::instance().captureState(this);
     this->hide();
     emit switchToLogin();
+}
+
+void SignUpWindow::setThemeService(cppforge::services::ThemeService *service)
+{
+    themeService_ = service;
+    if (themeService_)
+    {
+        connect(themeService_, &cppforge::services::ThemeService::themeChanged, this,
+                [this](cppforge::services::Theme)
+                {
+                    setupLogo();
+                    setupStyles();
+                    update();
+                });
+        setupLogo();
+        setupStyles();
+    }
 }

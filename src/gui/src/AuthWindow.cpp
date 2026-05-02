@@ -47,9 +47,14 @@ void AuthWindow::setupWindowProperties()
     setWindowTitle("cppforge Log in");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setAttribute(Qt::WA_TranslucentBackground);
     setObjectName("AuthWindow");
-    setStyleSheet("#AuthWindow { background-color: white; border: 1px solid #cccccc; }");
+    setupStyles();
+}
+
+void AuthWindow::setupStyles()
+{
+    setStyleSheet("#AuthWindow, #SignUpWindow { background-color: palette(window); border: 1px solid palette(mid); "
+                  "border-radius: 20px; }");
 }
 
 void AuthWindow::setupTitleBar()
@@ -105,18 +110,31 @@ void AuthWindow::fadeIn()
 
 void AuthWindow::setupLogo()
 {
-    iconLabel_ = std::make_unique<QLabel>();
-    iconLabel_->setAlignment(Qt::AlignCenter);
-    QPixmap logoPixmap(":/icons/main_logo.ico");
-    if (!logoPixmap.isNull())
+    if (!iconLabel_)
     {
-        logoPixmap = logoPixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        iconLabel_->setPixmap(logoPixmap);
-        iconLabel_->setFixedSize(200, 165);
+        iconLabel_ = std::make_unique<QLabel>(this);
+        iconLabel_->setFixedSize(200, 200);
+    }
+
+    QString logoPath = ":/icons/main_logo.ico";
+    if (themeService_ && themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
+    {
+        logoPath = ":/icons/main_logo_dark.ico";
+    }
+
+    QPixmap pixmap(logoPath);
+    if (pixmap.isNull())
+    {
+        showFallbackLogo();
     }
     else
     {
-        showFallbackLogo();
+        iconLabel_->setPixmap(pixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+    iconLabel_->setAlignment(Qt::AlignCenter);
+    if (customTitleBar_)
+    {
+        customTitleBar_->setIcon(QIcon(logoPath));
     }
 }
 
@@ -134,7 +152,7 @@ void AuthWindow::setupTitle()
     titleLabel_ = std::make_unique<QLabel>("Log Into cppforge");
     titleLabel_->setFont(QFont("Roboto", 32, QFont::Bold));
     titleLabel_->setAlignment(Qt::AlignCenter);
-    titleLabel_->setStyleSheet("color: #000000; padding: 10px;");
+    titleLabel_->setStyleSheet("color: palette(text); padding: 10px;");
 }
 
 void AuthWindow::setupInputFields()
@@ -142,15 +160,17 @@ void AuthWindow::setupInputFields()
     usernameInput_ = std::make_unique<QLineEdit>();
     usernameInput_->setPlaceholderText("Username or email address");
     usernameInput_->setFixedSize(500, 65);
-    usernameInput_->setStyleSheet("QLineEdit { padding: 18px 20px; border: 2px solid #cccccc; border-radius: 10px; "
-                                  "font-size: 18px; } QLineEdit:focus { border: 3px solid #4285f4; }");
+    usernameInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); "
+                                  "padding: 18px 20px; border: 2px solid palette(mid); border-radius: 10px; "
+                                  "font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); }");
 
     passwordInput_ = std::make_unique<QLineEdit>();
     passwordInput_->setPlaceholderText("Password");
     passwordInput_->setEchoMode(QLineEdit::Password);
     passwordInput_->setFixedSize(500, 65);
-    passwordInput_->setStyleSheet("QLineEdit { padding: 18px 50px 18px 20px; border: 2px solid #cccccc; border-radius: "
-                                  "10px; font-size: 18px; } QLineEdit:focus { border: 3px solid #4285f4; }");
+    passwordInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); "
+                                  "padding: 18px 50px 18px 20px; border: 2px solid palette(mid); border-radius: "
+                                  "10px; font-size: 18px; } QLineEdit:focus { border: 3px solid palette(link); }");
 
     passwordToggleButton_ = std::make_unique<QPushButton>();
     passwordToggleButton_->setFixedSize(32, 32);
@@ -175,9 +195,9 @@ void AuthWindow::setupLoginButton()
     loginButton_ = std::make_unique<QPushButton>("Log in");
     loginButton_->setFixedSize(500, 85);
     loginButton_->setCursor(Qt::PointingHandCursor);
-    loginButton_->setStyleSheet(
-        "QPushButton { background-color: #62639b; color: white; border-radius: 12px; font-size: 24px; font-weight: "
-        "bold; } QPushButton:hover { background-color: #7677B3; }");
+    loginButton_->setStyleSheet("QPushButton { background-color: palette(button); color: palette(button-text); "
+                                "border-radius: 12px; font-size: 24px; font-weight: "
+                                "bold; } QPushButton:hover { background-color: palette(highlight); }");
 }
 
 void AuthWindow::setupCreateAccountLink()
@@ -185,8 +205,9 @@ void AuthWindow::setupCreateAccountLink()
     createAccountButton_ = std::make_unique<QPushButton>("New to cppforge? Create an account");
     createAccountButton_->setFlat(true);
     createAccountButton_->setCursor(Qt::PointingHandCursor);
-    createAccountButton_->setStyleSheet("QPushButton { color: #4285f4; font-size: 18px; background: transparent; } "
-                                        "QPushButton:hover { text-decoration: underline; }");
+    createAccountButton_->setStyleSheet(
+        "QPushButton { color: palette(link); font-size: 18px; background: transparent; } "
+        "QPushButton:hover { text-decoration: underline; }");
 }
 
 void AuthWindow::setupLayout()
@@ -263,6 +284,10 @@ void AuthWindow::openSignUpWindow()
     if (!signUpWindow_)
     {
         signUpWindow_ = std::make_unique<SignUpWindow>(authManager_);
+        if (themeService_)
+        {
+            signUpWindow_->setThemeService(themeService_);
+        }
         connect(signUpWindow_.get(), &SignUpWindow::switchToLogin,
                 [this]()
                 {
@@ -274,4 +299,30 @@ void AuthWindow::openSignUpWindow()
     this->hide();
     WindowStateManager::instance().applyState(signUpWindow_.get(), QSize(1280, 900));
     signUpWindow_->fadeIn();
+}
+
+void AuthWindow::setThemeService(cppforge::services::ThemeService *service)
+{
+    themeService_ = service;
+    if (themeService_)
+    {
+        connect(themeService_, &cppforge::services::ThemeService::themeChanged, this,
+                [this](cppforge::services::Theme)
+                {
+                    setupLogo();
+                    setupStyles();
+                    if (signUpWindow_)
+                    {
+                        signUpWindow_->setThemeService(themeService_);
+                    }
+                    update();
+                });
+
+        setupLogo();
+        setupStyles();
+        if (signUpWindow_)
+        {
+            signUpWindow_->setThemeService(themeService_);
+        }
+    }
 }
