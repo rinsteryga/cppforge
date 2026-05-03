@@ -27,9 +27,7 @@ DuelTaskWindow::DuelTaskWindow(cppforge::services::DuelManager *manager, QWidget
       analyzer_(std::make_unique<cppforge::services::StaticAnalyzer>())
 {
     setupUI();
-
     setupStyles();
-
     duelTimer_ = new QTimer(this);
     connect(duelTimer_, &QTimer::timeout, this, &DuelTaskWindow::onTick);
 }
@@ -194,7 +192,7 @@ void DuelTaskWindow::setThemeService(cppforge::services::ThemeService *service)
                         customTitleBar_->setIcon(QIcon(iconPath));
                         customTitleBar_->setThemeService(themeService_);
                     }
-                    setupStyles();
+                    setupStyles(theme == cppforge::services::Theme::Dark);
                 });
 
         if (highlighter_)
@@ -210,29 +208,20 @@ void DuelTaskWindow::setThemeService(cppforge::services::ThemeService *service)
             customTitleBar_->setIcon(QIcon(iconPath));
             customTitleBar_->setThemeService(themeService_);
         }
-        setupStyles();
+        setupStyles(themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
     }
 }
 
-void DuelTaskWindow::setupStyles()
+void DuelTaskWindow::setupStyles(std::optional<bool> isDarkOverride)
 {
-    bool isDark = false;
-    if (themeService_)
-    {
-        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
-    }
-    else
-    {
-        QSettings settings("CppForge", "StudyApp");
-        isDark = (settings.value("app/theme", 0).toInt() == 1);
-    }
+    bool isDark = (palette().color(QPalette::Window).lightness() < 128);
 
     QString accentColor = isDark ? "#0e639c" : "#62639b";
-    QString hoverColor = isDark ? "#0e639c" : "#f3e8ff";
-    QString hoverBorder = isDark ? "#3b82f6" : "#8b5cf6";
+    QString hoverColor = isDark ? "#1177bb" : "#f3e8ff";
     QString hoverText = isDark ? "white" : "black";
 
-    QString cssStyle = R"(
+    QString cssStyle =
+        R"(
         #DuelEditorWindow { 
             background-color: palette(window); 
             border: 1px solid palette(mid); 
@@ -252,19 +241,21 @@ void DuelTaskWindow::setupStyles()
             font-weight: 800; 
             color: palette(text);
         }
-        QPushButton#runButton:hover { border-color: )" +
-                       hoverBorder + R"(; background-color: palette(alternate-base); }
+        QPushButton#runButton:hover { background-color: )" +
+        hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" + hoverColor +
+        R"( !important; }
         
         QPushButton#submitButton { 
             background-color: )" +
-                       accentColor + R"(; 
+        accentColor + R"(; 
             border-radius: 12px; 
             font-weight: 800; 
             border: none; 
             color: white; 
         }
         QPushButton#submitButton:hover { background-color: )" +
-                       hoverColor + R"(; color: )" + hoverText + R"(; }
+        hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" + hoverColor +
+        R"( !important; }
         
         #labelTimer { color: #ef4444; font-weight: 800; }
         #labelScore { color: palette(window-text); font-weight: 800; }
