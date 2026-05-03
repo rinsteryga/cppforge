@@ -108,7 +108,6 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
     if (finalPath.isEmpty() || finalPath == "NULL")
     {
         QDir imagesDir(":/images");
-        qDebug() << "Available resource images:" << imagesDir.entryList(QDir::Files);
         QStringList filters;
         filters << "default_avatar*.png";
         QStringList availableAvatars = imagesDir.entryList(filters, QDir::Files);
@@ -124,8 +123,6 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         {
             finalPath = ":/images/default_avatar1.png";
         }
-
-        qDebug() << "Assigned random avatar from resources:" << finalPath;
 
         if (userService_)
         {
@@ -196,12 +193,10 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
             bool earned = ach.getDateEarned().time_since_epoch().count() > 0;
             QString iconPath = ach.getIconPath().trimmed();
-            qDebug() << "[Achievement] Attempting to load icon for" << ach.getName() << "path: [" << iconPath << "]";
             QPixmap pix(iconPath);
 
             if (pix.isNull())
             {
-                qDebug() << "[Achievement] Icon NOT FOUND for" << ach.getName() << "at path:" << iconPath;
                 icon->setText("🏆");
                 icon->setStyleSheet(earned ? "background-color: palette(alternate-base); border: 1px solid "
                                              "palette(mid); border-radius: 8px; font-size: 24px;"
@@ -624,7 +619,6 @@ void ProfilePage::updateAvatarDisplay(const QString &path)
     QPixmap pix(path);
     if (pix.isNull())
     {
-        qDebug() << "[Avatar] Failed to load from:" << path;
         avatarLabel->setText("👤");
         avatarLabel->setAlignment(Qt::AlignCenter);
         avatarLabel->setStyleSheet("background-color: palette(button); border-radius: 100px;");
