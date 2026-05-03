@@ -194,6 +194,10 @@ void MainWindow::setThemeService(cppforge::services::ThemeService *service)
     {
         profilePage->setThemeService(service);
     }
+    if (duelPage)
+    {
+        duelPage->setThemeService(service);
+    }
 }
 
 void MainWindow::loadAllModulesProgress()
@@ -664,16 +668,7 @@ void MainWindow::setupUI()
 
 void MainWindow::setupStyles()
 {
-    bool isDark = false;
-    if (m_themeService)
-    {
-        isDark = (m_themeService->getCurrentTheme() == cppforge::services::Theme::Dark);
-    }
-    else
-    {
-        QSettings settings("CppForge", "StudyApp");
-        isDark = (settings.value("app/theme", 0).toInt() == 1);
-    }
+    bool isDark = (palette().color(QPalette::Window).lightness() < 128);
 
     QString hoverColor, accentColor;
     QString hoverText = "white";
