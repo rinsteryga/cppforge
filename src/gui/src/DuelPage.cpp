@@ -208,22 +208,17 @@ QFrame *DuelPage::createActionPanel()
     layout->addStretch();
 
     connect(m_btnCreateLobby, &QPushButton::clicked, this, &DuelPage::onCreateLobbyClicked);
-
     connect(m_btnJoinLobby, &QPushButton::clicked, this, &DuelPage::onJoinLobbyClicked);
 
     connect(m_btnStartDuel, &QPushButton::clicked, this,
             [this]()
             {
-                qDebug() << "[UI] Duel start button clicked";
-
                 if (m_duelManager)
                 {
-                    qDebug() << "[UI] Requesting random task via DuelManager...";
                     m_duelManager->startRandomDuel();
                 }
                 else
                 {
-                    qCritical() << "[UI] CRITICAL ERROR: m_duelManager not initialized!";
                     QMessageBox::warning(this, "Error", "Connection to duel manager lost. Please recreate the lobby.");
                 }
             });
