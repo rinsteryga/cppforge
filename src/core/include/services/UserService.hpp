@@ -5,7 +5,6 @@
 #include "../repositories/IUserRepository.hpp"
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 
 namespace cppforge::services
@@ -33,6 +32,13 @@ namespace cppforge::services
          * @return An optional containing the User if found.
          */
         std::optional<entities::User> getUser(const QString &username) const;
+
+        /**
+         * @brief Retrieves a full User entity by their unique ID.
+         * @param id The ID to search for.
+         * @return An optional containing the User if found.
+         */
+        std::optional<entities::User> findById(uint64_t userId) const;
 
         /**
          * @brief Retrieves the total number of unique coding tasks solved by a user.
@@ -63,11 +69,49 @@ namespace cppforge::services
         int getStreak(uint64_t userId) const;
 
         /**
+         * @brief Updates the user's avatar path.
+         * @param userId The ID of the user to update.
+         * @param avatarPath The new path to the avatar image.
+         */
+        void updateAvatar(uint64_t userId, const QString &avatarPath);
+
+        /**
+         * @brief Saves or updates the progression state of a lesson.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param lessonId The ID of the lesson.
+         * @param isCompleted True if the user successfully completed the lesson.
+         * @return True if saved successfully.
+         */
+        bool saveLessonProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted);
+
+        /**
+         * @brief Records a user's code submission for a task.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param taskId The ID of the coding task.
+         * @param code The source code submitted.
+         * @param isSuccess True if the submission passed all tests.
+         * @return True if saved successfully.
+         */
+        bool saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code, bool isSuccess);
+
+        /**
          * @brief Retrieves the total number of submissions made by a user.
          * @param userId The ID of the user.
          * @return The total submission count.
          */
         int getTotalSubmissionsCount(uint64_t userId) const;
+
+        /**
+         * @brief Records a user's duel stats based on a win or loss.
+         *
+         * @param userId The ID of the user.
+         * @param isWin True if the user won the duel, false otherwise.
+         * @param score Optional score earned in the duel. If not provided, default values (+10/-5) are used.
+         * @return True if the update was successfully persisted.
+         */
+        bool recordDuelResult(uint64_t userId, bool isWin, std::optional<int> score = std::nullopt);
 
         using Activity = repositories::IUserRepository::Activity;
 

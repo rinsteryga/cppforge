@@ -39,7 +39,9 @@ namespace cppforge::services
         QTemporaryFile sourceFile(QDir::tempPath() + "/cppforge_XXXXXX.cpp");
         sourceFile.setAutoRemove(false);
         if (!sourceFile.open())
-            throw std::runtime_error("Не удалось создать временный файл");
+        {
+            throw std::runtime_error("can not create temporary file");
+        }
 
         sourceFile.write(code.toUtf8());
         QString sourcePath = sourceFile.fileName();
@@ -100,9 +102,10 @@ namespace cppforge::services
 
                 if (process.waitForFinished(2000))
                 {
-                    QString output = QString::fromLocal8Bit(process.readAll().trimmed());
+                    QString output = QString::fromLocal8Bit(process.readAll().trimmed()).replace("\r\n", "\n");
+                    QString expected = test.getExpectedOutput().trimmed().replace("\r\n", "\n");
 
-                    if (output == test.getExpectedOutput().trimmed())
+                    if (output == expected)
                     {
                         passedCount++;
                     }

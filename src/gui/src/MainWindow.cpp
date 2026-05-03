@@ -1,12 +1,19 @@
 #include "MainWindow.hpp"
 
+#include "../../core/include/services/AchievementService.hpp"
+#include "../../core/include/services/CourseService.hpp"
+#include "../../core/include/services/UserService.hpp"
 #include "AchievementNotification.hpp"
 #include "CustomTitleBar.hpp"
+#include "DuelTaskWindow.hpp"
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
+#include "WindowStateManager.hpp"
 #include "services/AchievementService.hpp"
+#include "services/DuelManager.hpp"
 
+#include <QApplication>
 #include <QDebug>
 #include <QFont>
 #include <QFrame>
@@ -42,7 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupUI();
     setWindowOpacity(0.0);
 
-    QTimer::singleShot(50, this, &MainWindow::centerWindow);
+    WindowStateManager::instance().applyGeometry(this, QSize(1400, 950));
+
     QTimer::singleShot(100, this, &MainWindow::fadeIn);
 }
 
@@ -53,13 +61,12 @@ bool MainWindow::validateUserExists()
     if (m_currentUserId <= 0)
         return false;
 
-    QSqlQuery query;
-    query.prepare("SELECT id FROM users WHERE id = :id");
-    query.bindValue(":id", m_currentUserId);
+    if (!m_userService)
+        return false;
 
-    if (!query.exec() || !query.next())
+    if (!m_userService->findById(m_currentUserId).has_value())
     {
-        qDebug() << "!!! КРИТИЧЕСКАЯ ОШИБКА: Пользователь удален из БД. Сброс сессии.";
+        qDebug() << "!!! CRITICAL ERROR: User removed from DB. Resetting session.";
 
         QSettings settings("CppForge", "StudyApp");
         settings.remove("auth/user_id");
@@ -79,6 +86,35 @@ void MainWindow::setUserId(int id)
     {
         this->close();
         return;
+    }
+
+    if (m_userService)
+    {
+        auto userOpt = m_userService->findById(id);
+        if (userOpt)
+        {
+            m_currentUsername = userOpt->getUsername();
+            QString avatar = userOpt->getAvatarPath();
+
+            if (profilePage)
+            {
+                profilePage->setUserData(id, m_currentUsername, avatar);
+            }
+            if (duelPage)
+            {
+                duelPage->setUserId(id);
+                duelPage->setUserService(m_userService);
+
+                double winrate = 0.0;
+                int total = userOpt->getDuelWins() + userOpt->getDuelLosses();
+                if (total > 0)
+                {
+                    winrate = (static_cast<double>(userOpt->getDuelWins()) / total) * 100.0;
+                }
+
+                duelPage->updateUserStats(m_currentUsername, userOpt->getDuelPoints(), winrate, avatar);
+            }
+        }
     }
 
     loadAllModulesProgress();
@@ -103,30 +139,77 @@ void MainWindow::setAchievementService(cppforge::services::AchievementService *s
     }
 }
 
+void MainWindow::setCourseService(cppforge::services::CourseService *service)
+{
+    m_courseService = service;
+}
+
+void MainWindow::setThemeService(cppforge::services::ThemeService *service)
+{
+    m_themeService = service;
+    if (m_themeService)
+    {
+        connect(
+            m_themeService, &cppforge::services::ThemeService::themeChanged, this,
+            [this](cppforge::services::Theme theme)
+            {
+                QString iconPath =
+                    (theme == cppforge::services::Theme::Dark) ? ":/icons/main_logo_dark.ico" : ":/icons/main_logo.ico";
+                if (customTitleBar_)
+                {
+                    customTitleBar_->setIcon(QIcon(iconPath));
+                    customTitleBar_->setThemeService(m_themeService);
+                }
+                if (sideBarLogo_)
+                {
+                    QPixmap pix(iconPath);
+                    if (!pix.isNull())
+                    {
+                        sideBarLogo_->setPixmap(pix.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    }
+                }
+                setupStyles();
+            });
+
+        QString initIcon = (m_themeService->getCurrentTheme() == cppforge::services::Theme::Dark)
+                               ? ":/icons/main_logo_dark.ico"
+                               : ":/icons/main_logo.ico";
+
+        if (customTitleBar_)
+        {
+            customTitleBar_->setIcon(QIcon(initIcon));
+            customTitleBar_->setThemeService(m_themeService);
+        }
+        if (sideBarLogo_)
+        {
+            QPixmap pix(initIcon);
+            if (!pix.isNull())
+            {
+                sideBarLogo_->setPixmap(pix.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            }
+        }
+    }
+
+    if (profilePage)
+    {
+        profilePage->setThemeService(service);
+    }
+    if (duelPage)
+    {
+        duelPage->setThemeService(service);
+    }
+}
+
 void MainWindow::loadAllModulesProgress()
 {
-    if (m_currentUserId == -1 || moduleProgressBars.isEmpty())
+    if (m_currentUserId == -1 || moduleProgressBars.isEmpty() || !m_courseService)
         return;
 
-    for (int i = 1; i <= 14; ++i)
+    std::vector<int> progresses = m_courseService->getAllModulesProgress(m_currentUserId);
+
+    for (int i = 0; i < progresses.size(); ++i)
     {
-        QSqlQuery query;
-        query.prepare(R"(
-            SELECT 
-                (SELECT COUNT(*) FROM user_progress 
-                 WHERE user_id = :uid AND module_id = :mid AND is_completed = TRUE) * 100 / 
-                NULLIF((SELECT COUNT(*) FROM lessons WHERE module_id = :mid), 0)
-        )");
-
-        query.bindValue(":uid", m_currentUserId);
-        query.bindValue(":mid", i);
-
-        int progressValue = 0;
-        if (query.exec() && query.next())
-        {
-            progressValue = query.value(0).toInt();
-        }
-        updateModuleProgress(i, progressValue);
+        updateModuleProgress(i + 1, progresses[i]);
     }
 }
 
@@ -136,7 +219,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
         return;
 
     moduleProgressBars[moduleId - 1]->setValue(progress);
-    moduleProgressLabels[moduleId - 1]->setText(QString("%1% выполнено").arg(progress));
+    moduleProgressLabels[moduleId - 1]->setText(QString("%1% completed").arg(progress));
 
     if (progress == 100 && moduleId < (int)moduleButtons.size())
     {
@@ -144,7 +227,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
         if (nextBtn && !nextBtn->isEnabled())
         {
             nextBtn->setEnabled(true);
-            nextBtn->setText("Начать обучение");
+            nextBtn->setText("Start Learning");
             nextBtn->setStyleSheet("");
             disconnect(nextBtn, &QPushButton::clicked, nullptr, nullptr);
             connect(nextBtn, &QPushButton::clicked, this, &MainWindow::onModuleButtonClicked);
@@ -155,7 +238,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
 void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
-    this->show();
+    WindowStateManager::instance().applyState(this, QSize(1400, 950));
     loadAllModulesProgress();
 
     if (m_currentOpenModuleId != -1)
@@ -193,13 +276,14 @@ void MainWindow::showEvent(QShowEvent *event)
 
 void MainWindow::centerWindow()
 {
-    QScreen *screen = QGuiApplication::primaryScreen();
+    QScreen *screen = QGuiApplication::screenAt(QCursor::pos());
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+
     if (screen)
     {
-        QRect availableGeometry = screen->availableGeometry();
-        int x = availableGeometry.x() + (availableGeometry.width() - width()) / 2;
-        int y = availableGeometry.y() + (availableGeometry.height() - height()) / 2;
-        move(x, y);
+        QRect adjRect = screen->availableGeometry();
+        move(adjRect.center() - rect().center());
     }
 }
 
@@ -235,14 +319,33 @@ void MainWindow::fadeOut()
                     if (!taskWindow_)
                     {
                         taskWindow_ = std::make_unique<TaskWindow>();
+                        if (taskWindow_)
+                        {
+                            taskWindow_->setUserService(m_userService);
+                            taskWindow_->setCourseService(m_courseService);
+                            taskWindow_->setThemeService(m_themeService);
+                        }
                         connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this,
                                 &MainWindow::updateModuleProgress);
                         connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
+                        connect(taskWindow_.get(), &TaskWindow::customAchievementUnlocked, this,
+                                [this](const QString &name)
+                                {
+                                    if (m_achievementService && m_userService && m_currentUserId > 0)
+                                    {
+                                        auto userOpt = m_userService->findById(m_currentUserId);
+                                        if (userOpt)
+                                        {
+                                            m_achievementService->awardCustomEvent(*userOpt, name);
+                                        }
+                                    }
+                                });
                     }
                     taskWindow_->setUserId(m_currentUserId);
                     taskWindow_->loadModule(pendingModuleId_);
+                    WindowStateManager::instance().captureState(this);
                     this->hide();
-                    taskWindow_->show();
+                    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1300, 900));
                     taskWindow_->fadeIn();
                     pendingModuleId_ = -1;
                     isTransitioning_ = false;
@@ -254,10 +357,10 @@ void MainWindow::fadeOut()
 void MainWindow::setupWindowProperties()
 {
     setMinimumSize(1100, 800);
-    resize(1280, 900);
+    resize(1400, 950);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
-    setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
     setAttribute(Qt::WA_TranslucentBackground, false);
     setObjectName("MainWindow");
 }
@@ -273,7 +376,7 @@ void MainWindow::setupLeftPanel()
 {
     sideBar = std::make_unique<QFrame>(this);
     sideBar->setObjectName("sideBar");
-    sideBar->setFixedWidth(220);
+    sideBar->setFixedWidth(240);
 
     auto layout = new QVBoxLayout(sideBar.get());
     layout->setContentsMargins(20, 40, 20, 30);
@@ -284,30 +387,34 @@ void MainWindow::setupLeftPanel()
     logoContainer->setStyleSheet("background: transparent;");
     auto logoLayout = new QVBoxLayout(logoContainer);
 
-    auto logoIcon = new QLabel();
-    logoIcon->setAlignment(Qt::AlignCenter);
-    logoIcon->setStyleSheet("background: transparent;");
+    sideBarLogo_ = new QLabel();
+    sideBarLogo_->setAlignment(Qt::AlignCenter);
+    sideBarLogo_->setStyleSheet("background: transparent;");
 
-    QPixmap logoPixmap(":/icons/main_logo.ico");
+    QString logoPath = ":/icons/main_logo.ico";
+    if (m_themeService && m_themeService->getCurrentTheme() == cppforge::services::Theme::Dark)
+        logoPath = ":/icons/main_logo_dark.ico";
+
+    QPixmap logoPixmap(logoPath);
     if (!logoPixmap.isNull())
-        logoIcon->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        sideBarLogo_->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
-    logoIcon->setFixedSize(100, 100);
-    logoLayout->addWidget(logoIcon);
+    sideBarLogo_->setFixedSize(100, 100);
+    logoLayout->addWidget(sideBarLogo_);
     layout->addWidget(logoContainer, 0, Qt::AlignCenter);
     layout->addSpacing(20);
 
-    learnBtn = new QPushButton("Учиться");
-    ratingBtn = new QPushButton("Дуэль");
-    profileBtn = new QPushButton("Профиль");
-    logoutBtn = new QPushButton("Выйти");
+    learnBtn = new QPushButton("Learn");
+    ratingBtn = new QPushButton("Duel");
+    profileBtn = new QPushButton("Profile");
+    logoutBtn = new QPushButton("Logout");
 
     QFont btnFont("Roboto", 13, QFont::Medium);
     for (auto btn : {learnBtn, ratingBtn, profileBtn, logoutBtn})
     {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
-        btn->setFixedHeight(48);
+        btn->setFixedHeight(52);
         btn->setObjectName("navButton");
     }
 
@@ -325,6 +432,15 @@ void MainWindow::setupLeftPanel()
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
     connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
+
+    connect(ratingBtn, &QPushButton::clicked, this,
+            [this]()
+            {
+                if (duelPage)
+                {
+                    contentStack->setCurrentWidget(duelPage);
+                }
+            });
 }
 
 void MainWindow::setupCenterPanel()
@@ -339,10 +455,10 @@ void MainWindow::setupCenterPanel()
     auto eLayout = new QVBoxLayout(eventCard.get());
     eLayout->setContentsMargins(25, 25, 25, 25);
 
-    auto eventTitle = new QLabel("События");
+    auto eventTitle = new QLabel("Events");
     eventTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     eLayout->addWidget(eventTitle);
-    eLayout->addWidget(new QLabel("Нет предстоящих событий"));
+    eLayout->addWidget(new QLabel("No upcoming events"));
     eLayout->addStretch();
 
     dailyTaskCard = std::make_unique<QFrame>();
@@ -350,7 +466,7 @@ void MainWindow::setupCenterPanel()
     auto dLayout = new QVBoxLayout(dailyTaskCard.get());
     dLayout->setContentsMargins(25, 25, 25, 25);
 
-    auto dailyTitle = new QLabel("Задание дня");
+    auto dailyTitle = new QLabel("Daily Task");
     dailyTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     dLayout->addWidget(dailyTitle);
 
@@ -383,20 +499,20 @@ void MainWindow::setupRightPanel()
         auto mLayout = new QVBoxLayout(moduleCard.get());
         mLayout->setContentsMargins(20, 20, 20, 20);
 
-        auto mTitle = new QLabel(QString("Модуль %1").arg(i));
+        auto mTitle = new QLabel(QString("Module %1").arg(i));
         mTitle->setFont(QFont("Roboto", 15, QFont::Bold));
 
         auto progress = new QProgressBar();
         progress->setValue(0);
         progress->setFixedHeight(16);
 
-        auto progressLabel = new QLabel("0% выполнено");
+        auto progressLabel = new QLabel("0% completed");
         progressLabel->setFont(QFont("Roboto", 12));
 
         bool isLocked = (i != 1);
-        auto button = new QPushButton(isLocked ? "Заблокировано" : "Начать обучение");
+        auto button = new QPushButton(isLocked ? "Locked" : "Start Learning");
         button->setProperty("moduleId", i);
-        button->setFixedHeight(42);
+        button->setFixedHeight(45);
         button->setCursor(Qt::PointingHandCursor);
         button->setEnabled(!isLocked);
 
@@ -444,13 +560,74 @@ void MainWindow::setupUI()
 
     contentStack = std::make_unique<QStackedWidget>();
     profilePage = new ProfilePage(this);
+    connect(profilePage, &ProfilePage::secretTaskTriggered, this, &MainWindow::onSecretTaskTriggered);
+    connect(profilePage, &ProfilePage::avatarChanged, this,
+            [this](const QString &path)
+            {
+                if (duelPage)
+                {
+                    auto userOpt = m_userService->getUser(m_currentUsername);
+                    if (userOpt)
+                    {
+                        double winrate = 0.0;
+                        int total = userOpt->getDuelWins() + userOpt->getDuelLosses();
+                        if (total > 0)
+                        {
+                            winrate = (static_cast<double>(userOpt->getDuelWins()) / total) * 100.0;
+                        }
+                        duelPage->updateUserStats(m_currentUsername, userOpt->getDuelPoints(), winrate, path);
+                    }
+                }
+            });
+
     learningPage = new QWidget();
+    duelPage = new DuelPage();
+    duelPage->setUserId(m_currentUserId);
+    duelPage->setUserService(m_userService);
+    connect(duelPage, &DuelPage::startDuelSession, this,
+            [this](const cppforge::entities::CodingTask &task)
+            {
+                auto manager = duelPage->getDuelManager();
+
+                manager->sendIdentity(m_currentUsername);
+
+                m_duelTaskWindow = new DuelTaskWindow(manager);
+                m_duelTaskWindow->setThemeService(m_themeService);
+
+                m_duelTaskWindow->setTask(task);
+
+                m_duelTaskWindow->setLocalNickname(m_currentUsername);
+
+                m_duelTaskWindow->setAttribute(Qt::WA_DeleteOnClose);
+
+                connect(manager, &cppforge::services::DuelManager::duelFinished, m_duelTaskWindow,
+                        &DuelTaskWindow::showFinalResult);
+
+                connect(m_duelTaskWindow, &DuelTaskWindow::sessionClosed, this,
+                        [this]()
+                        {
+                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
+                            this->fadeIn();
+                        });
+
+                connect(m_duelTaskWindow, &QWidget::destroyed, this,
+                        [this]()
+                        {
+                            m_duelTaskWindow = nullptr;
+                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
+                            this->fadeIn();
+                        });
+
+                WindowStateManager::instance().captureState(this);
+                this->hide();
+                WindowStateManager::instance().applyState(m_duelTaskWindow, QSize(1300, 900));
+            });
 
     roadmapPage = new QWidget();
     auto roadmapLayout = new QVBoxLayout(roadmapPage);
     roadmapLayout->setContentsMargins(0, 0, 0, 0);
 
-    QPushButton *backBtn = new QPushButton("← Назад к модулям");
+    QPushButton *backBtn = new QPushButton("← Back to Modules");
     backBtn->setMinimumWidth(200);
     backBtn->setCursor(Qt::PointingHandCursor);
     connect(backBtn, &QPushButton::clicked, this, &MainWindow::onBackToModulesClicked);
@@ -481,6 +658,7 @@ void MainWindow::setupUI()
     contentStack->addWidget(learningPage);
     contentStack->addWidget(profilePage);
     contentStack->addWidget(roadmapPage);
+    contentStack->addWidget(duelPage);
 
     containerLayout->addWidget(sideBar.get(), 1);
     containerLayout->addWidget(contentStack.get(), 4);
@@ -490,27 +668,51 @@ void MainWindow::setupUI()
 
 void MainWindow::setupStyles()
 {
-    setStyleSheet(R"(
-        QWidget { background-color: #f5f7fb; font-family: 'Roboto'; }
-        #MainWindow { background-color: white; border: 1px solid #d0d0d0; }
+    bool isDark = (palette().color(QPalette::Window).lightness() < 128);
+
+    QString hoverColor, accentColor;
+    QString hoverText = "white";
+
+    if (isDark)
+    {
+        hoverColor = "#0e639c";
+        accentColor = "#0e639c";
+    }
+    else
+    {
+        hoverColor = "#f3e8ff";
+        accentColor = "#62639b";
+        hoverText = "black";
+    }
+
+    setStyleSheet(QString(R"(
+        QWidget { background-color: palette(alternate-base); font-family: 'Roboto'; color: palette(text); }
+        #MainWindow { background-color: palette(base); border: 1px solid palette(mid); }
         
-        QFrame#sideBar { background-color: white; border: 1px solid #e0e0e0; }
+        QFrame#sideBar { background-color: palette(base); border: 1px solid palette(mid); }
         
-        /* Фикс разводов для всех лейблов */
         QLabel { background-color: transparent; border: none; }
 
-        QPushButton#navButton { background-color: transparent; border: none; color: #555; text-align: left; padding-left: 20px; }
-        QPushButton#navButton:hover { background-color: #f0f2ff; color: #62639b; }
+        QPushButton#navButton { background-color: transparent; border: none; color: palette(window-text); text-align: left; padding-left: 20px; }
+        QPushButton#navButton:hover { background-color: %1; color: %2; }
         
-        QFrame[class="card"] { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; }
+        QFrame[class="card"] { background-color: palette(base); border: 1px solid palette(mid); border-radius: 8px; }
         
-        QProgressBar { background: #eef0f5; border: 1px solid #ddd; text-align: center; color: #333; border-radius: 4px; }
-        QProgressBar::chunk { background: #62639b; border-radius: 4px; }
+        QProgressBar { background: palette(alternate-base); border: 1px solid palette(mid); text-align: center; color: palette(text); border-radius: 4px; }
+        QProgressBar::chunk { background: %3; border-radius: 4px; }
         
-        QPushButton { background: #62639b; color: white; border-radius: 4px; padding: 5px 15px; font-weight: bold; }
-        QPushButton:hover { background: #51528a; }
-        QPushButton:disabled { background: #f0f0f0; color: #999; }
-    )");
+        QPushButton { background: palette(button); color: palette(button-text); border: 1px solid palette(mid); border-radius: 4px; padding: 5px 15px; font-weight: bold; }
+        QPushButton:hover { background: %1; color: %2; }
+        QPushButton#logoutButton:hover { background: palette(link); color: palette(highlighted-text); }
+        QPushButton:disabled { background: palette(disabled, button); color: palette(disabled, button-text); }
+    )")
+                      .arg(hoverColor)
+                      .arg(hoverText)
+                      .arg(accentColor));
+
+    style()->unpolish(this);
+    style()->polish(this);
+    update();
 }
 
 void MainWindow::onModuleButtonClicked()
@@ -531,17 +733,17 @@ void MainWindow::onLearnButtonClicked()
 
 void MainWindow::onProfileButtonClicked()
 {
-    QSqlQuery query;
-    query.prepare("SELECT id, username, avatar_path FROM users WHERE username = :name");
-    query.bindValue(":name", m_currentUsername);
-
-    if (query.exec() && query.next())
+    if (m_userService)
     {
-        int id = query.value("id").toInt();
-        QString name = query.value("username").toString();
-        QString avatar = query.value("avatar_path").toString();
-        profilePage->setUserData(id, name, avatar);
-        m_currentUserId = id;
+        auto userOpt = m_userService->getUser(m_currentUsername);
+        if (userOpt)
+        {
+            int id = userOpt->getId();
+            QString name = userOpt->getUsername();
+            QString avatar = userOpt->getAvatarPath();
+            profilePage->setUserData(id, name, avatar);
+            m_currentUserId = id;
+        }
     }
     contentStack->setCurrentIndex(1);
 }
@@ -562,41 +764,19 @@ void MainWindow::openTaskWindow(int lessonId)
 
 void MainWindow::loadRoadmapForModule(int moduleId)
 {
-    if (m_currentUserId == -1)
+    if (m_currentUserId == -1 || !m_courseService)
         return;
 
     m_currentOpenModuleId = moduleId;
 
+    auto nodesData = m_courseService->getModuleRoadmap(m_currentUserId, moduleId);
+
     std::vector<RoadmapNode> nodes;
-    QSqlQuery query;
-    query.prepare(R"(
-        SELECT l.id, l.title, COALESCE(up.is_completed, FALSE) as completed
-        FROM lessons l
-        LEFT JOIN user_progress up ON l.id = up.lesson_id AND up.user_id = :uid
-        WHERE l.module_id = :mid
-        ORDER BY l.id ASC
-    )");
-
-    query.bindValue(":uid", m_currentUserId);
-    query.bindValue(":mid", moduleId);
-
-    if (query.exec())
+    for (const auto &data : nodesData)
     {
-        while (query.next())
-        {
-            RoadmapNode node;
-            node.lessonId = query.value("id").toInt();
-            node.title = query.value("title").toString();
-            node.isCompleted = query.value("completed").toBool();
-
-            bool isLocked = false;
-            if (!nodes.empty())
-            {
-                isLocked = !nodes.back().isCompleted;
-            }
-            node.isLocked = isLocked;
-            nodes.push_back(node);
-        }
+        RoadmapNode node;
+        node.data = data;
+        nodes.push_back(node);
     }
 
     roadmapWidget->setLessons(nodes);
@@ -620,6 +800,27 @@ void MainWindow::onBackToModulesClicked()
     }
 }
 
+void MainWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange)
+    {
+        if (this->isMinimized())
+        {
+            event->accept();
+            return;
+        }
+
+        if (this->isMaximized())
+        {
+        }
+        else
+        {
+            this->setContentsMargins(0, 0, 0, 0);
+        }
+    }
+    QWidget::changeEvent(event);
+}
+
 void MainWindow::onLogoutClicked()
 {
     QSettings settings("CppForge", "StudyApp");
@@ -636,8 +837,14 @@ void MainWindow::onLogoutClicked()
 void MainWindow::onAchievementUnlocked(cppforge::entities::Achievement achievement)
 {
     qDebug() << "[MainWindow] Slot achievementUnlocked triggered for:" << achievement.getName();
+    QWidget *activeWin = QApplication::activeWindow();
+    if (!activeWin)
+    {
+        activeWin = this;
+    }
+
     auto *notif = new cppforge::gui::AchievementNotification(achievement.getName(), achievement.getDescription(),
-                                                             achievement.getIconPath());
+                                                             achievement.getIconPath(), activeWin);
     notif->showAnimated();
 
     if (contentStack->currentWidget() == profilePage)
@@ -645,4 +852,78 @@ void MainWindow::onAchievementUnlocked(cppforge::entities::Achievement achieveme
         qDebug() << "[MainWindow] Refreshing profile page...";
         onProfileButtonClicked();
     }
+}
+
+void MainWindow::onSecretTaskTriggered()
+{
+    qDebug() << "[MainWindow] Secret task triggered!";
+
+    QString desc =
+        "ОАО \"Экскаваторный завод 'Ковровец'\"\n\n"
+        "Некоторые заготовки завода изготавливаются в заготовительном цехе на раскройном оборудовании с ЧПУ.\n"
+        "Отдел главного конструктора создает чертежи деталей и сохраняет их в формате dxf. "
+        "После этого чертежи передаются по сети в отдел главного металлурга, там формируют размещение "
+        "набора деталей на листе (раскрой), вычисляют коэффициент использования металла (КИМ, то есть отношение "
+        "массы детали к массе заготовки). После этого по сети чертежи попадают в бюро ЧПУ заготовительного цеха, "
+        "где разрабатываются программы для раскроя. По сети программа передается оператору станка.\n\n"
+        "Требуется:\n"
+        "- максимально возможный КИМ (по базе раскроя);\n"
+        "- сколько полученных чертежей не обработано отделом главного металлурга.\n\n"
+        "Формат ввода:\n"
+        "N (количество чертежей)\n"
+        "Для каждого чертежа строка: <Статус> <Масса детали> <Масса заготовки>\n"
+        "Статусы: 'Создан', 'Обработан', 'В_бюро_ЧПУ'. Необработанные чертежи имеют статус 'Создан'.\n\n"
+        "Формат вывода:\n"
+        "1 строка: максимальный КИМ (округленный до 2 знаков после запятой, например, 0.85). Если нет обработанных, "
+        "вывести 0.00.\n"
+        "2 строка: количество необработанных чертежей.\n";
+
+    QString initCode = "#include <iostream>\n#include <string>\n#include <vector>\n#include <iomanip>\n\n"
+                       "using namespace std;\n\n"
+                       "int main() {\n"
+                       "    \n"
+                       "    return 0;\n"
+                       "}\n";
+    std::set<cppforge::entities::TestCase> testCases;
+    testCases.emplace(1, "3\nСоздан 10.0 15.0\nОбработан 12.0 15.0\nВ_бюро_ЧПУ 8.0 10.0\n", "0.80\n1", true);
+    testCases.emplace(2, "2\nСоздан 5.0 10.0\nСоздан 3.0 4.0\n", "0.00\n2", true);
+    testCases.emplace(3, "4\nОбработан 9.9 10.0\nОбработан 5.0 5.5\nВ_бюро_ЧПУ 100.0 101.0\nСоздан 1.0 2.0\n",
+                      "0.99\n1", true);
+
+    cppforge::entities::CodingTask secretTask(9999, std::nullopt, "Секретное задание: ОАО «Ковровец»", desc, initCode,
+                                              testCases, 1000, 256);
+
+    if (!taskWindow_)
+    {
+        taskWindow_ = std::make_unique<TaskWindow>();
+        if (m_userService)
+        {
+            taskWindow_->setUserService(m_userService);
+        }
+        if (m_courseService)
+        {
+            taskWindow_->setCourseService(m_courseService);
+        }
+        connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this, &MainWindow::updateModuleProgress);
+        connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
+        connect(taskWindow_.get(), &TaskWindow::customAchievementUnlocked, this,
+                [this](const QString &name)
+                {
+                    if (m_achievementService && m_userService && m_currentUserId > 0)
+                    {
+                        auto userOpt = m_userService->findById(m_currentUserId);
+                        if (userOpt)
+                        {
+                            m_achievementService->awardCustomEvent(*userOpt, name);
+                        }
+                    }
+                });
+    }
+
+    taskWindow_->setUserId(m_currentUserId);
+    taskWindow_->setTask(secretTask);
+
+    this->hide();
+    taskWindow_->show();
+    taskWindow_->fadeIn();
 }

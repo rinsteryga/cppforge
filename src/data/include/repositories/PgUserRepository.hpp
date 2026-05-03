@@ -27,6 +27,13 @@ namespace cppforge::repositories
         explicit PgUserRepository(QSqlDatabase &database);
 
         /**
+         * @brief Fetches a user by their ID.
+         * @param id The ID to search for.
+         * @return User if found, std::nullopt otherwise.
+         */
+        std::optional<entities::User> findById(uint64_t id) const override;
+
+        /**
          * @brief Fetches a user by their email.
          * @param email The email to search for.
          * @return User if found, std::nullopt otherwise.
@@ -53,19 +60,136 @@ namespace cppforge::repositories
          * @return The count of unique successfully solved coding tasks.
          */
         int getSolvedTasksCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the count of lessons a user has completed.
+         * @param userId The ID of the user.
+         * @return The count of completed lessons.
+         */
         int getCompletedLessonsCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the count of achievements a user has earned.
+         * @param userId The ID of the user.
+         * @return The count of earned achievements.
+         */
         int getAchievementsCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the current streak of a user.
+         * @param userId The ID of the user.
+         * @return The current streak in days.
+         */
         int getStreak(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the total number of submissions made by a user.
+         * @param userId The ID of the user.
+         * @return The total submission count.
+         */
         int getTotalSubmissionsCount(uint64_t userId) const override;
+
+        /**
+         * @brief Retrieves the last N activities of a user.
+         * @param userId The ID of the user.
+         * @param limit Maximum number of activities to return.
+         * @return A vector of Activity objects.
+         */
         std::vector<Activity> getRecentActivity(uint64_t userId, int limit) const override;
+
+        /**
+         * @brief Retrieves the IDs of all achievements earned by a user.
+         * @param userId The ID of the user.
+         * @return A vector of achievement IDs.
+         */
         std::vector<uint64_t> getEarnedAchievementIds(uint64_t userId) const override;
+
+        /**
+         * @brief Updates the user's streak and last solved timestamp in the database.
+         * @param userId The ID of the user to update.
+         */
         void updateStreak(uint64_t userId) override;
+
+        /**
+         * @brief Updates the user's avatar path in the database.
+         * @param userId The ID of the user to update.
+         * @param avatarPath The new path to the avatar image.
+         */
+        void updateAvatar(uint64_t userId, const QString &avatarPath) override;
+
+        /**
+         * @brief Saves or updates the progression state of a lesson.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param lessonId The ID of the lesson.
+         * @param isCompleted True if the user successfully completed the lesson.
+         * @return True if saved successfully.
+         */
+        bool saveLessonProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted) override;
+
+        /**
+         * @brief Records a user's code submission for a task in the database.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @param taskId The ID of the coding task.
+         * @param code The source code submitted.
+         * @param isSuccess True if the submission passed all tests.
+         * @return True if saved successfully.
+         */
+        bool saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code,
+                            bool isSuccess) override;
+
+        /**
+         * @brief Retrieves the source code of the most recent submission for a task.
+         * @param userId The ID of the user.
+         * @param taskId The ID of the coding task.
+         * @return The source code if found, std::nullopt otherwise.
+         */
+        std::optional<QString> getLastSubmission(uint64_t userId, uint64_t taskId) const override;
+
+        /**
+         * @brief Checks if a specific user has completed a specific lesson.
+         * @param userId The ID of the user.
+         * @param lessonId The ID of the lesson.
+         * @return True if completed.
+         */
+        bool isLessonCompleted(uint64_t userId, uint64_t lessonId) const override;
+
+        /**
+         * @brief Retrieves the IDs of all lessons completed by a user in a module.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @return A vector of completed lesson IDs.
+         */
+        std::vector<uint64_t> getCompletedLessonIds(uint64_t userId, uint64_t moduleId) const override;
+
+        /**
+         * @brief Calculates the completion progress percentage for a specific module.
+         * @param userId The ID of the user.
+         * @param moduleId The ID of the module.
+         * @return The completion percentage (0-100).
+         */
+        int getModuleProgress(uint64_t userId, uint64_t moduleId) const override;
 
     private:
         QSqlDatabase &database_;
 
+        /**
+         * @brief Lazy-loads achievement IDs for a user entity.
+         * @param user The User entity to populate.
+         */
         void loadUserAchievements(entities::User &user) const;
+
+        /**
+         * @brief Lazy-loads completed level IDs for a user entity.
+         * @param user The User entity to populate.
+         */
         void loadUserCompletedLevels(entities::User &user) const;
+
+        /**
+         * @brief Persists the user's achievements to the database.
+         * @param user The User entity whose achievements should be saved.
+         */
         void saveUserAchievements(const entities::User &user);
     };
 } // namespace cppforge::repositories

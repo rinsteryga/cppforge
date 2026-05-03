@@ -1,65 +1,59 @@
 #include "CustomTitleBar.hpp"
 
+#include "../../core/include/services/ThemeService.hpp"
+#include "WindowStateManager.hpp"
+
 #include <QApplication>
-#include <QEvent>
+#include <QDebug>
 #include <QFont>
-#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QScreen>
+#include <QSettings>
+#include <QTimer>
 
 CustomTitleBar::CustomTitleBar(QWidget *parent) : QWidget(parent)
 {
     setupUI();
     if (parent)
     {
-        window()->installEventFilter(this);
+        parent->installEventFilter(this);
     }
 }
+
+CustomTitleBar::~CustomTitleBar() = default;
 
 void CustomTitleBar::setupUI()
 {
     setFixedHeight(40);
-    setStyleSheet("background-color: white; border-bottom: 1px solid #e0e0e0; border-radius: 0px;");
+    setStyleSheet("background-color: palette(window); border-bottom: 1px solid; border-bottom-color: palette(mid); "
+                  "border-top-left-radius: 19px; border-top-right-radius: 19px;");
 
     layout_ = new QHBoxLayout(this);
-    layout_->setContentsMargins(10, 0, 0, 0);
-    layout_->setSpacing(0);
+    layout_->setContentsMargins(15, 0, 0, 0);
+    layout_->setSpacing(10);
 
     iconLabel_ = new QLabel(this);
-    iconLabel_->setFixedSize(24, 24);
+    iconLabel_->setFixedSize(22, 22);
     iconLabel_->setScaledContents(true);
-    iconLabel_->setStyleSheet("border: none; border-radius: 0px;");
+    iconLabel_->setStyleSheet("background: transparent; border: none;");
 
     titleLabel_ = new QLabel(this);
-    titleLabel_->setFont(QFont("Roboto", 10, QFont::Bold));
-    titleLabel_->setStyleSheet("color: #000000; padding-left: 8px; border: none;");
+    titleLabel_->setStyleSheet("color: palette(text); font-weight: bold; font-family: 'Roboto'; font-size: 13px; "
+                               "background: transparent; border: none;");
 
     minimizeButton_ = new QPushButton("-", this);
     maximizeRestoreButton_ = new QPushButton("□", this);
     closeButton_ = new QPushButton("✕", this);
 
-    const QString buttonStyle = "QPushButton { "
-                                "background-color: transparent; border: none; font-size: 18px; "
-                                "color: #5f6368; border-radius: 0px; "
-                                "} "
-                                "QPushButton:hover { background-color: #e8eaed; }";
+    updateStyles();
 
-    const QString closeStyle = "QPushButton { "
-                               "background-color: transparent; border: none; font-size: 18px; "
-                               "color: #5f6368; border-radius: 0px; "
-                               "} "
-                               "QPushButton:hover { background-color: #e81123; color: white; }";
-
-    minimizeButton_->setFixedSize(60, 40);
-    minimizeButton_->setStyleSheet(buttonStyle);
-    maximizeRestoreButton_->setFixedSize(60, 40);
-    maximizeRestoreButton_->setStyleSheet(buttonStyle);
-    closeButton_->setFixedSize(60, 40);
-    closeButton_->setStyleSheet(closeStyle);
+    minimizeButton_->setFixedSize(50, 40);
+    maximizeRestoreButton_->setFixedSize(50, 40);
+    closeButton_->setFixedSize(50, 40);
 
     layout_->addWidget(iconLabel_);
     layout_->addWidget(titleLabel_);
@@ -87,19 +81,28 @@ void CustomTitleBar::setIcon(const QIcon &icon)
 
 void CustomTitleBar::onMinimizeClicked()
 {
-    window()->setWindowState(window()->windowState() & ~Qt::WindowMaximized);
-    window()->showMinimized();
+    QWidget *win = window();
+    if (!win)
+        return;
+
+    minimizeButton_->clearFocus();
+
+    QTimer::singleShot(0, win, &QWidget::showMinimized);
 }
 
 void CustomTitleBar::onMaximizeRestoreClicked()
 {
-    if (window()->isMaximized())
+    QWidget *win = window();
+    if (!win)
+        return;
+
+    if (win->isMaximized())
     {
-        window()->showNormal();
+        win->showNormal();
     }
     else
     {
-        window()->showMaximized();
+        win->showMaximized();
     }
 }
 
@@ -112,51 +115,134 @@ void CustomTitleBar::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
     {
-        dragPosition_ = event->globalPos() - window()->frameGeometry().topLeft();
+        isResizing_ = false;
+
+        if (!window()->isMaximized())
+        {
+            dragPosition_ = event->globalPos() - window()->frameGeometry().topLeft();
+        }
         event->accept();
     }
+}
+
+void CustomTitleBar::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+    {
+        isResizing_ = false;
+        if (!window()->isMaximized() && !window()->isMinimized())
+        {
+            WindowStateManager::instance().captureState(window());
+        }
+    }
+    QWidget::mouseReleaseEvent(event);
 }
 
 void CustomTitleBar::mouseMoveEvent(QMouseEvent *event)
 {
+    if (isResizing_)
+        return;
+
     if (event->buttons() & Qt::LeftButton)
     {
         if (window()->isMaximized())
         {
-            double relativeX = (double)event->pos().x() / width();
-
-            window()->showNormal();
-
-            int newX = event->globalPos().x() - (window()->width() * relativeX);
-            int newY = event->globalPos().y() - event->pos().y();
-
-            dragPosition_ = event->globalPos() - QPoint(newX, newY);
-            window()->move(newX, newY);
+            return;
         }
-        else
-        {
-            window()->move(event->globalPos() - dragPosition_);
-        }
+
+        window()->move(event->globalPos() - dragPosition_);
         event->accept();
     }
 }
+
 void CustomTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
     {
         onMaximizeRestoreClicked();
-        event->accept();
     }
 }
 
 bool CustomTitleBar::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == window() && event->type() == QEvent::WindowStateChange)
+    if (obj == window())
     {
-        if (maximizeRestoreButton_)
+        if (event->type() == QEvent::WindowStateChange)
         {
-            maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
+            updateButtonIcons();
+        }
+        else if (event->type() == QEvent::Resize || event->type() == QEvent::Move)
+        {
+            QTimer::singleShot(0, this,
+                               [this]()
+                               {
+                                   if (window())
+                                   {
+                                       WindowStateManager::instance().captureState(window());
+                                   }
+                               });
         }
     }
     return QWidget::eventFilter(obj, event);
+}
+
+void CustomTitleBar::updateButtonIcons()
+{
+    if (maximizeRestoreButton_ && window())
+    {
+        maximizeRestoreButton_->setText(window()->isMaximized() ? "❐" : "□");
+    }
+}
+
+void CustomTitleBar::setThemeService(cppforge::services::ThemeService *service)
+{
+    themeService_ = service;
+    if (themeService_)
+    {
+        connect(themeService_, &cppforge::services::ThemeService::themeChanged, this, &CustomTitleBar::updateStyles);
+        updateStyles();
+    }
+}
+
+void CustomTitleBar::updateStyles()
+{
+    bool isDark = false;
+    if (themeService_)
+    {
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+
+    QString hoverColor = isDark ? "#0e639c" : "#f3e8ff";
+    QString hoverText = isDark ? "white" : "black";
+
+    const QString buttonStyle = QString("QPushButton { border: none; background: transparent; color: "
+                                        "palette(window-text); font-size: 16px; } "
+                                        "QPushButton:hover { background-color: %1; color: %2; border-radius: 0; }")
+                                    .arg(hoverColor)
+                                    .arg(hoverText);
+
+    const QString closeStyle = "QPushButton { border: none; background: transparent; color: palette(window-text); "
+                               "font-size: 16px; } "
+                               "QPushButton:hover { background-color: #e81123; color: white; border-radius: 0; }";
+
+    if (minimizeButton_)
+    {
+        minimizeButton_->setStyleSheet(buttonStyle);
+        minimizeButton_->update();
+    }
+    if (maximizeRestoreButton_)
+    {
+        maximizeRestoreButton_->setStyleSheet(buttonStyle);
+        maximizeRestoreButton_->update();
+    }
+    if (closeButton_)
+    {
+        closeButton_->setStyleSheet(closeStyle);
+        closeButton_->update();
+    }
 }

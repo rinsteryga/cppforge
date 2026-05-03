@@ -46,6 +46,20 @@ namespace cppforge
              * @return An std::optional containing the Lesson if successful; otherwise std::nullopt.
              */
             virtual std::optional<entities::Lesson> getLessonById(uint64_t lessonId) const = 0;
+
+            /**
+             * @brief Gets the ID of the chronologically next lesson after the given one.
+             * @param currentLessonId The unique identifier of the current lesson.
+             * @return An std::optional containing the next lesson ID if available.
+             */
+            virtual std::optional<uint64_t> getNextLessonId(uint64_t currentLessonId) const = 0;
+
+            /**
+             * @brief Gets the ID of the chronologically previous lesson before the given one.
+             * @param currentLessonId The unique identifier of the current lesson.
+             * @return An std::optional containing the previous lesson ID if available.
+             */
+            virtual std::optional<uint64_t> getPrevLessonId(uint64_t currentLessonId) const = 0;
         };
     } // namespace repositories
 } // namespace cppforge

@@ -1,11 +1,14 @@
 <RCC>
     <qresource prefix="/">
         <file>icons/main_logo.ico</file>
+        <file>icons/main_logo_dark.ico</file>
         <file>images/eye_open.png</file>
         <file>images/eye_slash.png</file>
         <file>images/default_avatar1.png</file>
         <file>images/default_avatar2.png</file>
         <file>images/default_avatar3.png</file>
         <file>images/default_avatar4.png</file>
+        <file>images/lb.png</file>
+        <file>images/patrick.png</file>
     </qresource>
 </RCC>

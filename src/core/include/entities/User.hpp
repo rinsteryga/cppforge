@@ -172,6 +172,42 @@ namespace cppforge::entities
         void setLastLevelSolvedAt(const std::chrono::system_clock::time_point &timestamp);
 
         /**
+         * @brief Retrieves the user's total duel points.
+         * @return The number of duel points.
+         */
+        int getDuelPoints() const;
+
+        /**
+         * @brief Updates the user's total duel points.
+         * @param points The new duel points value.
+         */
+        void setDuelPoints(int points);
+
+        /**
+         * @brief Retrieves the number of duels won by the user.
+         * @return The number of duel wins.
+         */
+        int getDuelWins() const;
+
+        /**
+         * @brief Updates the number of duels won by the user.
+         * @param wins The new number of duel wins.
+         */
+        void setDuelWins(int wins);
+
+        /**
+         * @brief Retrieves the number of duels lost by the user.
+         * @return The number of duel losses.
+         */
+        int getDuelLosses() const;
+
+        /**
+         * @brief Updates the number of duels lost by the user.
+         * @param losses The new number of duel losses.
+         */
+        void setDuelLosses(int losses);
+
+        /**
          * @brief Unlocks a target level, allowing the user to attempt it.
          * @param levelId The ID indicating the specified scope level.
          */
@@ -218,6 +254,10 @@ namespace cppforge::entities
         uint32_t currentStreakDays_;
         std::chrono::system_clock::time_point lastLevelSolvedAt_;
         std::chrono::system_clock::time_point createdAt_;
+
+        int duelPoints_{0};
+        int duelWins_{0};
+        int duelLosses_{0};
 
         std::set<uint64_t> availableLevelsIds_;
         std::set<uint64_t> completedLevelsIds_;

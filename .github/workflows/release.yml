@@ -1,4 +1,4 @@
-name: Release (Windows)
+name: Cross-Platform Release
 
 on:
   push:
@@ -10,12 +10,31 @@ permissions:
 
 jobs:
   release:
-    runs-on: windows-latest
+    name: Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v4
 
+    - name: Setup Dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev ninja-build postgresql
+
+    - name: Setup Dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install qt@5 ninja
+        echo "CMAKE_PREFIX_PATH=$(brew --prefix qt@5)" >> $GITHUB_ENV
+        echo "PATH=$(brew --prefix qt@5)/bin:$PATH" >> $GITHUB_ENV
+
     - name: Setup MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
       uses: msys2/setup-msys2@v2
       with:
         msystem: UCRT64
@@ -30,8 +49,15 @@ jobs:
           mingw-w64-ucrt-x86_64-ninja
           mingw-w64-ucrt-x86_64-nsis
           mingw-w64-ucrt-x86_64-postgresql
-          
-    - name: Configure CMake
+
+    - name: Configure CMake (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release
+
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |          
         cmake -B build -G Ninja \
@@ -41,19 +67,30 @@ jobs:
         -DCMAKE_C_COMPILER="$(cygpath -m /ucrt64/bin/gcc.exe)"
 
     - name: Build
+      if: matrix.os != 'windows-latest'
+      run: cmake --build build
+
+    - name: Build (Windows)
+      if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: cmake --build build
 
-    - name: Package (CPack)
+    - name: Package
+      if: matrix.os != 'windows-latest'
+      run: cmake --build build --target package
+
+    - name: Package (Windows)
+      if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: cmake --build build --target package
 
-    - name: List files
-      run: dir build
-
-    - name: Create Release
+    - name: Upload Release Artifacts
       uses: softprops/action-gh-release@v2
       with:
-        files: build/cppforge-*.exe
+        files: |
+          build/cppforge-*.exe
+          build/cppforge-*.dmg
+          build/cppforge-*.deb
+          build/cppforge-*.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

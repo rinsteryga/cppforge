@@ -1,454 +1,608 @@
 #include "../../include/repositories/PgUserRepository.hpp"
 
-#include "../../../core/include/entities/Achievement.hpp"
 #include "../../../core/include/entities/User.hpp"
 
 #include <QDateTime>
 #include <QDebug>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QVariant>
-#include <QtSql/QSqlError>
-#include <QtSql/QSqlQuery>
 
-namespace cppforge
+#include <chrono>
+
+namespace
 {
-    namespace repositories
+    std::chrono::system_clock::time_point qDateTimeToChrono(const QDateTime &dt)
     {
-        PgUserRepository::PgUserRepository(QSqlDatabase &database) : database_(database) {}
-
-        std::optional<entities::User> PgUserRepository::findByEmail(const QString &email) const
+        if (!dt.isValid())
         {
-            if (!database_.isOpen())
-            {
-                return std::nullopt;
-            }
+            return std::chrono::system_clock::time_point();
+        }
+        return std::chrono::system_clock::from_time_t(dt.toSecsSinceEpoch());
+    }
 
-            QSqlQuery query(database_);
-            query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, current_streak_days, "
-                          "last_level_solved_at, created_at FROM users WHERE "
-                          "email = :email");
-            query.bindValue(":email", email);
+    QDateTime chronoToQDateTime(const std::chrono::system_clock::time_point &tp)
+    {
+        if (tp == std::chrono::system_clock::time_point())
+        {
+            return QDateTime();
+        }
+        return QDateTime::fromSecsSinceEpoch(std::chrono::system_clock::to_time_t(tp));
+    }
 
-            if (query.exec() && query.next())
-            {
-                uint64_t userId = query.value("id").toULongLong();
-                QString username = query.value("username").toString();
-                QString userEmail = query.value("email").toString();
-                QString passwordHash = query.value("password_hash").toString();
-                QString salt = query.value("salt").toString();
-                QString avatarPath = query.value("avatar_path").toString();
-                QString bio = query.value("bio").toString();
+    cppforge::entities::ConditionType stringToConditionType(const QString &str)
+    {
+        if (str == "LEVELS_COMPLETED")
+        {
+            return cppforge::entities::ConditionType::LevelsCompleted;
+        }
+        if (str == "STREAK_DAYS")
+        {
+            return cppforge::entities::ConditionType::StreakDays;
+        }
+        return cppforge::entities::ConditionType::CustomEvent;
+    }
+} // namespace
 
-                auto createdAt =
-                    std::chrono::system_clock::from_time_t(query.value("created_at").toDateTime().toSecsSinceEpoch());
+namespace cppforge::repositories
+{
+    PgUserRepository::PgUserRepository(QSqlDatabase &database) : database_(database) {}
 
-                entities::User user(userId, username, userEmail, passwordHash, salt, createdAt);
-                user.setAvatarPath(avatarPath);
-                user.setBio(bio);
-                user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
-
-                QVariant lastSolvedVar = query.value("last_level_solved_at");
-                if (!lastSolvedVar.isNull() && lastSolvedVar.isValid())
-                {
-                    auto lastSolvedAt =
-                        std::chrono::system_clock::from_time_t(lastSolvedVar.toDateTime().toSecsSinceEpoch());
-                    user.setLastLevelSolvedAt(lastSolvedAt);
-                }
-
-                loadUserAchievements(user);
-                loadUserCompletedLevels(user);
-
-                return user;
-            }
-
+    std::optional<entities::User> PgUserRepository::findById(uint64_t id) const
+    {
+        if (!database_.isOpen() || id == 0)
+        {
             return std::nullopt;
         }
 
-        std::optional<entities::User> PgUserRepository::findByUsername(const QString &username) const
+        QSqlQuery query(database_);
+        query.prepare(
+            "SELECT id, username, email, password_hash, salt, avatar_path, bio, created_at, "
+            "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses FROM users WHERE id = :id");
+        query.bindValue(":id", QVariant::fromValue(id));
+
+        if (!query.exec() || !query.next())
         {
-            if (!database_.isOpen())
-            {
-                return std::nullopt;
-            }
-
-            QSqlQuery query(database_);
-            query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, current_streak_days, "
-                          "last_level_solved_at, created_at FROM users WHERE "
-                          "username = :username");
-            query.bindValue(":username", username);
-
-            if (query.exec() && query.next())
-            {
-                uint64_t userId = query.value("id").toULongLong();
-                QString fetchedUsername = query.value("username").toString();
-                QString userEmail = query.value("email").toString();
-                QString passwordHash = query.value("password_hash").toString();
-                QString salt = query.value("salt").toString();
-                QString avatarPath = query.value("avatar_path").toString();
-                QString bio = query.value("bio").toString();
-
-                auto createdAt =
-                    std::chrono::system_clock::from_time_t(query.value("created_at").toDateTime().toSecsSinceEpoch());
-
-                entities::User user(userId, fetchedUsername, userEmail, passwordHash, salt, createdAt);
-                user.setAvatarPath(avatarPath);
-                user.setBio(bio);
-                user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
-
-                QVariant lastSolvedVar = query.value("last_level_solved_at");
-                if (!lastSolvedVar.isNull() && lastSolvedVar.isValid())
-                {
-                    auto lastSolvedAt =
-                        std::chrono::system_clock::from_time_t(lastSolvedVar.toDateTime().toSecsSinceEpoch());
-                    user.setLastLevelSolvedAt(lastSolvedAt);
-                }
-
-                loadUserAchievements(user);
-                loadUserCompletedLevels(user);
-
-                return user;
-            }
-
             return std::nullopt;
         }
 
-        bool PgUserRepository::save(const entities::User &user)
+        entities::User user(query.value("id").toULongLong(), query.value("username").toString(),
+                            query.value("email").toString(), query.value("password_hash").toString(),
+                            query.value("salt").toString(), qDateTimeToChrono(query.value("created_at").toDateTime()));
+
+        user.setAvatarPath(query.value("avatar_path").toString());
+        user.setBio(query.value("bio").toString());
+        user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
+        user.setLastLevelSolvedAt(qDateTimeToChrono(query.value("last_level_solved_at").toDateTime()));
+        user.setDuelPoints(query.value("duel_points").toInt());
+        user.setDuelWins(query.value("duel_wins").toInt());
+        user.setDuelLosses(query.value("duel_losses").toInt());
+
+        loadUserAchievements(user);
+        loadUserCompletedLevels(user);
+
+        return user;
+    }
+
+    std::optional<entities::User> PgUserRepository::findByEmail(const QString &email) const
+    {
+        if (!database_.isOpen() || email.isEmpty())
         {
-            if (!database_.isOpen())
-            {
-                return false;
-            }
-
-            QSqlQuery query(database_);
-            if (user.getId() == 0)
-            {
-                query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_path, bio, "
-                              "current_streak_days, last_level_solved_at) VALUES (:username, "
-                              ":email, :password_hash, :salt, :avatar_path, :bio, :current_streak_days, "
-                              ":last_level_solved_at) RETURNING id");
-                query.bindValue(":username", user.getUsername());
-                query.bindValue(":email", user.getEmail());
-                query.bindValue(":password_hash", user.getPasswordHash());
-                query.bindValue(":salt", user.getSalt());
-                query.bindValue(":avatar_path", user.getAvatarPath());
-                query.bindValue(":bio", user.getBio());
-                query.bindValue(":current_streak_days", user.getCurrentStreakDays());
-
-                auto lastSolvedEpoch = std::chrono::system_clock::to_time_t(user.getLastLevelSolvedAt());
-                if (lastSolvedEpoch > 0)
-                {
-                    query.bindValue(":last_level_solved_at", QDateTime::fromSecsSinceEpoch(lastSolvedEpoch));
-                }
-                else
-                {
-                    query.bindValue(":last_level_solved_at", QVariant(QVariant::DateTime));
-                }
-
-                if (!query.exec())
-                {
-                    qDebug() << "INSERT failed inside PgUserRepository:" << query.lastError().text();
-                    return false;
-                }
-
-                if (query.next())
-                {
-                    uint64_t newId = query.value("id").toULongLong();
-                }
-                return true;
-            }
-
-            query.prepare("UPDATE users SET username = :username, email = :email, "
-                          "password_hash = :password_hash, salt = :salt, avatar_path = :avatar_path, "
-                          "bio = :bio, current_streak_days = :current_streak_days, "
-                          "last_level_solved_at = :last_level_solved_at WHERE id = :id");
-            query.bindValue(":username", user.getUsername());
-            query.bindValue(":email", user.getEmail());
-            query.bindValue(":password_hash", user.getPasswordHash());
-            query.bindValue(":salt", user.getSalt());
-            query.bindValue(":avatar_path", user.getAvatarPath());
-            query.bindValue(":bio", user.getBio());
-            query.bindValue(":current_streak_days", user.getCurrentStreakDays());
-
-            auto lastSolvedEpoch = std::chrono::system_clock::to_time_t(user.getLastLevelSolvedAt());
-            if (lastSolvedEpoch > 0)
-            {
-                query.bindValue(":last_level_solved_at", QDateTime::fromSecsSinceEpoch(lastSolvedEpoch));
-            }
-            else
-            {
-                query.bindValue(":last_level_solved_at", QVariant(QVariant::DateTime));
-            }
-
-            query.bindValue(":id", QVariant::fromValue(user.getId()));
-
-            if (!query.exec())
-            {
-                qDebug() << "UPDATE failed inside PgUserRepository:" << query.lastError().text();
-                return false;
-            }
-
-            saveUserAchievements(user);
-            return true;
+            return std::nullopt;
         }
 
-        int PgUserRepository::getSolvedTasksCount(uint64_t userId) const
-        {
-            if (!database_.isOpen())
-            {
-                return 0;
-            }
+        QSqlQuery query(database_);
+        query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, created_at, "
+                      "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses FROM users WHERE "
+                      "email = :email");
+        query.bindValue(":email", email);
 
-            QSqlQuery query(database_);
+        if (!query.exec() || !query.next())
+        {
+            return std::nullopt;
+        }
+
+        entities::User user(query.value("id").toULongLong(), query.value("username").toString(),
+                            query.value("email").toString(), query.value("password_hash").toString(),
+                            query.value("salt").toString(), qDateTimeToChrono(query.value("created_at").toDateTime()));
+
+        user.setAvatarPath(query.value("avatar_path").toString());
+        user.setBio(query.value("bio").toString());
+        user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
+        user.setLastLevelSolvedAt(qDateTimeToChrono(query.value("last_level_solved_at").toDateTime()));
+        user.setDuelPoints(query.value("duel_points").toInt());
+        user.setDuelWins(query.value("duel_wins").toInt());
+        user.setDuelLosses(query.value("duel_losses").toInt());
+
+        loadUserAchievements(user);
+        loadUserCompletedLevels(user);
+
+        return user;
+    }
+
+    std::optional<entities::User> PgUserRepository::findByUsername(const QString &username) const
+    {
+        if (!database_.isOpen() || username.isEmpty())
+        {
+            return std::nullopt;
+        }
+
+        QSqlQuery query(database_);
+        query.prepare("SELECT id, username, email, password_hash, salt, avatar_path, bio, created_at, "
+                      "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses FROM users WHERE "
+                      "username = :username");
+        query.bindValue(":username", username);
+
+        if (!query.exec() || !query.next())
+        {
+            return std::nullopt;
+        }
+
+        entities::User user(query.value("id").toULongLong(), query.value("username").toString(),
+                            query.value("email").toString(), query.value("password_hash").toString(),
+                            query.value("salt").toString(), qDateTimeToChrono(query.value("created_at").toDateTime()));
+
+        user.setAvatarPath(query.value("avatar_path").toString());
+        user.setBio(query.value("bio").toString());
+        user.setCurrentStreakDays(query.value("current_streak_days").toUInt());
+        user.setLastLevelSolvedAt(qDateTimeToChrono(query.value("last_level_solved_at").toDateTime()));
+        user.setDuelPoints(query.value("duel_points").toInt());
+        user.setDuelWins(query.value("duel_wins").toInt());
+        user.setDuelLosses(query.value("duel_losses").toInt());
+
+        loadUserAchievements(user);
+        loadUserCompletedLevels(user);
+
+        return user;
+    }
+
+    bool PgUserRepository::save(const entities::User &user)
+    {
+        if (!database_.isOpen())
+        {
+            return false;
+        }
+
+        QSqlQuery query(database_);
+        if (user.getId() == 0)
+        {
+            query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_path, bio, created_at, "
+                          "current_streak_days, last_level_solved_at, duel_points, duel_wins, duel_losses) "
+                          "VALUES (:username, :email, :password_hash, :salt, :avatar_path, :bio, :reg_date, "
+                          ":streak, :solved_at, :duel_points, :duel_wins, :duel_losses) RETURNING id");
+        }
+        else
+        {
             query.prepare(
-                "SELECT COUNT(DISTINCT coding_task_id) FROM submissions WHERE user_id = :uid AND is_success = true");
-            query.bindValue(":uid", QVariant::fromValue(userId));
+                "UPDATE users SET username = :username, email = :email, password_hash = :password_hash, "
+                "salt = :salt, avatar_path = :avatar_path, bio = :bio, "
+                "current_streak_days = :streak, last_level_solved_at = :solved_at, "
+                "duel_points = :duel_points, duel_wins = :duel_wins, duel_losses = :duel_losses WHERE id = :id");
+            query.bindValue(":id", QVariant::fromValue(user.getId()));
+        }
 
-            if (query.exec() && query.next())
-            {
-                return query.value(0).toInt();
-            }
+        query.bindValue(":username", user.getUsername());
+        query.bindValue(":email", user.getEmail());
+        query.bindValue(":password_hash", user.getPasswordHash());
+        query.bindValue(":salt", user.getSalt());
+        query.bindValue(":avatar_path", user.getAvatarPath());
+        query.bindValue(":bio", user.getBio());
+        query.bindValue(":reg_date", chronoToQDateTime(user.getCreatedAt()));
+        query.bindValue(":streak", user.getCurrentStreakDays());
+        query.bindValue(":solved_at", chronoToQDateTime(user.getLastLevelSolvedAt()));
+        query.bindValue(":duel_points", user.getDuelPoints());
+        query.bindValue(":duel_wins", user.getDuelWins());
+        query.bindValue(":duel_losses", user.getDuelLosses());
 
+        if (!query.exec())
+        {
+            qDebug() << "Failed to save user:" << query.lastError().text();
+            return false;
+        }
+
+        saveUserAchievements(user);
+
+        return true;
+    }
+
+    int PgUserRepository::getSolvedTasksCount(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
             return 0;
         }
 
-        int PgUserRepository::getCompletedLessonsCount(uint64_t userId) const
+        QSqlQuery query(database_);
+        query.prepare(
+            "SELECT COUNT(DISTINCT coding_task_id) FROM submissions WHERE user_id = :id AND is_success = true");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
         {
-            if (!database_.isOpen())
-                return 0;
-            QSqlQuery query(database_);
-            query.prepare("SELECT COUNT(*) FROM user_progress WHERE user_id = :uid AND is_completed = true");
-            query.bindValue(":uid", QVariant::fromValue(userId));
-            if (query.exec() && query.next())
-                return query.value(0).toInt();
+            return query.value(0).toInt();
+        }
+
+        return 0;
+    }
+
+    int PgUserRepository::getCompletedLessonsCount(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
             return 0;
         }
 
-        int PgUserRepository::getAchievementsCount(uint64_t userId) const
+        QSqlQuery query(database_);
+        query.prepare("SELECT COUNT(*) FROM user_progress WHERE user_id = :id AND is_completed = true");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
         {
-            if (!database_.isOpen())
-                return 0;
-            QSqlQuery query(database_);
-            query.prepare("SELECT COUNT(*) FROM user_achievements WHERE user_id = :uid");
-            query.bindValue(":uid", QVariant::fromValue(userId));
-            if (query.exec() && query.next())
-                return query.value(0).toInt();
+            return query.value(0).toInt();
+        }
+
+        return 0;
+    }
+
+    int PgUserRepository::getAchievementsCount(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
             return 0;
         }
 
-        int PgUserRepository::getStreak(uint64_t userId) const
+        QSqlQuery query(database_);
+        query.prepare("SELECT COUNT(*) FROM user_achievements WHERE user_id = :id");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
         {
-            if (!database_.isOpen())
-                return 0;
-            QSqlQuery query(database_);
-            query.prepare("SELECT current_streak_days FROM users WHERE id = :uid");
-            query.bindValue(":uid", QVariant::fromValue(userId));
-            if (query.exec() && query.next())
-                return query.value(0).toInt();
+            return query.value(0).toInt();
+        }
+
+        return 0;
+    }
+
+    int PgUserRepository::getStreak(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
             return 0;
         }
 
-        int PgUserRepository::getTotalSubmissionsCount(uint64_t userId) const
+        QSqlQuery query(database_);
+        query.prepare("SELECT current_streak_days FROM users WHERE id = :id");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
         {
-            if (!database_.isOpen())
-                return 0;
-            QSqlQuery query(database_);
-            query.prepare("SELECT COUNT(*) FROM submissions WHERE user_id = :uid");
-            query.bindValue(":uid", QVariant::fromValue(userId));
-            if (query.exec() && query.next())
-                return query.value(0).toInt();
+            return query.value(0).toInt();
+        }
+
+        return 0;
+    }
+
+    int PgUserRepository::getTotalSubmissionsCount(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
             return 0;
         }
 
-        std::vector<IUserRepository::Activity> PgUserRepository::getRecentActivity(uint64_t userId, int limit) const
+        QSqlQuery query(database_);
+        query.prepare("SELECT COUNT(*) FROM submissions WHERE user_id = :id");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
         {
-            std::vector<IUserRepository::Activity> activities;
-            if (!database_.isOpen())
-                return activities;
+            return query.value(0).toInt();
+        }
 
-            QSqlQuery query(database_);
-            query.prepare(R"(
-                (SELECT l.title as title, 'Урок' as type, up.updated_at as date
-                 FROM user_progress up
-                 JOIN lessons l ON up.lesson_id = l.id
-                 WHERE up.user_id = :uid AND up.is_completed = true)
-                UNION ALL
-                (SELECT t.title as title, 'Задача' as type, s.submitted_at as date
-                 FROM submissions s
-                 JOIN coding_tasks t ON s.coding_task_id = t.id
-                 WHERE s.user_id = :uid AND s.is_success = true)
-                ORDER BY date DESC
-                LIMIT :limit
-            )");
-            query.bindValue(":uid", QVariant::fromValue(userId));
-            query.bindValue(":limit", limit);
+        return 0;
+    }
 
-            if (query.exec())
-            {
-                while (query.next())
-                {
-                    IUserRepository::Activity act;
-                    act.title = query.value("title").toString();
-                    act.type = query.value("type").toString();
-                    act.date = query.value("date").toDateTime().toString("dd.MM.yyyy HH:mm");
-                    activities.push_back(act);
-                }
-            }
+    std::vector<IUserRepository::Activity> PgUserRepository::getRecentActivity(uint64_t userId, int limit) const
+    {
+        std::vector<IUserRepository::Activity> activities;
+        if (!database_.isOpen() || userId == 0)
+        {
             return activities;
         }
 
-        std::vector<uint64_t> PgUserRepository::getEarnedAchievementIds(uint64_t userId) const
+        QSqlQuery query(database_);
+        query.prepare(R"(
+            (SELECT title, 'lesson' as type, updated_at as date 
+             FROM user_progress 
+             JOIN lessons ON user_progress.lesson_id = lessons.id 
+             WHERE user_id = :id AND is_completed = true)
+            UNION ALL
+            (SELECT name as title, 'achievement' as type, earned_at as date 
+             FROM user_achievements 
+             JOIN achievements ON user_achievements.achievement_id = achievements.id 
+             WHERE user_id = :id)
+            ORDER BY date DESC LIMIT :limit
+        )");
+        query.bindValue(":id", QVariant::fromValue(userId));
+        query.bindValue(":limit", limit);
+
+        if (query.exec())
         {
-            std::vector<uint64_t> ids;
-            if (!database_.isOpen())
-                return ids;
-
-            QSqlQuery query(database_);
-            query.prepare("SELECT achievement_id FROM user_achievements WHERE user_id = :uid");
-            query.bindValue(":uid", QVariant::fromValue(userId));
-
-            if (query.exec())
+            while (query.next())
             {
-                while (query.next())
-                {
-                    ids.push_back(query.value(0).toULongLong());
-                }
+                activities.push_back({query.value("title").toString(), query.value("type").toString(),
+                                      query.value("date").toDateTime().toString("dd.MM.yyyy")});
             }
+        }
+
+        return activities;
+    }
+
+    std::vector<uint64_t> PgUserRepository::getEarnedAchievementIds(uint64_t userId) const
+    {
+        std::vector<uint64_t> ids;
+        if (!database_.isOpen() || userId == 0)
+        {
             return ids;
         }
 
-        void PgUserRepository::loadUserAchievements(entities::User &user) const
+        QSqlQuery query(database_);
+        query.prepare("SELECT achievement_id FROM user_achievements WHERE user_id = :id");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec())
         {
-            if (!database_.isOpen() || user.getId() == 0)
+            while (query.next())
             {
-                return;
-            }
-
-            QSqlQuery query(database_);
-            query.prepare(
-                "SELECT a.id, a.name, a.description, a.icon_path, a.condition_type, a.condition_value, ua.earned_at "
-                "FROM achievements a "
-                "JOIN user_achievements ua ON a.id = ua.achievement_id "
-                "WHERE ua.user_id = :user_id");
-            query.bindValue(":user_id", QVariant::fromValue(user.getId()));
-
-            if (query.exec())
-            {
-                auto parseConditionType = [](const QString &typeStr)
-                {
-                    if (typeStr == "LEVELS_COMPLETED")
-                    {
-                        return entities::ConditionType::LevelsCompleted;
-                    }
-                    if (typeStr == "STREAK_DAYS")
-                    {
-                        return entities::ConditionType::StreakDays;
-                    }
-                    return entities::ConditionType::CustomEvent;
-                };
-
-                while (query.next())
-                {
-                    auto earnedAt = std::chrono::system_clock::from_time_t(
-                        query.value("earned_at").toDateTime().toSecsSinceEpoch());
-
-                    entities::ConditionType cType = parseConditionType(query.value("condition_type").toString());
-                    uint32_t cValue = query.value("condition_value").toUInt();
-
-                    entities::Achievement achievement(query.value("id").toLongLong(), query.value("name").toString(),
-                                                      query.value("description").toString(),
-                                                      query.value("icon_path").toString(), cType, cValue, earnedAt);
-                    user.addAchievement(achievement);
-                }
+                ids.push_back(query.value(0).toULongLong());
             }
         }
 
-        void PgUserRepository::loadUserCompletedLevels(entities::User &user) const
+        return ids;
+    }
+
+    void PgUserRepository::loadUserAchievements(entities::User &user) const
+    {
+        QSqlQuery query(database_);
+        query.prepare("SELECT achievement_id, name, description, icon_path, condition_type, condition_value, earned_at "
+                      "FROM user_achievements "
+                      "JOIN achievements ON user_achievements.achievement_id = achievements.id WHERE user_id = :id");
+        query.bindValue(":id", QVariant::fromValue(user.getId()));
+
+        if (query.exec())
         {
-            if (!database_.isOpen() || user.getId() == 0)
+            while (query.next())
             {
-                return;
-            }
-
-            QSqlQuery query(database_);
-            query.prepare("SELECT lesson_id FROM user_progress WHERE user_id = :user_id AND is_completed = TRUE");
-            query.bindValue(":user_id", QVariant::fromValue(user.getId()));
-
-            if (query.exec())
-            {
-                while (query.next())
-                {
-                    user.addCompletedLevel(query.value("lesson_id").toULongLong());
-                }
+                entities::Achievement achievement(
+                    query.value("achievement_id").toLongLong(), query.value("name").toString(),
+                    query.value("description").toString(), query.value("icon_path").toString(),
+                    stringToConditionType(query.value("condition_type").toString()),
+                    query.value("condition_value").toUInt(), qDateTimeToChrono(query.value("earned_at").toDateTime()));
+                user.addAchievement(achievement);
             }
         }
+    }
 
-        void PgUserRepository::saveUserAchievements(const entities::User &user)
+    void PgUserRepository::loadUserCompletedLevels(entities::User &user) const
+    {
+        QSqlQuery query(database_);
+        query.prepare("SELECT lesson_id FROM user_progress WHERE user_id = :id AND is_completed = true");
+        query.bindValue(":id", QVariant::fromValue(user.getId()));
+
+        if (query.exec())
         {
-            if (!database_.isOpen() || user.getId() == 0)
+            while (query.next())
             {
-                return;
-            }
-
-            QSqlQuery query(database_);
-            query.prepare("DELETE FROM user_achievements WHERE user_id = :user_id");
-            query.bindValue(":user_id", QVariant::fromValue(user.getId()));
-            query.exec();
-
-            for (const auto &achievement : user.getAchievements())
-            {
-                QSqlQuery insertQuery(database_);
-                insertQuery.prepare("INSERT INTO user_achievements (user_id, achievement_id, earned_at) VALUES "
-                                    "(:user_id, :achievement_id, :earned_at)");
-                insertQuery.bindValue(":user_id", QVariant::fromValue(user.getId()));
-                insertQuery.bindValue(":achievement_id", QVariant::fromValue(achievement.getId()));
-                insertQuery.bindValue(":earned_at", QDateTime::fromSecsSinceEpoch(std::chrono::system_clock::to_time_t(
-                                                        achievement.getDateEarned())));
-                insertQuery.exec();
+                user.addCompletedLevel(query.value(0).toULongLong());
             }
         }
+    }
 
-        void PgUserRepository::updateStreak(uint64_t userId)
+    void PgUserRepository::saveUserAchievements(const entities::User &user)
+    {
+        QSqlQuery deleteQuery(database_);
+        deleteQuery.prepare("DELETE FROM user_achievements WHERE user_id = :id");
+        deleteQuery.bindValue(":id", QVariant::fromValue(user.getId()));
+        deleteQuery.exec();
+
+        for (const auto &achievement : user.getAchievements())
         {
-            if (!database_.isOpen() || userId == 0)
-                return;
+            QSqlQuery insertQuery(database_);
+            insertQuery.prepare(
+                "INSERT INTO user_achievements (user_id, achievement_id, earned_at) VALUES (:uid, :aid, :date)");
+            insertQuery.bindValue(":uid", QVariant::fromValue(user.getId()));
+            insertQuery.bindValue(":aid", QVariant::fromValue(achievement.getId()));
+            insertQuery.bindValue(":date", chronoToQDateTime(achievement.getDateEarned()));
+            insertQuery.exec();
+        }
+    }
 
-            QSqlQuery query(database_);
-            query.prepare("SELECT current_streak_days, last_level_solved_at FROM users WHERE id = :id");
-            query.bindValue(":id", QVariant::fromValue(userId));
+    void PgUserRepository::updateStreak(uint64_t userId)
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
+            return;
+        }
 
-            if (query.exec() && query.next())
+        QSqlQuery query(database_);
+        query.prepare("SELECT current_streak_days, last_level_solved_at FROM users WHERE id = :id");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
+        {
+            uint32_t currentStreak = query.value("current_streak_days").toUInt();
+            QDateTime lastSolvedAt = query.value("last_level_solved_at").toDateTime();
+            QDateTime now = QDateTime::currentDateTime();
+
+            if (!lastSolvedAt.isValid())
             {
-                int currentStreak = query.value("current_streak_days").toInt();
-                QDateTime lastSolved = query.value("last_level_solved_at").toDateTime();
-                QDate today = QDate::currentDate();
-
-                if (lastSolved.isValid())
+                currentStreak = 1;
+            }
+            else
+            {
+                int daysSince = lastSolvedAt.daysTo(now);
+                if (daysSince == 1)
                 {
-                    QDate lastDate = lastSolved.date();
-                    if (lastDate == today)
-                    {
-                        return;
-                    }
-                    else if (lastDate == today.addDays(-1))
-                    {
-                        currentStreak++;
-                    }
-                    else
-                    {
-                        currentStreak = 1;
-                    }
+                    currentStreak++;
                 }
-                else
+                else if (daysSince > 1)
                 {
                     currentStreak = 1;
                 }
+            }
 
-                QSqlQuery update(database_);
-                update.prepare("UPDATE users SET current_streak_days = :streak, last_level_solved_at = "
-                               "CURRENT_TIMESTAMP WHERE id = :id");
-                update.bindValue(":streak", currentStreak);
-                update.bindValue(":id", QVariant::fromValue(userId));
-                update.exec();
+            QSqlQuery updateQuery(database_);
+            updateQuery.prepare(
+                "UPDATE users SET current_streak_days = :streak, last_level_solved_at = :solved_at WHERE id = :id");
+            updateQuery.bindValue(":streak", currentStreak);
+            updateQuery.bindValue(":solved_at", now);
+            updateQuery.bindValue(":id", QVariant::fromValue(userId));
+            updateQuery.exec();
+        }
+    }
+
+    void PgUserRepository::updateAvatar(uint64_t userId, const QString &avatarPath)
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
+            return;
+        }
+
+        QSqlQuery query(database_);
+        query.prepare("UPDATE users SET avatar_path = :path WHERE id = :id");
+        query.bindValue(":path", avatarPath);
+        query.bindValue(":id", QVariant::fromValue(userId));
+        query.exec();
+    }
+
+    bool PgUserRepository::saveLessonProgress(uint64_t userId, uint64_t moduleId, uint64_t lessonId, bool isCompleted)
+    {
+        if (!database_.isOpen() || userId == 0)
+            return false;
+
+        QSqlQuery query(database_);
+        query.prepare(R"(
+                INSERT INTO user_progress (user_id, module_id, lesson_id, is_completed, updated_at) 
+                VALUES (:uid, :mid, :lid, :status, CURRENT_TIMESTAMP) 
+                ON CONFLICT (user_id, lesson_id) 
+                DO UPDATE SET 
+                    is_completed = EXCLUDED.is_completed, 
+                    updated_at = CURRENT_TIMESTAMP
+            )");
+
+        query.bindValue(":uid", static_cast<qulonglong>(userId));
+        query.bindValue(":mid", static_cast<qulonglong>(moduleId));
+        query.bindValue(":lid", static_cast<qulonglong>(lessonId));
+        query.bindValue(":status", isCompleted);
+
+        return query.exec();
+    }
+
+    bool PgUserRepository::saveSubmission(uint64_t userId, uint64_t moduleId, uint64_t taskId, const QString &code,
+                                          bool isSuccess)
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
+            return false;
+        }
+
+        QSqlQuery query(database_);
+        query.prepare(R"(
+                INSERT INTO submissions (user_id, module_id, coding_task_id, source_code, is_success, submitted_at) 
+                VALUES (:uid, :mid, :tid, :code, :success, CURRENT_TIMESTAMP)
+            )");
+
+        query.bindValue(":uid", static_cast<qulonglong>(userId));
+        query.bindValue(":mid", static_cast<qulonglong>(moduleId));
+        query.bindValue(":tid", static_cast<qulonglong>(taskId));
+        query.bindValue(":code", code);
+        query.bindValue(":success", isSuccess);
+
+        return query.exec();
+    }
+
+    std::optional<QString> PgUserRepository::getLastSubmission(uint64_t userId, uint64_t taskId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
+            return std::nullopt;
+        }
+
+        QSqlQuery query(database_);
+        query.prepare("SELECT source_code FROM submissions WHERE user_id = :uid AND coding_task_id = :tid ORDER BY "
+                      "submitted_at DESC LIMIT 1");
+        query.bindValue(":uid", static_cast<qulonglong>(userId));
+        query.bindValue(":tid", static_cast<qulonglong>(taskId));
+
+        if (query.exec() && query.next())
+        {
+            return query.value(0).toString();
+        }
+        return std::nullopt;
+    }
+
+    bool PgUserRepository::isLessonCompleted(uint64_t userId, uint64_t lessonId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+            return false;
+
+        QSqlQuery query(database_);
+        query.prepare("SELECT is_completed FROM user_progress WHERE user_id = :uid AND lesson_id = :lid");
+        query.bindValue(":uid", static_cast<qulonglong>(userId));
+        query.bindValue(":lid", static_cast<qulonglong>(lessonId));
+
+        if (query.exec() && query.next())
+        {
+            return query.value(0).toBool();
+        }
+        return false;
+    }
+
+    std::vector<uint64_t> PgUserRepository::getCompletedLessonIds(uint64_t userId, uint64_t moduleId) const
+    {
+        std::vector<uint64_t> ids;
+        if (!database_.isOpen() || userId == 0)
+            return ids;
+
+        QSqlQuery query(database_);
+        query.prepare(
+            "SELECT lesson_id FROM user_progress WHERE user_id = :uid AND module_id = :mid AND is_completed = "
+            "TRUE");
+        query.bindValue(":uid", static_cast<qulonglong>(userId));
+        query.bindValue(":mid", static_cast<qulonglong>(moduleId));
+
+        if (query.exec())
+        {
+            while (query.next())
+            {
+                ids.push_back(query.value(0).toULongLong());
             }
         }
-    } // namespace repositories
-} // namespace cppforge
+        return ids;
+    }
+
+    int PgUserRepository::getModuleProgress(uint64_t userId, uint64_t moduleId) const
+    {
+        if (!database_.isOpen() || userId == 0 || moduleId == 0)
+            return 0;
+
+        QSqlQuery query(database_);
+        query.prepare(R"(
+            SELECT 
+                (SELECT COUNT(*) FROM lessons WHERE module_id = :mid) as total,
+                (SELECT COUNT(*) FROM user_progress 
+                 WHERE module_id = :mid AND user_id = :uid AND is_completed = true) as completed
+        )");
+        query.bindValue(":mid", static_cast<qulonglong>(moduleId));
+        query.bindValue(":uid", static_cast<qulonglong>(userId));
+
+        if (query.exec() && query.next())
+        {
+            int total = query.value("total").toInt();
+            int completed = query.value("completed").toInt();
+            if (total <= 0)
+                return 0;
+            return (completed * 100) / total;
+        }
+        return 0;
+    }
+} // namespace cppforge::repositories

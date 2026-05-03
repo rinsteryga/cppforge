@@ -266,4 +266,88 @@ namespace cppforge::repositories
 
         return std::nullopt;
     }
+
+    std::optional<entities::CodingTask> PgCodingTaskRepository::getRandomDuelTask() const
+    {
+        if (!database_.isOpen())
+        {
+            return std::nullopt;
+        }
+
+        QSqlQuery query(database_);
+        query.prepare("SELECT id, lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, "
+                      "memory_limit, duel_topic FROM coding_tasks "
+                      "WHERE is_duel = TRUE "
+                      "ORDER BY RANDOM() LIMIT 1");
+
+        if (query.exec() && query.next())
+        {
+            uint64_t id = query.value("id").toULongLong();
+            QVariant lessonIdVar = query.value("lesson_id");
+            std::optional<uint64_t> lessonId =
+                lessonIdVar.isNull() ? std::nullopt : std::make_optional(lessonIdVar.toULongLong());
+            QString title = query.value("title").toString();
+            QString description = query.value("description").toString();
+            QString initialCode = query.value("initial_code").toString();
+            QString whiteStr = query.value("whitelist").toString();
+            QString blackStr = query.value("blacklist").toString();
+            int32_t timeLimit = query.value("time_limit").toInt();
+            int32_t memoryLimit = query.value("memory_limit").toInt();
+            QVariant topicVar = query.value("duel_topic");
+            std::optional<QString> topic = topicVar.isNull() ? std::nullopt : std::make_optional(topicVar.toString());
+
+            std::set<entities::TestCase> testCases;
+            QSqlQuery testQuery(database_);
+            testQuery.prepare("SELECT id, input, expected_output, is_public FROM test_cases WHERE coding_task_id = "
+                              ":task_id ORDER BY id ASC");
+            testQuery.bindValue(":task_id", QVariant::fromValue(id));
+
+            if (testQuery.exec())
+            {
+                while (testQuery.next())
+                {
+                    uint64_t testId = testQuery.value("id").toULongLong();
+                    QString input = testQuery.value("input").toString();
+                    QString output = testQuery.value("expected_output").toString();
+                    bool isPublic = testQuery.value("is_public").toBool();
+
+                    testCases.emplace(testId, input, output, isPublic);
+                }
+            }
+
+            std::optional<std::set<QString>> whitelist;
+            std::optional<std::set<QString>> blacklist;
+
+            if (!whiteStr.isEmpty())
+            {
+                std::set<QString> white;
+                for (const auto &kw : whiteStr.split(",", Qt::SkipEmptyParts))
+                {
+                    white.insert(kw.trimmed());
+                }
+                if (!white.empty())
+                {
+                    whitelist = std::move(white);
+                }
+            }
+
+            if (!blackStr.isEmpty())
+            {
+                std::set<QString> black;
+                for (const auto &kw : blackStr.split(",", Qt::SkipEmptyParts))
+                {
+                    black.insert(kw.trimmed());
+                }
+                if (!black.empty())
+                {
+                    blacklist = std::move(black);
+                }
+            }
+
+            return entities::CodingTask(id, lessonId, title, description, initialCode, testCases, timeLimit,
+                                        memoryLimit, whitelist, blacklist, topic);
+        }
+
+        return std::nullopt;
+    }
 } // namespace cppforge::repositories

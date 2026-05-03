@@ -28,10 +28,10 @@ namespace cppforge::repositories
 
         /**
          * @brief Fetches a specific module by its ID.
-         * @param id The module identifier.
+         * @param moduleId The module identifier.
          * @return Module if found, std::nullopt otherwise.
          */
-        std::optional<entities::Module> getModuleById(uint64_t id) const override;
+        std::optional<entities::Module> getModuleById(uint64_t moduleId) const override;
 
     private:
         QSqlDatabase &database_;
