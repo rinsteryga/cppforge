@@ -136,8 +136,9 @@ private:
 
     /**
      * @brief Configures visual window style, fonts, and color scheme.
+     * @param isDark Optional override for the theme state.
      */
-    void setupStyles();
+    void setupStyles(std::optional<bool> isDark = std::nullopt);
 
     QString m_localNickname;                                ///< Nickname of the local user.
     cppforge::services::DuelManager *duelManager_{nullptr}; ///< Pointer to network manager.
