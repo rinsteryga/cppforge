@@ -87,9 +87,6 @@ ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
 {
     setupUI();
     applyStyles();
-
-    auto *secretShortcut = new QShortcut(QKeySequence("Alt+L, B"), this);
-    connect(secretShortcut, &QShortcut::activated, this, &ProfilePage::secretTaskTriggered);
 }
 
 ProfilePage::~ProfilePage() = default;
