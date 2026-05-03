@@ -9,6 +9,7 @@
 #include "ModuleRoadmapWidget.hpp"
 #include "ProfilePage.hpp"
 #include "TaskWindow.hpp"
+#include "WindowStateManager.hpp"
 #include "services/AchievementService.hpp"
 #include "services/DuelManager.hpp"
 
@@ -48,7 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupUI();
     setWindowOpacity(0.0);
 
-    QTimer::singleShot(50, this, &MainWindow::centerWindow);
+    WindowStateManager::instance().applyGeometry(this, QSize(1400, 950));
+
     QTimer::singleShot(100, this, &MainWindow::fadeIn);
 }
 
@@ -142,6 +144,62 @@ void MainWindow::setCourseService(cppforge::services::CourseService *service)
     m_courseService = service;
 }
 
+void MainWindow::setThemeService(cppforge::services::ThemeService *service)
+{
+    m_themeService = service;
+    if (m_themeService)
+    {
+        connect(
+            m_themeService, &cppforge::services::ThemeService::themeChanged, this,
+            [this](cppforge::services::Theme theme)
+            {
+                QString iconPath =
+                    (theme == cppforge::services::Theme::Dark) ? ":/icons/main_logo_dark.ico" : ":/icons/main_logo.ico";
+                if (customTitleBar_)
+                {
+                    customTitleBar_->setIcon(QIcon(iconPath));
+                    customTitleBar_->setThemeService(m_themeService);
+                }
+                if (sideBarLogo_)
+                {
+                    QPixmap pix(iconPath);
+                    if (!pix.isNull())
+                    {
+                        sideBarLogo_->setPixmap(pix.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    }
+                }
+                setupStyles();
+            });
+
+        QString initIcon = (m_themeService->getCurrentTheme() == cppforge::services::Theme::Dark)
+                               ? ":/icons/main_logo_dark.ico"
+                               : ":/icons/main_logo.ico";
+
+        if (customTitleBar_)
+        {
+            customTitleBar_->setIcon(QIcon(initIcon));
+            customTitleBar_->setThemeService(m_themeService);
+        }
+        if (sideBarLogo_)
+        {
+            QPixmap pix(initIcon);
+            if (!pix.isNull())
+            {
+                sideBarLogo_->setPixmap(pix.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            }
+        }
+    }
+
+    if (profilePage)
+    {
+        profilePage->setThemeService(service);
+    }
+    if (duelPage)
+    {
+        duelPage->setThemeService(service);
+    }
+}
+
 void MainWindow::loadAllModulesProgress()
 {
     if (m_currentUserId == -1 || moduleProgressBars.isEmpty() || !m_courseService)
@@ -180,7 +238,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
 void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
-    this->show();
+    WindowStateManager::instance().applyState(this, QSize(1400, 950));
     loadAllModulesProgress();
 
     if (m_currentOpenModuleId != -1)
@@ -261,10 +319,12 @@ void MainWindow::fadeOut()
                     if (!taskWindow_)
                     {
                         taskWindow_ = std::make_unique<TaskWindow>();
-                        if (m_userService)
+                        if (taskWindow_)
+                        {
                             taskWindow_->setUserService(m_userService);
-                        if (m_courseService)
                             taskWindow_->setCourseService(m_courseService);
+                            taskWindow_->setThemeService(m_themeService);
+                        }
                         connect(taskWindow_.get(), &TaskWindow::moduleProgressUpdated, this,
                                 &MainWindow::updateModuleProgress);
                         connect(taskWindow_.get(), &TaskWindow::windowClosed, this, &MainWindow::onTaskWindowClosed);
@@ -283,8 +343,9 @@ void MainWindow::fadeOut()
                     }
                     taskWindow_->setUserId(m_currentUserId);
                     taskWindow_->loadModule(pendingModuleId_);
+                    WindowStateManager::instance().captureState(this);
                     this->hide();
-                    taskWindow_->show();
+                    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1300, 900));
                     taskWindow_->fadeIn();
                     pendingModuleId_ = -1;
                     isTransitioning_ = false;
@@ -299,7 +360,7 @@ void MainWindow::setupWindowProperties()
     resize(1400, 950);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
-    setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
     setAttribute(Qt::WA_TranslucentBackground, false);
     setObjectName("MainWindow");
 }
@@ -326,16 +387,20 @@ void MainWindow::setupLeftPanel()
     logoContainer->setStyleSheet("background: transparent;");
     auto logoLayout = new QVBoxLayout(logoContainer);
 
-    auto logoIcon = new QLabel();
-    logoIcon->setAlignment(Qt::AlignCenter);
-    logoIcon->setStyleSheet("background: transparent;");
+    sideBarLogo_ = new QLabel();
+    sideBarLogo_->setAlignment(Qt::AlignCenter);
+    sideBarLogo_->setStyleSheet("background: transparent;");
 
-    QPixmap logoPixmap(":/icons/main_logo.ico");
+    QString logoPath = ":/icons/main_logo.ico";
+    if (m_themeService && m_themeService->getCurrentTheme() == cppforge::services::Theme::Dark)
+        logoPath = ":/icons/main_logo_dark.ico";
+
+    QPixmap logoPixmap(logoPath);
     if (!logoPixmap.isNull())
-        logoIcon->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        sideBarLogo_->setPixmap(logoPixmap.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
-    logoIcon->setFixedSize(100, 100);
-    logoLayout->addWidget(logoIcon);
+    sideBarLogo_->setFixedSize(100, 100);
+    logoLayout->addWidget(sideBarLogo_);
     layout->addWidget(logoContainer, 0, Qt::AlignCenter);
     layout->addSpacing(20);
 
@@ -496,6 +561,24 @@ void MainWindow::setupUI()
     contentStack = std::make_unique<QStackedWidget>();
     profilePage = new ProfilePage(this);
     connect(profilePage, &ProfilePage::secretTaskTriggered, this, &MainWindow::onSecretTaskTriggered);
+    connect(profilePage, &ProfilePage::avatarChanged, this,
+            [this](const QString &path)
+            {
+                if (duelPage)
+                {
+                    auto userOpt = m_userService->getUser(m_currentUsername);
+                    if (userOpt)
+                    {
+                        double winrate = 0.0;
+                        int total = userOpt->getDuelWins() + userOpt->getDuelLosses();
+                        if (total > 0)
+                        {
+                            winrate = (static_cast<double>(userOpt->getDuelWins()) / total) * 100.0;
+                        }
+                        duelPage->updateUserStats(m_currentUsername, userOpt->getDuelPoints(), winrate, path);
+                    }
+                }
+            });
 
     learningPage = new QWidget();
     duelPage = new DuelPage();
@@ -509,6 +592,7 @@ void MainWindow::setupUI()
                 manager->sendIdentity(m_currentUsername);
 
                 m_duelTaskWindow = new DuelTaskWindow(manager);
+                m_duelTaskWindow->setThemeService(m_themeService);
 
                 m_duelTaskWindow->setTask(task);
 
@@ -522,7 +606,7 @@ void MainWindow::setupUI()
                 connect(m_duelTaskWindow, &DuelTaskWindow::sessionClosed, this,
                         [this]()
                         {
-                            this->show();
+                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
                             this->fadeIn();
                         });
 
@@ -530,12 +614,13 @@ void MainWindow::setupUI()
                         [this]()
                         {
                             m_duelTaskWindow = nullptr;
-                            this->show();
+                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
                             this->fadeIn();
                         });
 
+                WindowStateManager::instance().captureState(this);
                 this->hide();
-                m_duelTaskWindow->show();
+                WindowStateManager::instance().applyState(m_duelTaskWindow, QSize(1300, 900));
             });
 
     roadmapPage = new QWidget();
@@ -583,27 +668,51 @@ void MainWindow::setupUI()
 
 void MainWindow::setupStyles()
 {
-    setStyleSheet(R"(
-        QWidget { background-color: #f5f7fb; font-family: 'Roboto'; }
-        #MainWindow { background-color: white; border: 1px solid #d0d0d0; }
+    bool isDark = (palette().color(QPalette::Window).lightness() < 128);
+
+    QString hoverColor, accentColor;
+    QString hoverText = "white";
+
+    if (isDark)
+    {
+        hoverColor = "#0e639c";
+        accentColor = "#0e639c";
+    }
+    else
+    {
+        hoverColor = "#f3e8ff";
+        accentColor = "#62639b";
+        hoverText = "black";
+    }
+
+    setStyleSheet(QString(R"(
+        QWidget { background-color: palette(alternate-base); font-family: 'Roboto'; color: palette(text); }
+        #MainWindow { background-color: palette(base); border: 1px solid palette(mid); }
         
-        QFrame#sideBar { background-color: white; border: 1px solid #e0e0e0; }
+        QFrame#sideBar { background-color: palette(base); border: 1px solid palette(mid); }
         
-        /* Anti-aliasing fix for all labels */
         QLabel { background-color: transparent; border: none; }
 
-        QPushButton#navButton { background-color: transparent; border: none; color: #555; text-align: left; padding-left: 20px; }
-        QPushButton#navButton:hover { background-color: #f0f2ff; color: #62639b; }
+        QPushButton#navButton { background-color: transparent; border: none; color: palette(window-text); text-align: left; padding-left: 20px; }
+        QPushButton#navButton:hover { background-color: %1; color: %2; }
         
-        QFrame[class="card"] { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; }
+        QFrame[class="card"] { background-color: palette(base); border: 1px solid palette(mid); border-radius: 8px; }
         
-        QProgressBar { background: #eef0f5; border: 1px solid #ddd; text-align: center; color: #333; border-radius: 4px; }
-        QProgressBar::chunk { background: #62639b; border-radius: 4px; }
+        QProgressBar { background: palette(alternate-base); border: 1px solid palette(mid); text-align: center; color: palette(text); border-radius: 4px; }
+        QProgressBar::chunk { background: %3; border-radius: 4px; }
         
-        QPushButton { background: #62639b; color: white; border-radius: 4px; padding: 5px 15px; font-weight: bold; }
-        QPushButton:hover { background: #51528a; }
-        QPushButton:disabled { background: #f0f0f0; color: #999; }
-    )");
+        QPushButton { background: palette(button); color: palette(button-text); border: 1px solid palette(mid); border-radius: 4px; padding: 5px 15px; font-weight: bold; }
+        QPushButton:hover { background: %1; color: %2; }
+        QPushButton#logoutButton:hover { background: palette(link); color: palette(highlighted-text); }
+        QPushButton:disabled { background: palette(disabled, button); color: palette(disabled, button-text); }
+    )")
+                      .arg(hoverColor)
+                      .arg(hoverText)
+                      .arg(accentColor));
+
+    style()->unpolish(this);
+    style()->polish(this);
+    update();
 }
 
 void MainWindow::onModuleButtonClicked()
@@ -772,7 +881,7 @@ void MainWindow::onSecretTaskTriggered()
     QString initCode = "#include <iostream>\n#include <string>\n#include <vector>\n#include <iomanip>\n\n"
                        "using namespace std;\n\n"
                        "int main() {\n"
-                       "    // Ваше решение\n"
+                       "    \n"
                        "    return 0;\n"
                        "}\n";
     std::set<cppforge::entities::TestCase> testCases;

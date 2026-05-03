@@ -1,5 +1,7 @@
 #include "AuthWindow.hpp"
 #include "MainWindow.hpp"
+#include "ThemeManager.hpp"
+#include "WindowStateManager.hpp"
 #include "repositories/PgAchievementRepository.hpp"
 #include "repositories/PgCodingTaskRepository.hpp"
 #include "repositories/PgLessonRepository.hpp"
@@ -8,6 +10,7 @@
 #include "services/AuthManager.hpp"
 #include "services/CourseService.hpp"
 #include "services/TaskManager.hpp"
+#include "services/ThemeService.hpp"
 #include "services/UserService.hpp"
 
 #include <QApplication>
@@ -59,31 +62,29 @@ int main(int argc, char *argv[])
     // Initialize TaskManager singleton
     cppforge::services::TaskManager::instance().setTaskRepository(codingTaskRepo.get());
 
+    auto themeService = std::make_shared<cppforge::services::ThemeService>();
+    cppforge::gui::ThemeManager themeManager(themeService.get());
+
     QSettings settings("CppForge", "StudyApp");
     bool remember = settings.value("auth/remember", false).toBool();
     int savedUserId = settings.value("auth/user_id", -1).toInt();
     QString savedUsername = settings.value("auth/username", "").toString();
 
     AuthWindow authWindow(authManager);
+    authWindow.setThemeService(themeService.get());
     MainWindow mainWindow;
     mainWindow.setUserService(userService.get());
     mainWindow.setAchievementService(achievementService.get());
     mainWindow.setCourseService(courseService.get());
+    mainWindow.setThemeService(themeService.get());
 
     auto showMain = [&](const QString &username, int userId)
     {
         mainWindow.setCurrentUser(username);
         mainWindow.setUserId(userId);
 
-        QScreen *screen = QGuiApplication::primaryScreen();
-        if (screen)
-        {
-            QRect geom = screen->availableGeometry();
-            mainWindow.move(geom.center() - mainWindow.rect().center());
-        }
-
         authWindow.hide();
-        mainWindow.show();
+        WindowStateManager::instance().applyState(&mainWindow, QSize(1400, 950));
         mainWindow.fadeIn();
     };
 
@@ -112,7 +113,7 @@ int main(int argc, char *argv[])
 
     if (!autoLoginValid)
     {
-        authWindow.show();
+        WindowStateManager::instance().applyState(&authWindow, QSize(1280, 900));
     }
 
     return app.exec();

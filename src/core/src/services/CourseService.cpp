@@ -48,7 +48,7 @@ namespace cppforge::services
     std::vector<int> CourseService::getAllModulesProgress(uint64_t userId) const
     {
         std::vector<int> progresses;
-        // Assuming 14 modules as per existing logic
+
         for (int i = 1; i <= 14; ++i)
         {
             progresses.push_back(m_userRepo->getModuleProgress(userId, i));

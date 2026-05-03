@@ -2,6 +2,7 @@
 
 #include "../../core/include/services/UserService.hpp"
 
+#include <QComboBox>
 #include <QDebug>
 #include <QDialog>
 #include <QDir>
@@ -12,9 +13,14 @@
 #include <QImageReader>
 #include <QKeySequence>
 #include <QLabel>
+#include <QPainter>
+#include <QPainterPath>
 #include <QPixmap>
 #include <QPushButton>
+#include <QScrollArea>
+#include <QSettings>
 #include <QShortcut>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QtSql/QSqlError>
@@ -37,21 +43,21 @@ namespace
             card->setObjectName("DialogCard");
             card->setStyleSheet(R"(
                 #DialogCard {
-                    background-color: white;
-                    border: 2px solid #62639b;
+                    background-color: palette(base);
+                    border: 2px solid palette(highlight);
                     border-radius: 15px;
                 }
-                QLabel { color: #333; font-size: 16px; }
-                #Title { font-weight: bold; font-size: 20px; color: #62639b; }
+                QLabel { color: palette(text); font-size: 16px; }
+                #Title { font-weight: bold; font-size: 20px; color: palette(highlight); }
                 QPushButton {
-                    background-color: #62639b;
-                    color: white;
+                    background-color: palette(button);
+                    color: palette(button-text);
                     border-radius: 8px;
                     padding: 8px 20px;
                     font-weight: bold;
                     border: none;
                 }
-                QPushButton:hover { background-color: #51528a; }
+                QPushButton:hover { background-color: palette(highlight); }
             )");
 
             auto *cardLayout = new QVBoxLayout(card);
@@ -86,6 +92,8 @@ ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
     connect(secretShortcut, &QShortcut::activated, this, &ProfilePage::secretTaskTriggered);
 }
 
+ProfilePage::~ProfilePage() = default;
+
 void ProfilePage::setUserData(uint64_t userId, const QString &name, const QString &avatarPath)
 {
     currentUserId = userId;
@@ -100,7 +108,6 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
     if (finalPath.isEmpty() || finalPath == "NULL")
     {
         QDir imagesDir(":/images");
-        qDebug() << "Available resource images:" << imagesDir.entryList(QDir::Files);
         QStringList filters;
         filters << "default_avatar*.png";
         QStringList availableAvatars = imagesDir.entryList(filters, QDir::Files);
@@ -117,27 +124,13 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             finalPath = ":/images/default_avatar1.png";
         }
 
-        qDebug() << "Assigned random avatar from resources:" << finalPath;
-
         if (userService_)
         {
             userService_->updateAvatar(userId, finalPath);
         }
     }
 
-    QPixmap pix(finalPath);
-    if (pix.isNull())
-    {
-        qDebug() << "[Avatar] Failed to load from:" << finalPath;
-        avatarLabel->setText("👤");
-        avatarLabel->setAlignment(Qt::AlignCenter);
-        avatarLabel->setStyleSheet("background-color: #EEE; font-size: 80px; border-radius: 20px;");
-    }
-    else
-    {
-        avatarLabel->setPixmap(pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
-        avatarLabel->setStyleSheet("border-radius: 20px;");
-    }
+    updateAvatarDisplay(finalPath);
 
     if (userService_)
     {
@@ -200,21 +193,21 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
             bool earned = ach.getDateEarned().time_since_epoch().count() > 0;
             QString iconPath = ach.getIconPath().trimmed();
-            qDebug() << "[Achievement] Attempting to load icon for" << ach.getName() << "path: [" << iconPath << "]";
             QPixmap pix(iconPath);
 
             if (pix.isNull())
             {
-                qDebug() << "[Achievement] Icon NOT FOUND for" << ach.getName() << "at path:" << iconPath;
                 icon->setText("🏆");
-                icon->setStyleSheet(earned ? "background: #eee; border-radius: 8px; font-size: 24px;"
-                                           : "background: #f9f9f9; border-radius: 8px; font-size: 24px; color: "
-                                             "#ccc; border: 1px dashed #ddd;");
+                icon->setStyleSheet(earned ? "background-color: palette(alternate-base); border: 1px solid "
+                                             "palette(mid); border-radius: 8px; font-size: 24px;"
+                                           : "background-color: palette(base); border: 1px dashed palette(mid); "
+                                             "border-radius: 8px; font-size: 24px; color: palette(mid);");
             }
             else
             {
-                icon->setStyleSheet(earned ? "background: #f0f0f0; border-radius: 8px;"
-                                           : "background: #f9f9f9; border-radius: 8px; border: 1px dashed #ddd;");
+                icon->setStyleSheet(
+                    earned ? "background-color: palette(alternate-base); border-radius: 8px;"
+                           : "background-color: palette(base); border: 1px dashed palette(mid); border-radius: 8px;");
                 if (!earned)
                 {
                     QImage img = pix.toImage().convertToFormat(QImage::Format_Grayscale8);
@@ -230,8 +223,9 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             v->addWidget(icon, 0, Qt::AlignCenter);
             auto *name = new QLabel(ach.getName());
             name->setAlignment(Qt::AlignCenter);
-            name->setStyleSheet(earned ? "font-size: 10px; font-weight: bold; color: #333; background: transparent;"
-                                       : "font-size: 10px; color: #777; background: transparent;");
+            name->setStyleSheet(
+                earned ? "font-size: 10px; font-weight: bold; color: palette(text); background: transparent;"
+                       : "font-size: 10px; color: palette(window-text); background: transparent;");
             name->setWordWrap(true);
             name->setContentsMargins(0, 0, 0, 0);
             v->addWidget(name, 0, Qt::AlignCenter);
@@ -260,16 +254,17 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             h->setContentsMargins(0, 5, 0, 5);
 
             auto *typeTag = new QLabel(act.type);
-            typeTag->setStyleSheet(
-                act.type == "Lesson"
-                    ? "background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 10px; font-size: 11px;"
-                    : "background: #e8f5e9; color: #388e3c; padding: 2px 8px; border-radius: 10px; font-size: 11px;");
+            typeTag->setStyleSheet(act.type == "Lesson"
+                                       ? "background-color: palette(highlight); color: palette(highlighted-text); "
+                                         "padding: 2px 8px; border-radius: 10px; font-size: 11px;"
+                                       : "background-color: palette(button); color: palette(button-text); padding: 2px "
+                                         "8px; border-radius: 10px; font-size: 11px;");
 
             auto *title = new QLabel(act.title);
             title->setStyleSheet("font-weight: 500;");
 
             auto *date = new QLabel(act.date);
-            date->setStyleSheet("color: #888; font-size: 12px;");
+            date->setStyleSheet("color: palette(window-text); font-size: 12px;");
 
             h->addWidget(typeTag);
             h->addWidget(title, 1);
@@ -298,7 +293,7 @@ void ProfilePage::setupUI()
     avatarLabel->setFixedSize(200, 200);
     avatarLabel->setObjectName("AvatarSquare");
     avatarLabel->setAlignment(Qt::AlignCenter);
-    avatarLabel->setStyleSheet("background-color: #f0f0f0;");
+    avatarLabel->setStyleSheet("background-color: transparent;");
 
     auto *infoLayout = new QVBoxLayout();
 
@@ -378,6 +373,7 @@ void ProfilePage::setupUI()
         v->addWidget(h);
 
         auto *content = new QWidget();
+        content->setObjectName("BoxContent");
         QLayout *contentLayout = nullptr;
         if (titleText == "ACHIEVEMENTS")
         {
@@ -396,7 +392,44 @@ void ProfilePage::setupUI()
 
     rightSection->addWidget(createBigBox("ACHIEVEMENTS", &achievementsContainer));
     rightSection->addSpacing(20);
+
+    auto *settingsContainer = new QWidget();
+    settingsContainer->setObjectName("BoxContent");
+    auto *settingsLayout = new QVBoxLayout(settingsContainer);
+    settingsLayout->setContentsMargins(15, 15, 15, 15);
+    settingsLayout->setSpacing(10);
+
+    auto *themeLayout = new QHBoxLayout();
+    auto *themeLabel = new QLabel("Theme:");
+    themeLabel->setStyleSheet("font-size: 14px; color: palette(text);");
+    themeCombo_ = new QComboBox();
+    themeCombo_->addItems({"Light", "Dark"});
+    themeCombo_->setCursor(Qt::PointingHandCursor);
+    themeLayout->addWidget(themeLabel);
+    themeLayout->addWidget(themeCombo_);
+    themeLayout->addStretch();
+
+    settingsLayout->addLayout(themeLayout);
+    settingsLayout->addStretch();
+
+    auto *settingsBox = new QFrame();
+    settingsBox->setObjectName("BigBlock");
+    auto *boxLayout = new QVBoxLayout(settingsBox);
+    boxLayout->setContentsMargins(0, 0, 0, 0);
+    boxLayout->setSpacing(0);
+
+    auto *headerLabel = new QLabel("APP SETTINGS");
+    headerLabel->setProperty("class", "box-header");
+    headerLabel->setAlignment(Qt::AlignCenter);
+    boxLayout->addWidget(headerLabel);
+    boxLayout->addWidget(settingsContainer);
+
+    rightSection->addWidget(settingsBox);
+    rightSection->addSpacing(20);
+
     rightSection->addWidget(createBigBox("RECENT ACTIVITY", &activityContainer));
+
+    connect(themeCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ProfilePage::onThemeChanged);
 
     auto *footerLayout = new QHBoxLayout();
     footerLayout->setSpacing(10);
@@ -436,30 +469,124 @@ void ProfilePage::setupUI()
 
 void ProfilePage::applyStyles()
 {
-    setStyleSheet(R"(
-        #UserNameLabel { font-size: 28px; font-weight: bold; color: #222; }
+    bool isDark = false;
+    if (themeService_)
+    {
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    }
+    else
+    {
+        QSettings settings("CppForge", "StudyApp");
+        isDark = (settings.value("app/theme", 0).toInt() == 1);
+    }
+    QString hoverColor, hoverText;
+    if (isDark)
+    {
+        hoverColor = "#0e639c";
+        hoverText = "white";
+    }
+    else
+    {
+        hoverColor = "#f3e8ff";
+        hoverText = "black";
+    }
+
+    setStyleSheet(QString(R"(
+        #UserNameLabel { font-size: 28px; font-weight: bold; color: palette(text); }
         #StatTitle { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; }
-        #AvatarSquare { background-color: #f0f0f0; border: 1px solid #DDD; }
-        #StatCard, #BigBlock { background-color: white; border: 2px solid #EAEAEA; border-radius: 20px; }
-        .box-header { background-color: #F8F9FB; padding: 5px; font-weight: bold; color: #555; border-bottom: 1px solid #EEE; }
+        #AvatarSquare { 
+            background-color: palette(alternate-base); 
+            border: 2px solid palette(mid);
+            border-radius: 100px;
+        }
+        #StatCard, #BigBlock { 
+            background-color: palette(base); 
+            border: 2px solid;
+            border-color: palette(mid); 
+            border-radius: 20px; 
+        }
+        .box-header { 
+            background-color: palette(alternate-base); 
+            padding: 5px; 
+            font-weight: bold; 
+            color: palette(window-text); 
+            border-bottom: 1px solid;
+            border-bottom-color: palette(mid);
+            border-top-left-radius: 18px;
+            border-top-right-radius: 18px;
+        }
         #GreenValue { color: #4CAF50; font-size: 24px; font-weight: bold; }
+        #GreenValue:hover { color: #4CAF50; }
         #StreakLabel { font-size: 26px; font-weight: bold; }
-        #FooterLinks { color: #888; font-size: 13px; line-height: 1.5; }
+        #FooterLinks { color: palette(window-text); font-size: 13px; line-height: 1.5; }
         #FooterBtn {
             background: transparent;
             border: none;
-            color: #888;
+            color: palette(window-text);
             font-size: 14px;
             padding: 2px 5px;
             text-align: right;
         }
-        #FooterBtn:hover { color: #62639b; text-decoration: underline; }
+        #FooterBtn:hover { color: %1; text-decoration: underline; background: transparent; }
         #ChangeAvatarBtn {
-            background-color: #f8f9ff; color: #62639b; border: 1px solid #62639b;
-            border-radius: 5px; padding: 8px; font-weight: 500;
+            background-color: palette(button); 
+            color: palette(button-text); 
+            border: 1px solid palette(mid);
+            border-radius: 8px; 
+            padding: 8px 16px; 
+            font-weight: 600;
         }
-        #ChangeAvatarBtn:hover { background-color: #eef0ff; }
-    )");
+        #ChangeAvatarBtn:hover { background-color: %1; color: %2; }
+        #BoxContent { 
+            background: transparent; 
+            border: none; 
+            border-bottom-left-radius: 18px; 
+            border-bottom-right-radius: 18px; 
+        }
+        
+        QComboBox {
+            background-color: palette(base);
+            border: 1px solid palette(mid);
+            border-radius: 8px;
+            padding: 5px 15px;
+            min-width: 100px;
+            color: palette(text);
+        }
+        QComboBox:hover { border-color: %1; }
+        QComboBox::drop-down { border: none; width: 30px; }
+        QComboBox::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid palette(text); margin-right: 10px; }
+        QComboBox QAbstractItemView {
+            background-color: palette(base);
+            border: 1px solid palette(mid);
+            selection-background-color: %1;
+            color: %2;
+        }
+    )")
+                      .arg(hoverColor)
+                      .arg(hoverText));
+}
+
+void ProfilePage::setThemeService(cppforge::services::ThemeService *service)
+{
+    themeService_ = service;
+    if (themeService_)
+    {
+        if (themeCombo_)
+        {
+            themeCombo_->blockSignals(true);
+            themeCombo_->setCurrentIndex(themeService_->getCurrentTheme() == cppforge::services::Theme::Dark ? 1 : 0);
+            themeCombo_->blockSignals(false);
+        }
+        connect(themeService_, &cppforge::services::ThemeService::themeChanged, this, &ProfilePage::applyStyles);
+    }
+}
+
+void ProfilePage::onThemeChanged(int index)
+{
+    if (themeService_)
+    {
+        themeService_->setTheme(index == 1 ? cppforge::services::Theme::Dark : cppforge::services::Theme::Light);
+    }
 }
 
 void ProfilePage::onChangeAvatarClicked()
@@ -474,16 +601,40 @@ void ProfilePage::onChangeAvatarClicked()
     QString fileName = QFileDialog::getOpenFileName(this, "Select Avatar", "", filter);
     if (!fileName.isEmpty())
     {
-        QPixmap pix(fileName);
-        if (!pix.isNull())
-        {
-            avatarLabel->setPixmap(pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
+        updateAvatarDisplay(fileName);
 
-            if (userService_)
-            {
-                userService_->updateAvatar(currentUserId, fileName);
-            }
+        if (userService_)
+        {
+            userService_->updateAvatar(currentUserId, fileName);
         }
+        emit avatarChanged(fileName);
+    }
+}
+
+void ProfilePage::updateAvatarDisplay(const QString &path)
+{
+    if (!avatarLabel)
+        return;
+
+    QPixmap pix(path);
+    if (pix.isNull())
+    {
+        avatarLabel->setText("👤");
+        avatarLabel->setAlignment(Qt::AlignCenter);
+        avatarLabel->setStyleSheet("background-color: palette(button); border-radius: 100px;");
+    }
+    else
+    {
+        QPixmap rounded(200, 200);
+        rounded.fill(Qt::transparent);
+        QPainter painter(&rounded);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+        QPainterPath clipPath;
+        clipPath.addEllipse(0, 0, 200, 200);
+        painter.setClipPath(clipPath);
+        painter.drawPixmap(0, 0, pix.scaled(200, 200, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
+        avatarLabel->setPixmap(rounded);
     }
 }
 

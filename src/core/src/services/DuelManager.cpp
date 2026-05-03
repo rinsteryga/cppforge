@@ -26,6 +26,7 @@ namespace cppforge::services
     bool DuelManager::hostRoom(quint16 port)
     {
         m_isHost = true;
+        m_isIntentionalDisconnect = false;
         disconnectAll();
         server_ = std::make_unique<QTcpServer>(this);
         connect(server_.get(), &QTcpServer::newConnection, this, &DuelManager::onNewConnection);
@@ -35,6 +36,7 @@ namespace cppforge::services
     void DuelManager::joinRoom(const QString &ip, quint16 port)
     {
         m_isHost = false;
+        m_isIntentionalDisconnect = false;
 
         disconnectAll();
 
@@ -84,6 +86,7 @@ namespace cppforge::services
 
     void DuelManager::disconnectAll()
     {
+        m_isIntentionalDisconnect = true;
         if (socket_ != nullptr)
         {
             socket_->disconnectFromHost();
@@ -135,17 +138,16 @@ namespace cppforge::services
         }
     }
 
-    void DuelManager::sendIdentity(const QString &myName)
+    void DuelManager::sendIdentity(const QString &myName, const QString &avatarPath)
     {
         m_localPlayerName = myName;
-
         QJsonObject json;
         json["type"] = "IDENTIFY";
         QJsonObject payload;
         payload["nickname"] = myName;
+        payload["avatar"] = avatarPath;
         payload["isHost"] = m_isHost;
         json["payload"] = payload;
-
         sendMessage(json);
     }
 
@@ -159,9 +161,15 @@ namespace cppforge::services
 
     void DuelManager::onSocketDisconnected()
     {
-        emit connectionError("Opponent disconnected.");
-        socket_->deleteLater();
-        socket_ = nullptr;
+        if (socket_ != nullptr)
+        {
+            if (!m_isIntentionalDisconnect)
+            {
+                emit connectionError("Opponent disconnected.");
+            }
+            socket_->deleteLater();
+            socket_ = nullptr;
+        }
     }
 
     void DuelManager::processMessage(const QJsonObject &json)
@@ -172,7 +180,8 @@ namespace cppforge::services
         if (type == "IDENTIFY")
         {
             m_opponentName = payload["nickname"].toString();
-            emit opponentIdentified(m_opponentName);
+            QString avatar = payload["avatar"].toString();
+            emit opponentIdentified(m_opponentName, avatar);
         }
 
         else if (type == "TASK")
@@ -191,10 +200,12 @@ namespace cppforge::services
 
         else if (type == "SURRENDER")
         {
+            m_isIntentionalDisconnect = true;
             emit duelFinished(m_localPlayerName, 10);
         }
         else if (type == "WIN" || type == "FINISH")
         {
+            m_isIntentionalDisconnect = true;
             int finalScore = payload["score"].toInt();
             QString winner = payload["winner"].toString();
 
@@ -276,6 +287,7 @@ namespace cppforge::services
 
     void DuelManager::finishDuel(int score)
     {
+        m_isIntentionalDisconnect = true;
         QJsonObject payload;
         payload["score"] = score;
         payload["winner"] = m_localPlayerName;
@@ -291,6 +303,7 @@ namespace cppforge::services
 
     void DuelManager::surrender()
     {
+        m_isIntentionalDisconnect = true;
         QJsonObject json;
         json["type"] = "SURRENDER";
         QJsonObject payload;
