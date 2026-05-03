@@ -168,9 +168,10 @@ private:
     void setupUI();
 
     /**
-     * @brief Applies CSS styles based on the theme.
+     * @brief Configures visual window style, fonts, and color scheme.
+     * @param isDark Optional override for the theme state.
      */
-    void setupStyles();
+    void setupStyles(std::optional<bool> isDark = std::nullopt);
 
     /**
      * @brief Centers the window on screen.
