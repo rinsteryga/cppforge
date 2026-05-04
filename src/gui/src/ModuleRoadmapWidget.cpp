@@ -39,6 +39,25 @@ void ModuleRoadmapWidget::setLessons(const std::vector<RoadmapNode> &nodes)
     updateLayout();
 }
 
+int ModuleRoadmapWidget::getFirstIncompleteY() const
+{
+    for (const auto &node : m_nodes)
+    {
+        if (!node.data.isCompleted && !node.data.isLocked)
+        {
+            return node.pos.y();
+        }
+    }
+    if (!m_nodes.empty())
+        return m_nodes.back().pos.y();
+    return 0;
+}
+
+void ModuleRoadmapWidget::setThemeService(cppforge::services::ThemeService *service)
+{
+    m_themeService = service;
+}
+
 void ModuleRoadmapWidget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
