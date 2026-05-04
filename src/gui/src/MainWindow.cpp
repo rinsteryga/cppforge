@@ -405,22 +405,19 @@ void MainWindow::setupLeftPanel()
     layout->addWidget(logoContainer, 0, Qt::AlignCenter);
     layout->addSpacing(20);
 
-    learnBtn = new QPushButton("Learn");
-    ratingBtn = new QPushButton("Duel");
-    profileBtn = new QPushButton("Profile");
-    logoutBtn = new QPushButton("Logout");
+    learnBtn = new QPushButton("LEARN");
+    ratingBtn = new QPushButton("DUELS");
+    profileBtn = new QPushButton("PROFILE");
+    logoutBtn = new QPushButton("LOGOUT");
 
-    QFont btnFont("Roboto", 13, QFont::Medium);
+    QFont btnFont("Roboto", 11, QFont::Black);
     for (auto btn : {learnBtn, ratingBtn, profileBtn, logoutBtn})
     {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
-        btn->setFixedHeight(52);
-        btn->setObjectName("navButton");
+        btn->setFixedHeight(54);
+        btn->setObjectName("sideBarButton");
     }
-
-    logoutBtn->setStyleSheet("QPushButton#navButton { color: #d9534f; } "
-                             "QPushButton#navButton:hover { background-color: #fff1f0; color: #d9534f; }");
 
     layout->addWidget(learnBtn);
     layout->addWidget(ratingBtn);
@@ -430,6 +427,7 @@ void MainWindow::setupLeftPanel()
 
     layout->addWidget(logoutBtn);
 
+    learnBtn->setProperty("active", true);
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
     connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
@@ -440,6 +438,9 @@ void MainWindow::setupLeftPanel()
                 if (duelPage)
                 {
                     contentStack->setCurrentWidget(duelPage);
+                    for (auto b : {learnBtn, ratingBtn, profileBtn, logoutBtn})
+                        b->setProperty("active", b == ratingBtn);
+                    setupStyles();
                 }
             });
 }
@@ -682,45 +683,77 @@ void MainWindow::setupStyles()
 {
     bool isDark = (palette().color(QPalette::Window).lightness() < 128);
 
-    QString hoverColor, accentColor;
-    QString hoverText = "white";
+    QString sidebarBg, buttonColor, buttonHover, buttonActive, buttonText, activeBorder, hoverColor, accentColor,
+        hoverText;
+
+    activeBorder = isDark ? "#0e639c" : "#62639b";
+    hoverColor = isDark ? "#1177bb" : "#f3e8ff";
+    hoverText = isDark ? "white" : "black";
 
     if (isDark)
     {
-        hoverColor = "#0e639c";
+        sidebarBg = "#1a1a1a";
+        buttonColor = "transparent";
+        buttonHover = hoverColor;
+        buttonActive = "transparent";
+        buttonText = "#afafaf";
         accentColor = "#0e639c";
     }
     else
     {
-        hoverColor = "#f3e8ff";
+        sidebarBg = "white";
+        buttonColor = "transparent";
+        buttonHover = hoverColor;
+        buttonActive = "transparent";
+        buttonText = "#777777";
         accentColor = "#62639b";
-        hoverText = "black";
     }
 
     setStyleSheet(QString(R"(
         QWidget { background-color: palette(alternate-base); font-family: 'Roboto'; color: palette(text); }
         #MainWindow { background-color: palette(base); border: 1px solid palette(mid); }
         
-        QFrame#sideBar { background-color: palette(base); border: 1px solid palette(mid); }
+        QFrame#sideBar { background-color: %1; border-right: 2px solid palette(mid); }
         
         QLabel { background-color: transparent; border: none; }
 
-        QPushButton#navButton { background-color: transparent; border: none; color: palette(window-text); text-align: left; padding-left: 20px; }
-        QPushButton#navButton:hover { background-color: %1; color: %2; }
+        QPushButton#sideBarButton { 
+            background-color: %2; 
+            border: 2px solid transparent; 
+            color: %5; 
+            text-align: left; 
+            padding-left: 20px; 
+            border-radius: 12px; 
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        QPushButton#sideBarButton:hover { background-color: %3; }
+        QPushButton#sideBarButton[active="true"] { 
+            background-color: %4; 
+            border: 2px solid %6; 
+            border-bottom: 4px solid %6; 
+            color: %6; 
+        }
         
         QFrame[class="card"] { background-color: palette(base); border: 1px solid palette(mid); border-radius: 8px; }
         
         QProgressBar { background: palette(alternate-base); border: 1px solid palette(mid); text-align: center; color: palette(text); border-radius: 4px; }
-        QProgressBar::chunk { background: %3; border-radius: 4px; }
+        QProgressBar::chunk { background: %8; border-radius: 4px; }
         
         QPushButton { background: palette(button); color: palette(button-text); border: 1px solid palette(mid); border-radius: 4px; padding: 5px 15px; font-weight: bold; }
-        QPushButton:hover { background: %1; color: %2; }
+        QPushButton:hover { background: %7; color: %9; }
         QPushButton#logoutButton:hover { background: palette(link); color: palette(highlighted-text); }
         QPushButton:disabled { background: palette(disabled, button); color: palette(disabled, button-text); }
     )")
+                      .arg(sidebarBg)
+                      .arg(buttonColor)
+                      .arg(buttonHover)
+                      .arg(buttonActive)
+                      .arg(buttonText)
+                      .arg(activeBorder)
                       .arg(hoverColor)
-                      .arg(hoverText)
-                      .arg(accentColor));
+                      .arg(accentColor)
+                      .arg(hoverText));
 
     style()->unpolish(this);
     style()->polish(this);
@@ -740,7 +773,48 @@ void MainWindow::onModuleButtonClicked()
 
 void MainWindow::onLearnButtonClicked()
 {
-    contentStack->setCurrentIndex(0);
+    if (contentStack->currentIndex() == 0 || contentStack->currentWidget() == roadmapPage)
+    {
+        if (m_courseService && m_currentUserId != -1)
+        {
+            std::vector<int> progresses = m_courseService->getAllModulesProgress(m_currentUserId);
+            int targetModuleId = 1;
+            for (size_t i = 0; i < progresses.size(); ++i)
+            {
+                if (progresses[i] < 100)
+                {
+                    targetModuleId = static_cast<int>(i + 1);
+                    break;
+                }
+            }
+
+            loadRoadmapForModule(targetModuleId);
+            contentStack->setCurrentWidget(roadmapPage);
+
+            QTimer::singleShot(100,
+                               [this]()
+                               {
+                                   if (roadmapWidget)
+                                   {
+                                       int targetY = roadmapWidget->getFirstIncompleteY();
+                                       QScrollArea *scroll = roadmapPage->findChild<QScrollArea *>();
+                                       if (scroll && scroll->verticalScrollBar())
+                                       {
+                                           int scrollValue = targetY - (scroll->height() / 2);
+                                           scroll->verticalScrollBar()->setValue(scrollValue);
+                                       }
+                                   }
+                               });
+        }
+    }
+    else
+    {
+        contentStack->setCurrentIndex(0);
+    }
+
+    for (auto b : {learnBtn, ratingBtn, profileBtn, logoutBtn})
+        b->setProperty("active", b == learnBtn);
+    setupStyles();
 }
 
 void MainWindow::onProfileButtonClicked()
@@ -758,6 +832,9 @@ void MainWindow::onProfileButtonClicked()
         }
     }
     contentStack->setCurrentIndex(1);
+    for (auto b : {learnBtn, ratingBtn, profileBtn, logoutBtn})
+        b->setProperty("active", b == profileBtn);
+    setupStyles();
 }
 
 void MainWindow::animateToTaskWindow(int moduleId)
