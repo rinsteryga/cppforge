@@ -67,13 +67,20 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
 
     if (practiceEdit_)
     {
-        practiceEdit_->setPlainText(task.getDescription());
+        practiceEdit_->setMarkdown(task.getDescription());
         applyTextFormatting(practiceEdit_);
     }
 
+    if (btnNext_)
+        btnNext_->hide();
+    if (btnPrev_)
+        btnPrev_->hide();
+
+    currentModuleId_ = -1;
+
     if (theoryEdit_)
     {
-        theoryEdit_->setPlainText("Theoretical material is not provided for this task.");
+        theoryEdit_->setMarkdown("Theoretical material is not provided for this task.");
         applyTextFormatting(theoryEdit_);
     }
 
@@ -103,6 +110,11 @@ void TaskWindow::setTask(const cppforge::entities::CodingTask &task)
 
 void TaskWindow::loadModule(int lessonId)
 {
+    if (btnNext_)
+        btnNext_->show();
+    if (btnPrev_)
+        btnPrev_->show();
+
     if (!courseService_)
     {
         return;
@@ -135,7 +147,7 @@ void TaskWindow::loadModule(int lessonId)
     customTitleBar_->setTitle(title);
     if (theoryEdit_)
     {
-        theoryEdit_->setPlainText(theory);
+        theoryEdit_->setMarkdown(theory);
         applyTextFormatting(theoryEdit_);
     }
 
@@ -150,7 +162,7 @@ void TaskWindow::loadModule(int lessonId)
             btnRun_->setVisible(true);
         if (practiceEdit_)
         {
-            practiceEdit_->setPlainText(practiceDesc);
+            practiceEdit_->setMarkdown(practiceDesc);
             applyTextFormatting(practiceEdit_);
         }
 
@@ -181,7 +193,7 @@ void TaskWindow::loadModule(int lessonId)
         hasCodingTask_ = false;
         if (practiceEdit_)
         {
-            practiceEdit_->setPlainText("Practical tasks are not provided for this module.");
+            practiceEdit_->setMarkdown("Practical tasks are not provided for this module.");
             applyTextFormatting(practiceEdit_);
         }
         codeEditor_->setPlainText("// Theory only material.");
@@ -356,6 +368,7 @@ void TaskWindow::setupUI()
     auto contentStack = new QStackedWidget();
 
     theoryEdit_ = new QTextEdit();
+    theoryEdit_->setObjectName("theoryEdit");
     theoryEdit_->setReadOnly(true);
     theoryEdit_->setFrameStyle(QFrame::NoFrame);
     theoryEdit_->setFont(QFont("Roboto", 13));
@@ -363,6 +376,7 @@ void TaskWindow::setupUI()
     theoryEdit_->installEventFilter(this);
 
     practiceEdit_ = new QTextEdit();
+    practiceEdit_->setObjectName("practiceEdit");
     practiceEdit_->setReadOnly(true);
     practiceEdit_->setFrameStyle(QFrame::NoFrame);
     practiceEdit_->setFont(QFont("Roboto", 13));
@@ -712,21 +726,40 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
 
 void TaskWindow::setupStyles(std::optional<bool> isDarkOverride)
 {
-    bool isDark = (palette().color(QPalette::Window).lightness() < 128);
+    bool isDark = isDarkOverride.value_or(palette().color(QPalette::Window).lightness() < 128);
 
     QString accentColor = isDark ? "#0e639c" : "#62639b";
     QString hoverColor = isDark ? "#1177bb" : "#f3e8ff";
     QString hoverText = isDark ? "white" : "black";
 
-    QString cssStyle = R"(
+    QString cssStyle =
+        R"(
         #TaskWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }
         #tabHeader { background-color: palette(alternate-base); border-bottom: 2px solid palette(mid); border-top-left-radius: 19px; border-top-right-radius: 19px; }
         
         QPushButton#tabButton { border: none; background: transparent; padding: 0 25px; color: palette(window-text); }
         QPushButton#tabButton:checked { border-bottom: 4px solid )" +
-                       accentColor + R"(; color: )" + accentColor + R"(; }
+        accentColor + R"(; color: )" + accentColor + R"(; }
         
-        QTextEdit { background-color: palette(base); color: palette(text); border: none; padding: 25px; }
+        QTextEdit { background-color: palette(base); color: palette(text); border: none; }
+
+        QTextEdit#theoryEdit, QTextEdit#practiceEdit {
+            padding: 30px;
+        }
+        QTextEdit#theoryEdit h1, QTextEdit#practiceEdit h1 { color: )" +
+        accentColor +
+        R"(; font-family: 'Outfit', 'Inter', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 15px; }
+        QTextEdit#theoryEdit h2, QTextEdit#practiceEdit h2 { color: )" +
+        accentColor +
+        R"(; font-family: 'Outfit', 'Inter', sans-serif; font-size: 20px; font-weight: 700; border-left: 5px solid )" +
+        accentColor + R"(; padding-left: 12px; margin-top: 25px; margin-bottom: 10px; }
+        QTextEdit#theoryEdit h3, QTextEdit#practiceEdit h3 { color: )" +
+        accentColor +
+        R"(; font-family: 'Outfit', 'Inter', sans-serif; font-size: 18px; font-weight: 600; margin-top: 20px; }
+        QTextEdit#theoryEdit p, QTextEdit#practiceEdit p { line-height: 1.6; margin-bottom: 12px; }
+        QTextEdit#theoryEdit li, QTextEdit#practiceEdit li { margin-bottom: 8px; }
+        QTextEdit#theoryEdit pre, QTextEdit#practiceEdit pre { background-color: palette(alternate-base); padding: 15px; border-radius: 10px; border: 1px solid palette(mid); font-family: 'Consolas', monospace; font-size: 13px; margin: 10px 0; }
+        QTextEdit#theoryEdit code, QTextEdit#practiceEdit code { background-color: palette(alternate-base); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; }
         
         QPushButton#backButton {
             background-color: palette(alternate-base);
@@ -736,8 +769,8 @@ void TaskWindow::setupStyles(std::optional<bool> isDarkOverride)
             border: 1px solid palette(mid);
         }
         QPushButton#backButton:hover { background-color: )" +
-                       hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" +
-                       hoverColor + R"( !important; }
+        hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" + hoverColor +
+        R"( !important; }
  
         QPushButton#navButton {
             background-color: palette(alternate-base);
@@ -747,8 +780,8 @@ void TaskWindow::setupStyles(std::optional<bool> isDarkOverride)
             font-weight: bold;
         }
         QPushButton#navButton:hover { background-color: )" +
-                       hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" +
-                       hoverColor + R"( !important; }
+        hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" + hoverColor +
+        R"( !important; }
         
         QFrame#editorFrame, QFrame#testFrame { background-color: palette(base); border: 1px solid palette(mid); border-radius: 12px; }
         
@@ -760,20 +793,20 @@ void TaskWindow::setupStyles(std::optional<bool> isDarkOverride)
             color: palette(text);
         }
         QPushButton#runButton:hover { background-color: )" +
-                       hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" +
-                       hoverColor + R"( !important; }
+        hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" + hoverColor +
+        R"( !important; }
         
         QPushButton#submitButton { 
             background-color: )" +
-                       accentColor + R"(; 
+        accentColor + R"(; 
             border-radius: 6px; 
             font-weight: 600; 
             border: none; 
             color: white; 
         }
         QPushButton#submitButton:hover { background-color: )" +
-                       hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" +
-                       hoverColor + R"( !important; }
+        hoverColor + R"( !important; color: )" + hoverText + R"( !important; border-color: )" + hoverColor +
+        R"( !important; }
         
         QLabel { color: palette(text); font-size: 14px; }
     )";

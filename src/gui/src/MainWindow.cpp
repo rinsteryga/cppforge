@@ -33,6 +33,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSettings>
+#include <QShortcut>
 #include <QSpacerItem>
 #include <QStackedWidget>
 #include <QStyleOption>
@@ -664,6 +665,17 @@ void MainWindow::setupUI()
     containerLayout->addWidget(contentStack.get(), 4);
 
     mainVerticalLayout->addWidget(contentContainer);
+
+    auto *secretShortcut = new QShortcut(QKeySequence("L, B"), this);
+    secretShortcut->setContext(Qt::ApplicationShortcut);
+    connect(secretShortcut, &QShortcut::activated, this,
+            [this]()
+            {
+                if (contentStack && contentStack->currentWidget() == profilePage)
+                {
+                    onSecretTaskTriggered();
+                }
+            });
 }
 
 void MainWindow::setupStyles()
@@ -881,6 +893,7 @@ void MainWindow::onSecretTaskTriggered()
     QString initCode = "#include <iostream>\n#include <string>\n#include <vector>\n#include <iomanip>\n\n"
                        "using namespace std;\n\n"
                        "int main() {\n"
+                       "    // Хэ! Удачи!\n"
                        "    \n"
                        "    return 0;\n"
                        "}\n";
@@ -921,6 +934,10 @@ void MainWindow::onSecretTaskTriggered()
     }
 
     taskWindow_->setUserId(m_currentUserId);
+    if (m_themeService)
+    {
+        taskWindow_->setThemeService(m_themeService);
+    }
     taskWindow_->setTask(secretTask);
 
     this->hide();
