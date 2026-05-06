@@ -82,7 +82,7 @@ void SignUpWindow::setupWindowProperties()
     setMinimumSize(900, 600);
     resize(1280, 900);
     setWindowTitle("Sign Up - cppforge");
-    setWindowIcon(QIcon(":/icons/main_logo.ico"));
+    setWindowIcon(QIcon(":/icons/main_logo_pale.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setObjectName("SignUpWindow");
     setupStyles();
@@ -152,7 +152,7 @@ void SignUpWindow::setupLogo()
         iconLabel_->setFixedSize(200, 200);
     }
 
-    QString logoPath = ":/icons/main_logo.ico";
+    QString logoPath = ":/icons/main_logo_pale.ico";
     if (themeService_ && themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
     {
         logoPath = ":/icons/main_logo_dark.ico";

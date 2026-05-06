@@ -773,7 +773,11 @@ void MainWindow::onModuleButtonClicked()
 
 void MainWindow::onLearnButtonClicked()
 {
-    if (contentStack->currentIndex() == 0 || contentStack->currentWidget() == roadmapPage)
+    if (contentStack->currentWidget() == roadmapPage)
+    {
+        contentStack->setCurrentIndex(0);
+    }
+    else
     {
         if (m_courseService && m_currentUserId != -1)
         {
@@ -806,10 +810,10 @@ void MainWindow::onLearnButtonClicked()
                                    }
                                });
         }
-    }
-    else
-    {
-        contentStack->setCurrentIndex(0);
+        else
+        {
+            contentStack->setCurrentIndex(0);
+        }
     }
 
     for (auto b : {learnBtn, ratingBtn, profileBtn, logoutBtn})
