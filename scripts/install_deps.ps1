@@ -113,7 +113,7 @@ if ($IsInstalled) {
         "--servicename", $PG_SERVICE_NAME,
         "--superpassword", $PG_PASSWORD,
         "--serverport", $PG_PORT,
-        "--disable-components", "pgadmin,stackbuilder"
+        "--disable-components", "pgAdmin,stackbuilder"
     )
     $process = Start-Process -FilePath $InstallerPath -ArgumentList $InstallArgs -Wait -NoNewWindow -PassThru
 
