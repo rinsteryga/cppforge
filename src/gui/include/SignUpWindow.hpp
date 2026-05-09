@@ -80,6 +80,11 @@ protected:
     void paintEvent(QPaintEvent *event) override;
 
     /**
+     * @brief Event filter for handling internal layout adjustments.
+     */
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
+    /**
      * @brief Initializes the UI components.
      */
     void setupUI();
@@ -154,6 +159,7 @@ protected:
     std::unique_ptr<QPushButton> backToLoginButton_;               ///< Back to login button.
     std::unique_ptr<QPushButton> passwordToggleButton_;            ///< Password visibility toggle.
     std::unique_ptr<QVBoxLayout> mainLayout_;                      ///< Main layout.
+    QWidget *centerContainer_ = nullptr;                           ///< Inner container for scrolling.
     cppforge::services::ThemeService *themeService_ = nullptr;     ///< Theme service.
     std::shared_ptr<cppforge::services::AuthManager> authManager_; ///< Auth manager.
     bool passwordVisible_ = false;                                 ///< Password visibility flag.
