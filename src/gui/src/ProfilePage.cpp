@@ -228,7 +228,11 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             v->addWidget(name, 0, Qt::AlignCenter);
             v->addStretch();
 
-            achWidget->setToolTip(ach.getName() + (earned ? "" : " (Locked)") + ": " + ach.getDescription());
+            icon->setAttribute(Qt::WA_TransparentForMouseEvents);
+            name->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+            achWidget->setProperty("customTooltipText", ach.getName() + (earned ? "" : " (Locked)") + ":\n" + ach.getDescription());
+            achWidget->installEventFilter(this);
 
             if (achGrid)
             {
@@ -476,6 +480,10 @@ void ProfilePage::setupUI()
     rootLayout->addWidget(scrollArea);
 
     connect(changeAvatarBtn, &QPushButton::clicked, this, &ProfilePage::onChangeAvatarClicked);
+
+    customTooltipLabel_ = new QLabel(this);
+    customTooltipLabel_->setObjectName("CustomTooltip");
+    customTooltipLabel_->hide();
 }
 
 void ProfilePage::applyStyles()
@@ -566,6 +574,15 @@ void ProfilePage::applyStyles()
             border: 1px solid palette(mid);
             selection-background-color: %1;
             color: white;
+        }
+
+        #CustomTooltip {
+            background-color: rgb(255, 255, 255);
+            color: rgb(0, 0, 0);
+            border: 1px solid rgb(150, 150, 150);
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 12px;
         }
     )")
                         .arg(btnColor)
@@ -675,4 +692,40 @@ void ProfilePage::onPrivacyClicked()
         "By using cppforge, you agree to the local storage of learning progress and profile settings.";
     InfoDialog dlg("Privacy Policy", privacyText, this);
     dlg.exec();
+}
+
+bool ProfilePage::eventFilter(QObject *watched, QEvent *event)
+{
+    if (!customTooltipLabel_)
+        return QWidget::eventFilter(watched, event);
+
+    if (event->type() == QEvent::Enter)
+    {
+        QString text = watched->property("customTooltipText").toString();
+        if (!text.isEmpty())
+        {
+            customTooltipLabel_->setText(text);
+            customTooltipLabel_->adjustSize();
+            customTooltipLabel_->raise();
+            
+            QWidget *w = qobject_cast<QWidget*>(watched);
+            if (w) {
+                QPoint pos = w->mapTo(this, QPoint(0, w->height() + 5));
+                if (pos.x() + customTooltipLabel_->width() > this->width()) {
+                    pos.setX(this->width() - customTooltipLabel_->width() - 5);
+                }
+                if (pos.y() + customTooltipLabel_->height() > this->height()) {
+                    pos.setY(w->mapTo(this, QPoint(0, -customTooltipLabel_->height() - 5)).y());
+                }
+                customTooltipLabel_->move(pos);
+            }
+            customTooltipLabel_->show();
+        }
+    }
+    else if (event->type() == QEvent::Leave)
+    {
+        customTooltipLabel_->hide();
+    }
+    
+    return QWidget::eventFilter(watched, event);
 }
