@@ -6,15 +6,15 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QEvent>
 #include <QFont>
 #include <QGuiApplication>
 #include <QIcon>
-#include <QEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
-#include <QScrollArea>
 #include <QScreen>
+#include <QScrollArea>
 #include <QSettings>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -103,13 +103,14 @@ void AuthWindow::setupStyles()
         }
         QLineEdit:focus { border: 2px solid %1; }
     )")
-    .arg(btnColor)
-    .arg(btnHover)
-    .arg(hoverText)
-    .arg(linkColor);
+                        .arg(btnColor)
+                        .arg(btnHover)
+                        .arg(hoverText)
+                        .arg(linkColor);
 
     setStyleSheet(style);
-    if (centerContainer_) centerContainer_->setStyleSheet(style);
+    if (centerContainer_)
+        centerContainer_->setStyleSheet(style);
 }
 
 void AuthWindow::setupTitleBar()
@@ -306,10 +307,9 @@ void AuthWindow::setupLayout()
     pLayout->addWidget(passwordInput_.get());
     passwordToggleButton_->raise();
 
-    auto updatePasswordTogglePos = [this, passwordContainer]() {
-        passwordToggleButton_->move(passwordContainer->width() - 42, (passwordContainer->height() - 32) / 2);
-    };
-    passwordContainer->installEventFilter(this); 
+    auto updatePasswordTogglePos = [this, passwordContainer]()
+    { passwordToggleButton_->move(passwordContainer->width() - 42, (passwordContainer->height() - 32) / 2); };
+    passwordContainer->installEventFilter(this);
 
     centerLayout->addWidget(passwordContainer, 0, Qt::AlignCenter);
     centerLayout->addSpacing(35);
