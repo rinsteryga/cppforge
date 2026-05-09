@@ -143,5 +143,5 @@ private:
     cppforge::services::AchievementService *achievementService_ = nullptr; ///< Achievement service.
     cppforge::services::ThemeService *themeService_ = nullptr;             ///< Theme service.
     QComboBox *themeCombo_ = nullptr;                                      ///< Theme selection combobox.
-    QLabel *customTooltipLabel_ = nullptr;                                 ///< Custom floating tooltip for achievements.
+    QLabel *customTooltipLabel_ = nullptr; ///< Custom floating tooltip for achievements.
 };
