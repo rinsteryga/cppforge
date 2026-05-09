@@ -710,7 +710,11 @@ void MainWindow::setupStyles()
     }
 
     setStyleSheet(QString(R"(
-        QWidget { background-color: palette(alternate-base); font-family: 'Roboto'; color: palette(text); }
+        #MainWindow, #contentContainer, #sideBar { 
+            background-color: palette(alternate-base); 
+            font-family: 'Roboto'; 
+            color: palette(text); 
+        }
         #MainWindow { background-color: palette(base); border: 1px solid palette(mid); }
         
         QFrame#sideBar { background-color: %1; border-right: 2px solid palette(mid); }
