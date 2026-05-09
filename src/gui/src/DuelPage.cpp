@@ -106,8 +106,8 @@ void DuelPage::clearLobbyList()
 void DuelPage::setupUI()
 {
     auto mainLayout = new QHBoxLayout(this);
-    mainLayout->setContentsMargins(25, 25, 25, 25);
-    mainLayout->setSpacing(30);
+    mainLayout->setContentsMargins(15, 15, 15, 15);
+    mainLayout->setSpacing(20);
 
     auto leftColumn = new QVBoxLayout();
     leftColumn->setSpacing(25);
@@ -141,9 +141,10 @@ QFrame *DuelPage::createProfileHeader()
 {
     auto frame = new QFrame();
     frame->setObjectName("card");
-    frame->setFixedHeight(110);
+    frame->setMinimumHeight(80);
+    frame->setMaximumHeight(120);
     auto layout = new QHBoxLayout(frame);
-    layout->setContentsMargins(25, 0, 25, 0);
+    layout->setContentsMargins(20, 0, 20, 0);
 
     m_lblAvatar = new QLabel();
     m_lblAvatar->setFixedSize(55, 55);
@@ -175,8 +176,8 @@ QFrame *DuelPage::createActionPanel()
     auto frame = new QFrame();
     frame->setObjectName("card");
     auto layout = new QVBoxLayout(frame);
-    layout->setContentsMargins(50, 40, 50, 40);
-    layout->setSpacing(20);
+    layout->setContentsMargins(30, 20, 30, 20);
+    layout->setSpacing(15);
 
     auto title = new QLabel("LEAGUE");
     title->setAlignment(Qt::AlignCenter);
@@ -185,16 +186,19 @@ QFrame *DuelPage::createActionPanel()
     m_btnCreateLobby = new QPushButton("CREATE LOBBY");
     m_btnCreateLobby->setObjectName("btnCreate");
     m_btnCreateLobby->setProperty("state", "default");
-    m_btnCreateLobby->setFixedHeight(70);
+    m_btnCreateLobby->setMinimumHeight(50);
+    m_btnCreateLobby->setMaximumHeight(70);
     m_btnCreateLobby->setCursor(Qt::PointingHandCursor);
 
     m_btnJoinLobby = new QPushButton("JOIN LOBBY");
-    m_btnJoinLobby->setFixedHeight(70);
+    m_btnJoinLobby->setMinimumHeight(50);
+    m_btnJoinLobby->setMaximumHeight(70);
     m_btnJoinLobby->setCursor(Qt::PointingHandCursor);
 
     m_btnStartDuel = new QPushButton("START DUEL");
     m_btnStartDuel->setObjectName("btnStart");
-    m_btnStartDuel->setFixedHeight(70);
+    m_btnStartDuel->setMinimumHeight(50);
+    m_btnStartDuel->setMaximumHeight(70);
     m_btnStartDuel->setStyleSheet("background-color: #27ae60; color: white; border: none; font-size: 18px;");
     m_btnStartDuel->setCursor(Qt::PointingHandCursor);
     m_btnStartDuel->setVisible(false);
