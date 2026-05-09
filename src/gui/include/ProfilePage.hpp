@@ -114,6 +114,11 @@ private:
     void applyStyles();
 
     /**
+     * @brief Event filter for custom tooltip handling.
+     */
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
+    /**
      * @brief Updates the avatar image with a circular mask.
      * @param path Path to the avatar image.
      */
@@ -138,4 +143,5 @@ private:
     cppforge::services::AchievementService *achievementService_ = nullptr; ///< Achievement service.
     cppforge::services::ThemeService *themeService_ = nullptr;             ///< Theme service.
     QComboBox *themeCombo_ = nullptr;                                      ///< Theme selection combobox.
+    QLabel *customTooltipLabel_ = nullptr;                                 ///< Custom floating tooltip for achievements.
 };
