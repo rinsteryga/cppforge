@@ -9,9 +9,11 @@
 #include <QFont>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
+#include <QScrollArea>
 #include <QScreen>
 #include <QSettings>
 #include <QSqlError>
@@ -42,8 +44,7 @@ void AuthWindow::paintEvent(QPaintEvent *event)
 
 void AuthWindow::setupWindowProperties()
 {
-    setMinimumSize(900, 600);
-    resize(1280, 900);
+    setMinimumSize(600, 500);
     setWindowTitle("cppforge Log in");
     setWindowIcon(QIcon(":/icons/main_logo_pale.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
@@ -66,38 +67,49 @@ void AuthWindow::setupStyles()
 
     QString btnColor = isDark ? "#0e639c" : "#62639b";
     QString btnHover = isDark ? "#1177bb" : "#f3e8ff";
-    QString btnText = "white";
     QString hoverText = isDark ? "white" : "black";
-    QString linkColor = isDark ? "#3794ff" : "#4f46e5";
+    QString linkColor = isDark ? "#3794ff" : "#62639b";
 
-    setStyleSheet(QString(R"(
-        #AuthWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }
+    QString style = QString(R"(
+        #AuthWindow, #centerContainer { background-color: palette(window); border: none; }
         
         QPushButton#loginButton { 
             background-color: %1; 
-            color: %3; 
+            color: white; 
             border-radius: 12px; 
             font-size: 24px; 
             font-weight: bold; 
             border: none; 
         }
-        QPushButton#loginButton:hover { background-color: %2; color: %4; }
+        QPushButton#loginButton:hover { background-color: %2; color: %3; }
         
         QPushButton#createAccountButton { 
-            color: %5; 
+            color: %4; 
             font-size: 18px; 
             background: transparent; 
             border: none; 
             border-bottom: 1px solid transparent; 
             padding: 15px; 
         }
-        QPushButton#createAccountButton:hover { border-bottom: 1px solid %5; }
+        QPushButton#createAccountButton:hover { color: %2; border-bottom: 1px solid %2; }
+        
+        QLineEdit { 
+            background-color: palette(alternate-base); 
+            color: palette(text); 
+            padding: 12px 20px; 
+            border: 2px solid palette(mid); 
+            border-radius: 10px; 
+            font-size: 18px; 
+        }
+        QLineEdit:focus { border: 2px solid %1; }
     )")
-                      .arg(btnColor)
-                      .arg(btnHover)
-                      .arg(btnText)
-                      .arg(hoverText)
-                      .arg(linkColor));
+    .arg(btnColor)
+    .arg(btnHover)
+    .arg(hoverText)
+    .arg(linkColor);
+
+    setStyleSheet(style);
+    if (centerContainer_) centerContainer_->setStyleSheet(style);
 }
 
 void AuthWindow::setupTitleBar()
@@ -156,7 +168,9 @@ void AuthWindow::setupLogo()
     if (!iconLabel_)
     {
         iconLabel_ = std::make_unique<QLabel>(this);
-        iconLabel_->setFixedSize(200, 200);
+        iconLabel_->setMinimumSize(120, 120);
+        iconLabel_->setMaximumSize(200, 200);
+        iconLabel_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
 
     QString logoPath = ":/icons/main_logo_pale.ico";
@@ -202,17 +216,19 @@ void AuthWindow::setupInputFields()
 {
     usernameInput_ = std::make_unique<QLineEdit>();
     usernameInput_->setPlaceholderText("Username or email address");
-    usernameInput_->setFixedSize(500, 65);
+    usernameInput_->setMinimumSize(300, 50);
+    usernameInput_->setMaximumSize(500, 65);
     usernameInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); "
-                                  "padding: 18px 20px; border: 2px solid palette(mid); border-radius: 10px; "
+                                  "padding: 12px 20px; border: 2px solid palette(mid); border-radius: 10px; "
                                   "font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; }");
 
     passwordInput_ = std::make_unique<QLineEdit>();
     passwordInput_->setPlaceholderText("Password");
     passwordInput_->setEchoMode(QLineEdit::Password);
-    passwordInput_->setFixedSize(500, 65);
+    passwordInput_->setMinimumSize(300, 50);
+    passwordInput_->setMaximumSize(500, 65);
     passwordInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); "
-                                  "padding: 18px 50px 18px 20px; border: 2px solid palette(mid); border-radius: "
+                                  "padding: 12px 50px 12px 20px; border: 2px solid palette(mid); border-radius: "
                                   "10px; font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; }");
 
     passwordToggleButton_ = std::make_unique<QPushButton>();
@@ -236,7 +252,8 @@ void AuthWindow::togglePasswordVisibility()
 void AuthWindow::setupLoginButton()
 {
     loginButton_ = std::make_unique<QPushButton>("Log in");
-    loginButton_->setFixedSize(500, 85);
+    loginButton_->setMinimumSize(300, 60);
+    loginButton_->setMaximumSize(500, 85);
     loginButton_->setCursor(Qt::PointingHandCursor);
     loginButton_->setObjectName("loginButton");
 }
@@ -256,32 +273,53 @@ void AuthWindow::setupLayout()
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(customTitleBar_.get());
 
-    auto *centerContainer = new QWidget(this);
-    auto *centerLayout = new QVBoxLayout(centerContainer);
+    auto *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameStyle(QFrame::NoFrame);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setStyleSheet("background: transparent;");
+
+    centerContainer_ = new QWidget();
+    centerContainer_->setObjectName("centerContainer");
+    centerContainer_->setStyleSheet("background: transparent;");
+    auto *centerLayout = new QVBoxLayout(centerContainer_);
     centerLayout->setAlignment(Qt::AlignCenter);
     centerLayout->setSpacing(25);
+    centerLayout->setContentsMargins(40, 20, 40, 40);
 
+    centerLayout->addStretch(1);
     centerLayout->addWidget(iconLabel_.get(), 0, Qt::AlignCenter);
     centerLayout->addSpacing(5);
     centerLayout->addWidget(titleLabel_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(40);
+    centerLayout->addSpacing(30);
     centerLayout->addWidget(usernameInput_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(20);
+    centerLayout->addSpacing(15);
 
-    auto *passwordContainer = new QWidget(centerContainer);
-    passwordContainer->setFixedSize(500, 65);
+    auto *passwordContainer = new QWidget(centerContainer_);
+    passwordContainer->setMinimumSize(300, 50);
+    passwordContainer->setMaximumSize(500, 65);
     passwordInput_->setParent(passwordContainer);
-    passwordInput_->setGeometry(0, 0, 500, 65);
     passwordToggleButton_->setParent(passwordContainer);
-    passwordToggleButton_->setGeometry(500 - 42, 16, 32, 32);
+
+    auto *pLayout = new QHBoxLayout(passwordContainer);
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->addWidget(passwordInput_.get());
+    passwordToggleButton_->raise();
+
+    auto updatePasswordTogglePos = [this, passwordContainer]() {
+        passwordToggleButton_->move(passwordContainer->width() - 42, (passwordContainer->height() - 32) / 2);
+    };
+    passwordContainer->installEventFilter(this); 
 
     centerLayout->addWidget(passwordContainer, 0, Qt::AlignCenter);
-    centerLayout->addSpacing(40);
+    centerLayout->addSpacing(35);
     centerLayout->addWidget(loginButton_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(30);
+    centerLayout->addSpacing(25);
     centerLayout->addWidget(createAccountButton_.get(), 0, Qt::AlignCenter);
+    centerLayout->addStretch(1);
 
-    layout->addWidget(centerContainer);
+    scrollArea->setWidget(centerContainer_);
+    layout->addWidget(scrollArea);
 }
 
 void AuthWindow::onLoginClicked()
@@ -338,6 +376,19 @@ void AuthWindow::openSignUpWindow()
     this->hide();
     WindowStateManager::instance().applyState(signUpWindow_.get(), QSize(1280, 900));
     signUpWindow_->fadeIn();
+}
+
+bool AuthWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::Resize || event->type() == QEvent::Move)
+    {
+        if (passwordInput_ && passwordToggleButton_ && passwordInput_->parentWidget())
+        {
+            QWidget *container = passwordInput_->parentWidget();
+            passwordToggleButton_->move(container->width() - 42, (container->height() - 32) / 2);
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void AuthWindow::setThemeService(cppforge::services::ThemeService *service)
