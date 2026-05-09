@@ -173,14 +173,19 @@ void SignUpWindow::setupLogo()
         logoPath = ":/icons/main_logo_dark.ico";
     }
 
-    QPixmap pixmap(logoPath);
-    if (pixmap.isNull())
+    QIcon logoIcon(logoPath);
+    QPixmap pixmap = logoIcon.pixmap(200, 200);
+
+    if (!pixmap.isNull())
     {
-        showFallbackLogo();
+        iconLabel_->setPixmap(pixmap);
+        iconLabel_->setText("");
+        iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     }
     else
     {
-        iconLabel_->setPixmap(pixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        iconLabel_->clear();
+        iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     }
     iconLabel_->setAlignment(Qt::AlignCenter);
     if (customTitleBar_)
@@ -191,11 +196,8 @@ void SignUpWindow::setupLogo()
 
 void SignUpWindow::showFallbackLogo()
 {
-    iconLabel_->setFixedSize(200, 200);
-    iconLabel_->setStyleSheet("QLabel { background-color: #4285f4; border-radius: 20px; border: 4px solid #356ac3; "
-                              "color: white; font-size: 48px; font-weight: bold; }");
-    iconLabel_->setText("C++");
-    iconLabel_->setAlignment(Qt::AlignCenter);
+    iconLabel_->setStyleSheet("background-color: transparent; border: none;");
+    iconLabel_->setText("");
 }
 
 void SignUpWindow::setupTitle()
