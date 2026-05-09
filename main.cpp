@@ -36,8 +36,9 @@ int main(int argc, char *argv[])
 
     Q_INIT_RESOURCE(resources);
     QApplication app(argc, argv);
-    
-    app.setStyleSheet("QToolTip { background-color: rgb(255, 255, 255); color: rgb(0, 0, 0); border: 1px solid rgb(150, 150, 150); padding: 5px; }");
+
+    app.setStyleSheet("QToolTip { background-color: rgb(255, 255, 255); color: rgb(0, 0, 0); border: 1px solid "
+                      "rgb(150, 150, 150); padding: 5px; }");
 
     app.setQuitOnLastWindowClosed(false);
 
