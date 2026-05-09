@@ -217,8 +217,8 @@ void CustomTitleBar::updateStyles()
         isDark = (settings.value("app/theme", 0).toInt() == 1);
     }
 
-    QString hoverColor = isDark ? "#0e639c" : "#f3e8ff";
-    QString hoverText = isDark ? "white" : "black";
+    QString hoverColor = isDark ? "#0e639c" : "#62639b";
+    QString hoverText = "white";
 
     const QString buttonStyle = QString("QPushButton { border: none; background: transparent; color: "
                                         "palette(window-text); font-size: 16px; } "
