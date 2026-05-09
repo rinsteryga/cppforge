@@ -174,20 +174,26 @@ void AuthWindow::setupLogo()
         iconLabel_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
 
-    QString logoPath = ":/icons/main_logo_pale.ico";
+    QString logoPath = ":/icons/main_logo_pale.jpg";
     if (themeService_ && themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
     {
         logoPath = ":/icons/main_logo_dark.ico";
     }
 
-    QPixmap pixmap(logoPath);
-    if (pixmap.isNull())
+    QIcon logoIcon(logoPath);
+    QPixmap pixmap = logoIcon.pixmap(200, 200);
+
+    if (!pixmap.isNull())
     {
-        showFallbackLogo();
+        iconLabel_->setPixmap(pixmap);
+        iconLabel_->setText("");
+        iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     }
     else
     {
-        iconLabel_->setPixmap(pixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        // If still null, just keep it empty but transparent
+        iconLabel_->clear();
+        iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     }
     iconLabel_->setAlignment(Qt::AlignCenter);
     if (customTitleBar_)
@@ -198,11 +204,9 @@ void AuthWindow::setupLogo()
 
 void AuthWindow::showFallbackLogo()
 {
-    iconLabel_->setFixedSize(200, 200);
-    iconLabel_->setStyleSheet(
-        "background-color: #4285f4; border-radius: 20px; color: white; font-size: 48px; font-weight: bold;");
-    iconLabel_->setText("C++");
-    iconLabel_->setAlignment(Qt::AlignCenter);
+    // Keeping the method for compatibility but making it do nothing visible
+    iconLabel_->setStyleSheet("background-color: transparent; border: none;");
+    iconLabel_->setText("");
 }
 
 void AuthWindow::setupTitle()
