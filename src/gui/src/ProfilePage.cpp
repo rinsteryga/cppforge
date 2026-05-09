@@ -231,7 +231,8 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             icon->setAttribute(Qt::WA_TransparentForMouseEvents);
             name->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-            achWidget->setProperty("customTooltipText", ach.getName() + (earned ? "" : " (Locked)") + ":\n" + ach.getDescription());
+            achWidget->setProperty("customTooltipText",
+                                   ach.getName() + (earned ? "" : " (Locked)") + ":\n" + ach.getDescription());
             achWidget->installEventFilter(this);
 
             if (achGrid)
@@ -707,14 +708,17 @@ bool ProfilePage::eventFilter(QObject *watched, QEvent *event)
             customTooltipLabel_->setText(text);
             customTooltipLabel_->adjustSize();
             customTooltipLabel_->raise();
-            
-            QWidget *w = qobject_cast<QWidget*>(watched);
-            if (w) {
+
+            QWidget *w = qobject_cast<QWidget *>(watched);
+            if (w)
+            {
                 QPoint pos = w->mapTo(this, QPoint(0, w->height() + 5));
-                if (pos.x() + customTooltipLabel_->width() > this->width()) {
+                if (pos.x() + customTooltipLabel_->width() > this->width())
+                {
                     pos.setX(this->width() - customTooltipLabel_->width() - 5);
                 }
-                if (pos.y() + customTooltipLabel_->height() > this->height()) {
+                if (pos.y() + customTooltipLabel_->height() > this->height())
+                {
                     pos.setY(w->mapTo(this, QPoint(0, -customTooltipLabel_->height() - 5)).y());
                 }
                 customTooltipLabel_->move(pos);
@@ -726,6 +730,6 @@ bool ProfilePage::eventFilter(QObject *watched, QEvent *event)
     {
         customTooltipLabel_->hide();
     }
-    
+
     return QWidget::eventFilter(watched, event);
 }
