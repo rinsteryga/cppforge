@@ -191,7 +191,6 @@ void AuthWindow::setupLogo()
     }
     else
     {
-        // If still null, just keep it empty but transparent
         iconLabel_->clear();
         iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     }
@@ -204,7 +203,6 @@ void AuthWindow::setupLogo()
 
 void AuthWindow::showFallbackLogo()
 {
-    // Keeping the method for compatibility but making it do nothing visible
     iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     iconLabel_->setText("");
 }
