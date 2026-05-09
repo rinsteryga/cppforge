@@ -121,6 +121,7 @@ private:
 
     uint64_t currentUserId = 0;              ///< ID of the user whose profile is shown.
     QLabel *avatarLabel = nullptr;           ///< Avatar display label.
+    QWidget *contentWidget_ = nullptr;       ///< Inner container for scrolling.
     QLabel *userNameLabel = nullptr;         ///< Username display label.
     QLabel *solvedTasksLabel = nullptr;      ///< Count of solved tasks.
     QLabel *completedLessonsLabel = nullptr; ///< Count of completed lessons.
