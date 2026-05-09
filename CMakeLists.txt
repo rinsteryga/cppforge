@@ -70,12 +70,24 @@ if(WIN32)
     get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
     find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt-qt5 windeployqt-qt5.exe windeployqt windeployqt.exe HINTS ${MSYS2_BIN_DIR})
 
-    install(CODE "
-        execute_process(
-            COMMAND \"${WINDEPLOYQT_EXECUTABLE}\" --no-translations --no-opengl-sw --no-angle --compiler-runtime \"\${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe\"
-            RESULT_VARIABLE WINDEPLOYQT_RES
-        )
-    ")
+    if(WINDEPLOYQT_EXECUTABLE)
+        install(CODE "
+            execute_process(
+                COMMAND \"${WINDEPLOYQT_EXECUTABLE}\" 
+                        --no-translations 
+                        --no-opengl-sw 
+                        --no-angle 
+                        --compiler-runtime 
+                        \"\${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe\"
+                RESULT_VARIABLE WINDEPLOYQT_RES
+            )
+            if(NOT WINDEPLOYQT_RES EQUAL 0)
+                message(FATAL_ERROR \"windeployqt failed with error: \${WINDEPLOYQT_RES}\")
+            endif()
+        ")
+    else()
+        message(WARNING "windeployqt not found! Visual assets might not load correctly on other machines.")
+    endif()
 
     file(GLOB MSYS2_RUNTIME_DLLS
         "${MSYS2_BIN_DIR}/libpq.dll"
@@ -97,6 +109,8 @@ if(WIN32)
         "${MSYS2_BIN_DIR}/libbrotlicommon.dll"
         "${MSYS2_BIN_DIR}/libbz2-*.dll"
         "${MSYS2_BIN_DIR}/libpng*.dll"
+        "${MSYS2_BIN_DIR}/libjpeg*.dll"
+        "${MSYS2_BIN_DIR}/libwebp*.dll"
         "${MSYS2_BIN_DIR}/libmd4c.dll"
         "${MSYS2_BIN_DIR}/libharfbuzz-*.dll"
         "${MSYS2_BIN_DIR}/zlib*.dll"
@@ -127,6 +141,8 @@ set(CPACK_PACKAGE_VERSION "1.0.0")
 
 if(WIN32)
     set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/icons/main_logo.ico")
+    set(CPACK_NSIS_MUI_UNIICON "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/icons/main_logo.ico")
     set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
         ExecWait 'powershell.exe -ExecutionPolicy Bypass -File \\\"\$INSTDIR\\\\scripts\\\\install_deps.ps1\\\" -InstallDir \\\"\$INSTDIR\\\"'
     ")
