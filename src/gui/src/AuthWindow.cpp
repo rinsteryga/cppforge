@@ -174,7 +174,7 @@ void AuthWindow::setupLogo()
         iconLabel_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
 
-    QString logoPath = ":/icons/main_logo_pale.jpg";
+    QString logoPath = ":/icons/main_logo_pale.ico";
     if (themeService_ && themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
     {
         logoPath = ":/icons/main_logo_dark.ico";
