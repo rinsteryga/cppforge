@@ -60,8 +60,6 @@ if ($IsInstalled) {
 
     $env:PGPASSWORD = $PG_PASSWORD
     
-    $env:PGPASSWORD = $PG_PASSWORD
-    
     $OldErrorAction = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     $DbReady = $false
@@ -113,7 +111,7 @@ if ($IsInstalled) {
         "--servicename", $PG_SERVICE_NAME,
         "--superpassword", $PG_PASSWORD,
         "--serverport", $PG_PORT,
-        "--disable-components", "pgadmin,stackbuilder"
+        "--disable-components", "pgAdmin,stackbuilder"
     )
     $process = Start-Process -FilePath $InstallerPath -ArgumentList $InstallArgs -Wait -NoNewWindow -PassThru
 
@@ -186,13 +184,6 @@ if (-not $SkipDbConfig) {
         Write-Host "WARNING: Seed file not found at $SeedFile"
     }
 
-    $ModulesDir = "$InstallDir\data\migrations\modules"
-    if (Test-Path $ModulesDir) {
-        $ModuleFiles = Get-ChildItem -Path $ModulesDir -Filter "*.sql" | Sort-Object Name
-        foreach ($ModFile in $ModuleFiles) {
-            & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $ModFile.FullName
-        }
-    }
 } else {
     Write-Warning "Skipped database setup because PostgreSQL connection failed."
 }
@@ -207,7 +198,7 @@ PG_PASSWORD=$PG_PASSWORD
 "@
 
 $EnvPath = "$InstallDir\.env"
-Set-Content -Path $EnvPath -Value $EnvConfig
+Set-Content -Path $EnvPath -Value $EnvConfig -Encoding UTF8
 
 Write-Host "PostgreSQL setup complete!"
 Stop-Transcript

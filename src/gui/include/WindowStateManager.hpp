@@ -93,6 +93,11 @@ private:
     void centerOnScreen(QWidget *window);
 
     /**
+     * @brief Clamps the requested size to available screen space.
+     */
+    QSize clampSizeToScreen(const QSize &requestedSize);
+
+    /**
      * @brief Saves the current state to persistent storage.
      */
     void persistState();

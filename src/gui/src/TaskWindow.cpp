@@ -316,8 +316,8 @@ void TaskWindow::onPrevTask()
 void TaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setMinimumSize(900, 600);
-    resize(1300, 900);
+    setMinimumSize(800, 580);
+    resize(1200, 800);
     setObjectName("TaskWindow");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
 
@@ -391,7 +391,8 @@ void TaskWindow::setupUI()
     footerLeft->setContentsMargins(20, 20, 20, 20);
 
     btnBack_ = new QPushButton("←");
-    btnBack_->setFixedSize(55, 55);
+    btnBack_->setMinimumSize(50, 50);
+    btnBack_->setMaximumSize(60, 60);
     btnBack_->setObjectName("backButton");
     footerLeft->addWidget(btnBack_);
 
@@ -399,8 +400,10 @@ void TaskWindow::setupUI()
     btnNext_ = new QPushButton("Next");
     btnPrev_->setObjectName("navButton");
     btnNext_->setObjectName("navButton");
-    btnPrev_->setFixedSize(130, 55);
-    btnNext_->setFixedSize(130, 55);
+    btnPrev_->setMinimumSize(100, 50);
+    btnPrev_->setMaximumSize(150, 60);
+    btnNext_->setMinimumSize(100, 50);
+    btnNext_->setMaximumSize(150, 60);
 
     footerLeft->addWidget(btnPrev_);
     footerLeft->addWidget(btnNext_);
@@ -445,8 +448,10 @@ void TaskWindow::setupUI()
 
     btnRun_->setObjectName("runButton");
     btnSubmit_->setObjectName("submitButton");
-    btnRun_->setFixedSize(120, 50);
-    btnSubmit_->setFixedSize(120, 50);
+    btnRun_->setMinimumSize(100, 45);
+    btnRun_->setMaximumSize(140, 55);
+    btnSubmit_->setMinimumSize(100, 45);
+    btnSubmit_->setMaximumSize(140, 55);
 
     codeActions->addStretch();
     codeActions->addWidget(btnRun_);

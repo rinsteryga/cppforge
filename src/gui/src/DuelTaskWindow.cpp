@@ -37,8 +37,8 @@ DuelTaskWindow::~DuelTaskWindow() = default;
 void DuelTaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setMinimumSize(900, 600);
-    resize(1300, 900);
+    setMinimumSize(800, 580);
+    resize(1200, 800);
     setObjectName("DuelEditorWindow");
 
     auto rootLayout = new QVBoxLayout(this);
@@ -133,10 +133,14 @@ void DuelTaskWindow::setupUI()
     btnExit_->setObjectName("exitButton");
     btnExit_->setVisible(false);
 
-    btnRun_->setFixedSize(100, 45);
-    btnSubmit_->setFixedSize(140, 45);
-    btnSurrender_->setFixedSize(120, 45);
-    btnExit_->setFixedSize(100, 45);
+    btnRun_->setMinimumSize(80, 40);
+    btnRun_->setMaximumSize(120, 50);
+    btnSubmit_->setMinimumSize(120, 40);
+    btnSubmit_->setMaximumSize(160, 50);
+    btnSurrender_->setMinimumSize(100, 40);
+    btnSurrender_->setMaximumSize(140, 50);
+    btnExit_->setMinimumSize(80, 40);
+    btnExit_->setMaximumSize(120, 50);
 
     codeActions->addStretch();
     codeActions->addWidget(btnRun_);

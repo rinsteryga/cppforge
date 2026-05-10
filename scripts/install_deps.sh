@@ -77,14 +77,6 @@ if [ -f "$SEED_FILE" ]; then
     PGPASSWORD=$PG_PASSWORD psql -h localhost -U $PG_USER -d $PG_DB -p $PG_PORT -f "$SEED_FILE"
 fi
 
-MODULES_DIR="$INSTALL_DIR/share/cppforge/data/migrations/modules"
-if [ -d "$MODULES_DIR" ]; then
-    for f in "$MODULES_DIR"/*.sql; do
-        if [ -f "$f" ]; then
-            PGPASSWORD=$PG_PASSWORD psql -h localhost -U $PG_USER -d $PG_DB -p $PG_PORT -f "$f"
-        fi
-    done
-fi
 
 echo "Creating .env file..."
 mkdir -p /etc/cppforge

@@ -239,7 +239,7 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
 void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
-    WindowStateManager::instance().applyState(this, QSize(1400, 950));
+    WindowStateManager::instance().applyState(this, QSize(1200, 800));
     loadAllModulesProgress();
 
     if (m_currentOpenModuleId != -1)
@@ -346,7 +346,7 @@ void MainWindow::fadeOut()
                     taskWindow_->loadModule(pendingModuleId_);
                     WindowStateManager::instance().captureState(this);
                     this->hide();
-                    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1300, 900));
+                    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1200, 800));
                     taskWindow_->fadeIn();
                     pendingModuleId_ = -1;
                     isTransitioning_ = false;
@@ -357,8 +357,8 @@ void MainWindow::fadeOut()
 
 void MainWindow::setupWindowProperties()
 {
-    setMinimumSize(1100, 800);
-    resize(1400, 950);
+    setMinimumSize(1000, 680);
+    resize(1200, 800);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
@@ -553,8 +553,8 @@ void MainWindow::setupUI()
     auto contentContainer = new QWidget();
     contentContainer->setObjectName("contentContainer");
     auto containerLayout = new QHBoxLayout(contentContainer);
-    containerLayout->setContentsMargins(30, 30, 30, 30);
-    containerLayout->setSpacing(30);
+    containerLayout->setContentsMargins(20, 20, 20, 20);
+    containerLayout->setSpacing(20);
 
     setupLeftPanel();
     setupRightPanel();
@@ -608,7 +608,7 @@ void MainWindow::setupUI()
                 connect(m_duelTaskWindow, &DuelTaskWindow::sessionClosed, this,
                         [this]()
                         {
-                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
+                            WindowStateManager::instance().applyState(this, QSize(1200, 800));
                             this->fadeIn();
                         });
 
@@ -616,13 +616,13 @@ void MainWindow::setupUI()
                         [this]()
                         {
                             m_duelTaskWindow = nullptr;
-                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
+                            WindowStateManager::instance().applyState(this, QSize(1200, 800));
                             this->fadeIn();
                         });
 
                 WindowStateManager::instance().captureState(this);
                 this->hide();
-                WindowStateManager::instance().applyState(m_duelTaskWindow, QSize(1300, 900));
+                WindowStateManager::instance().applyState(m_duelTaskWindow, QSize(1200, 800));
             });
 
     roadmapPage = new QWidget();
@@ -710,7 +710,11 @@ void MainWindow::setupStyles()
     }
 
     setStyleSheet(QString(R"(
-        QWidget { background-color: palette(alternate-base); font-family: 'Roboto'; color: palette(text); }
+        #MainWindow, #contentContainer, #sideBar { 
+            background-color: palette(alternate-base); 
+            font-family: 'Roboto'; 
+            color: palette(text); 
+        }
         #MainWindow { background-color: palette(base); border: 1px solid palette(mid); }
         
         QFrame#sideBar { background-color: %1; border-right: 2px solid palette(mid); }
@@ -903,10 +907,7 @@ void MainWindow::changeEvent(QEvent *event)
             return;
         }
 
-        if (this->isMaximized())
-        {
-        }
-        else
+        if (!this->isMaximized())
         {
             this->setContentsMargins(0, 0, 0, 0);
         }

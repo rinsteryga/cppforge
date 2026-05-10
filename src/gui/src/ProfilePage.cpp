@@ -228,7 +228,12 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             v->addWidget(name, 0, Qt::AlignCenter);
             v->addStretch();
 
-            achWidget->setToolTip(ach.getName() + (earned ? "" : " (Locked)") + ": " + ach.getDescription());
+            icon->setAttribute(Qt::WA_TransparentForMouseEvents);
+            name->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+            achWidget->setProperty("customTooltipText",
+                                   ach.getName() + (earned ? "" : " (Locked)") + ":\n" + ach.getDescription());
+            achWidget->installEventFilter(this);
 
             if (achGrid)
             {
@@ -277,9 +282,20 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
 void ProfilePage::setupUI()
 {
-    auto *mainLayout = new QHBoxLayout(this);
-    mainLayout->setContentsMargins(50, 50, 50, 50);
-    mainLayout->setSpacing(60);
+    auto *rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameStyle(QFrame::NoFrame);
+    scrollArea->setStyleSheet("background: transparent;");
+
+    contentWidget_ = new QWidget();
+    contentWidget_->setObjectName("contentWidget");
+    contentWidget_->setStyleSheet("background: transparent;");
+    auto *mainLayout = new QHBoxLayout(contentWidget_);
+    mainLayout->setContentsMargins(30, 30, 30, 30);
+    mainLayout->setSpacing(40);
 
     auto *leftSection = new QVBoxLayout();
     leftSection->setSpacing(30);
@@ -461,7 +477,14 @@ void ProfilePage::setupUI()
     mainLayout->addLayout(leftSection, 3);
     mainLayout->addLayout(rightSection, 2);
 
+    scrollArea->setWidget(contentWidget_);
+    rootLayout->addWidget(scrollArea);
+
     connect(changeAvatarBtn, &QPushButton::clicked, this, &ProfilePage::onChangeAvatarClicked);
+
+    customTooltipLabel_ = new QLabel(this);
+    customTooltipLabel_->setObjectName("CustomTooltip");
+    customTooltipLabel_->hide();
 }
 
 void ProfilePage::applyStyles()
@@ -476,19 +499,14 @@ void ProfilePage::applyStyles()
         QSettings settings("CppForge", "StudyApp");
         isDark = (settings.value("app/theme", 0).toInt() == 1);
     }
-    QString hoverColor, hoverText;
-    if (isDark)
-    {
-        hoverColor = "#0e639c";
-        hoverText = "white";
-    }
-    else
-    {
-        hoverColor = "#f3e8ff";
-        hoverText = "black";
-    }
 
-    setStyleSheet(QString(R"(
+    QString hoverText;
+    QString btnColor = isDark ? "#0e639c" : "#62639b";
+    QString btnHover = isDark ? "#1177bb" : "#f3e8ff";
+    hoverText = isDark ? "white" : "black";
+
+    QString style = QString(R"(
+        #contentWidget { background-color: palette(window); border: none; }
         #UserNameLabel { font-size: 28px; font-weight: bold; color: palette(text); }
         #StatTitle { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; }
         #AvatarSquare { 
@@ -524,16 +542,16 @@ void ProfilePage::applyStyles()
             padding: 2px 5px;
             text-align: right;
         }
-        #FooterBtn:hover { color: %1; text-decoration: underline; background: transparent; }
+        #FooterBtn:hover { color: %2; text-decoration: underline; background: transparent; }
         #ChangeAvatarBtn {
-            background-color: palette(button); 
-            color: palette(button-text); 
-            border: 1px solid palette(mid);
+            background-color: %1; 
+            color: white; 
+            border: none;
             border-radius: 8px; 
             padding: 8px 16px; 
             font-weight: 600;
         }
-        #ChangeAvatarBtn:hover { background-color: %1; color: %2; }
+        #ChangeAvatarBtn:hover { background-color: %2; color: %3; }
         #BoxContent { 
             background: transparent; 
             border: none; 
@@ -556,11 +574,25 @@ void ProfilePage::applyStyles()
             background-color: palette(base);
             border: 1px solid palette(mid);
             selection-background-color: %1;
-            color: %2;
+            color: white;
+        }
+
+        #CustomTooltip {
+            background-color: rgb(255, 255, 255);
+            color: rgb(0, 0, 0);
+            border: 1px solid rgb(150, 150, 150);
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 12px;
         }
     )")
-                      .arg(hoverColor)
-                      .arg(hoverText));
+                        .arg(btnColor)
+                        .arg(btnHover)
+                        .arg(hoverText);
+
+    setStyleSheet(style);
+    if (contentWidget_)
+        contentWidget_->setStyleSheet(style);
 }
 
 void ProfilePage::setThemeService(cppforge::services::ThemeService *service)
@@ -661,4 +693,43 @@ void ProfilePage::onPrivacyClicked()
         "By using cppforge, you agree to the local storage of learning progress and profile settings.";
     InfoDialog dlg("Privacy Policy", privacyText, this);
     dlg.exec();
+}
+
+bool ProfilePage::eventFilter(QObject *watched, QEvent *event)
+{
+    if (!customTooltipLabel_)
+        return QWidget::eventFilter(watched, event);
+
+    if (event->type() == QEvent::Enter)
+    {
+        QString text = watched->property("customTooltipText").toString();
+        if (!text.isEmpty())
+        {
+            customTooltipLabel_->setText(text);
+            customTooltipLabel_->adjustSize();
+            customTooltipLabel_->raise();
+
+            QWidget *w = qobject_cast<QWidget *>(watched);
+            if (w)
+            {
+                QPoint pos = w->mapTo(this, QPoint(0, w->height() + 5));
+                if (pos.x() + customTooltipLabel_->width() > this->width())
+                {
+                    pos.setX(this->width() - customTooltipLabel_->width() - 5);
+                }
+                if (pos.y() + customTooltipLabel_->height() > this->height())
+                {
+                    pos.setY(w->mapTo(this, QPoint(0, -customTooltipLabel_->height() - 5)).y());
+                }
+                customTooltipLabel_->move(pos);
+            }
+            customTooltipLabel_->show();
+        }
+    }
+    else if (event->type() == QEvent::Leave)
+    {
+        customTooltipLabel_->hide();
+    }
+
+    return QWidget::eventFilter(watched, event);
 }
