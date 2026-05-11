@@ -59,6 +59,34 @@ BEGIN
 После использования динамическую память нужно ОБЯЗАТЕЛЬНО вернуть ОС с помощью функции free(ptr). Если этого не сделать, произойдет утечка памяти (Memory Leak) — программа будет потреблять всё больше ОЗУ, пока не упадет.', 3)
     RETURNING id INTO v_lesson_id;
 
+    -- Coding Task for 6.1-6.3
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
+    VALUES (
+        v_lesson_id, 
+        'Простой узел списка', 
+        'Создайте структуру `Node`, которая хранит целое число `value` и указатель `next` на следующий элемент такого же типа. Затем в функции `main` выделите память под один узел в куче, считайте число из стандартного ввода, запишите его в `value`, а указатель `next` сделайте равным `NULL`. Выведите `value` и освободите память.
+
+Формат ввода:
+Одно целое число.
+
+Формат вывода:
+Одно целое число — значение из структуры.
+
+Пример:
+Ввод: 42
+Вывод: 42', 
+        E'#include <stdio.h>\n#include <stdlib.h>\n\n// Определите структуру Node\n\nint main(void) {\n    // Ваш код\n    return 0;\n}',
+        'main,return,int,void,#include,stdio.h,stdlib.h,printf,scanf,malloc,free,struct,NULL', 
+        '#define,goto,asm,__asm__,__asm,class,new,delete', 
+        2000, 
+        256,
+        FALSE
+    ) RETURNING id INTO v_task_id;
+
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
+    VALUES (v_task_id, '42', '42\n', TRUE),
+           (v_task_id, '-99', '-99\n', TRUE);
+
     -- Lesson 6.4
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
     (v_mod_id, '6.4. Динамические массивы', 'Главное применение malloc — динамические массивы, размер которых неизвестен на этапе компиляции (например, он вводится пользователем).
@@ -77,10 +105,20 @@ BEGIN
     VALUES (
         v_lesson_id, 
         'Динамическое выделение', 
-        'Напишите программу, которая считывает число N, затем выделяет динамический массив целых чисел размера N. Заполните массив числами от 1 до N и выведите последний элемент. Обязательно освободите память с помощью free!', 
+        'Напишите программу, которая считывает число N, затем выделяет динамический массив целых чисел размера N. Заполните массив числами от 1 до N и выведите последний элемент. Обязательно освободите память с помощью free!
+
+Формат ввода:
+Одно положительное целое число N (до 10^5).
+
+Формат вывода:
+Одно целое число — последний элемент массива (число N).
+
+Пример:
+Ввод: 10
+Вывод: 10', 
         E'#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int n;\n    if (scanf("%d", &n) != 1) return 0;\n    // Ваш код\n    return 0;\n}',
         'main,return,int,void,#include,stdio.h,printf,scanf,stdlib.h,malloc,free', 
-        '#define,goto,asm,__asm__,__asm', 
+        '#define,goto,asm,__asm__,__asm,class,new,delete', 
         2000, 
         256,
         FALSE
