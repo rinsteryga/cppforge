@@ -326,7 +326,16 @@ void AuthWindow::setupLayout()
 
 void AuthWindow::onLoginClicked()
 {
-    if (authManager_ && authManager_->login(usernameInput_->text(), passwordInput_->text()))
+    QString username = usernameInput_->text().trimmed();
+    QString password = passwordInput_->text();
+
+    if (username.isEmpty() || password.isEmpty())
+    {
+        QMessageBox::warning(this, "Login Failed", "Please fill in all fields.");
+        return;
+    }
+
+    if (authManager_ && authManager_->login(username, password))
     {
         int userId = -1;
         auto currentUser = cppforge::services::SessionManager::instance().getCurrentUser();
