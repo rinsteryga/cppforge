@@ -185,8 +185,9 @@ void TaskWindow::loadModule(int lessonId)
 
         codeEditor_->setReadOnly(false);
 
-        currentTask_ = cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc,
-                                                      initCode, data.testCases, 1000, 256, data.whitelist, data.blacklist);
+        currentTask_ =
+            cppforge::entities::CodingTask(taskId, static_cast<uint64_t>(lessonId), title, practiceDesc, initCode,
+                                           data.testCases, 1000, 256, data.whitelist, data.blacklist);
     }
     else
     {
@@ -216,16 +217,22 @@ void TaskWindow::loadModule(int lessonId)
             {
                 btnSubmit_->setEnabled(false);
                 btnSubmit_->setStyleSheet("background-color: #95a5a6; color: white; font-weight: bold; border: none;");
-                
-                QTimer::singleShot(100, this, [this]() {
-                    if (theoryEdit_ && theoryEdit_->verticalScrollBar()) {
-                        QScrollBar *vBar = theoryEdit_->verticalScrollBar();
-                        if (vBar->maximum() <= 0) {
-                            btnSubmit_->setEnabled(true);
-                            btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold; border: none;");
+
+                QTimer::singleShot(
+                    100, this,
+                    [this]()
+                    {
+                        if (theoryEdit_ && theoryEdit_->verticalScrollBar())
+                        {
+                            QScrollBar *vBar = theoryEdit_->verticalScrollBar();
+                            if (vBar->maximum() <= 0)
+                            {
+                                btnSubmit_->setEnabled(true);
+                                btnSubmit_->setStyleSheet(
+                                    "background-color: #2ecc71; color: white; font-weight: bold; border: none;");
+                            }
                         }
-                    }
-                });
+                    });
             }
         }
     }
