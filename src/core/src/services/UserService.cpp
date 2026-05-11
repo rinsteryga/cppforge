@@ -25,6 +25,11 @@ namespace cppforge::services
         return userRepository_.getSolvedTasksCount(userId);
     }
 
+    int UserService::getTodaySolvedTasksCount(uint64_t userId) const
+    {
+        return userRepository_.getTodaySolvedTasksCount(userId);
+    }
+
     int UserService::getCompletedLessonsCount(uint64_t userId) const
     {
         return userRepository_.getCompletedLessonsCount(userId);
