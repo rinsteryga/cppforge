@@ -45,9 +45,9 @@ BEGIN;
 
 INSERT INTO achievements (name, description, icon_path, condition_type, condition_value) VALUES
 ('First Code', 'Solve your first coding task!', ':/images/patrick.png', 'LEVELS_COMPLETED', 1),
-('Expert', 'Solve 10 tasks to become an expert.', NULL, 'LEVELS_COMPLETED', 10),
-('Persistent', 'Solve tasks 3 days in a row.', NULL, 'STREAK_DAYS', 3),
-('Tenacious', 'Solve tasks 7 days in a row.', NULL, 'STREAK_DAYS', 7),
+('Expert', 'Solve 10 tasks to become an expert.', ':/images/terry.png', 'LEVELS_COMPLETED', 10),
+('Persistent', 'Solve tasks 2 days in a row.', ':/images/tony.png', 'STREAK_DAYS', 2),
+('Tenacious', 'Solve tasks 5 days in a row.', ':/images/walter.png', 'STREAK_DAYS', 5),
 ('Easter Egg Finder', 'Find the hidden secret.', ':/images/lb.png', 'CUSTOM_EVENT', 0);
 
 COMMIT;
