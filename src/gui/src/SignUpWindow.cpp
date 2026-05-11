@@ -15,6 +15,7 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
+#include <QRegularExpression>
 #include <QScreen>
 #include <QScrollArea>
 #include <QSettings>
@@ -363,13 +364,39 @@ void SignUpWindow::setupConnections()
 
 void SignUpWindow::onSignUpButtonClicked()
 {
-    if (usernameInput_->text().isEmpty() || emailInput_->text().isEmpty() || passwordInput_->text().isEmpty())
+    QString username = usernameInput_->text().trimmed();
+    QString email = emailInput_->text().trimmed();
+    QString password = passwordInput_->text();
+
+    if (username.isEmpty() || email.isEmpty() || password.isEmpty())
     {
-        QMessageBox::warning(this, "Error", "Please fill all fields");
+        QMessageBox::warning(this, "Error", "Please fill all fields.");
         return;
     }
 
-    if (authManager_ && authManager_->registerUser(usernameInput_->text(), emailInput_->text(), passwordInput_->text()))
+    QRegularExpression usernameRegex("^[a-zA-Z0-9_]{3,20}$");
+    if (!usernameRegex.match(username).hasMatch())
+    {
+        QMessageBox::warning(
+            this, "Invalid Username",
+            "Username must be 3-20 characters long and contain only letters, numbers, and underscores.");
+        return;
+    }
+
+    QRegularExpression emailRegex("^[\\w\\.-]+@[\\w\\.-]+\\.[a-zA-Z]{2,}$");
+    if (!emailRegex.match(email).hasMatch())
+    {
+        QMessageBox::warning(this, "Invalid Email", "Please enter a valid email address.");
+        return;
+    }
+
+    if (password.length() < 6)
+    {
+        QMessageBox::warning(this, "Weak Password", "Password must be at least 6 characters long.");
+        return;
+    }
+
+    if (authManager_ && authManager_->registerUser(username, email, password))
     {
         QMessageBox::information(this, "Success", "Account created successfully!");
         WindowStateManager::instance().captureState(this);
