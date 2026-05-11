@@ -13,6 +13,22 @@ namespace cppforge
     {
         PgLessonRepository::PgLessonRepository(QSqlDatabase &database) : database_(database) {}
 
+        QString PgLessonRepository::getRandomTip() const
+        {
+            if (!database_.isOpen())
+                return "Keep coding!";
+
+            QSqlQuery query(database_);
+            query.prepare("SELECT content FROM tips ORDER BY RANDOM() LIMIT 1");
+
+            if (query.exec() && query.next())
+            {
+                return query.value(0).toString();
+            }
+
+            return "Stay curious!";
+        }
+
         std::vector<entities::Lesson> PgLessonRepository::getLessonsByModuleId(uint64_t moduleId) const
         {
             std::vector<entities::Lesson> lessons;
