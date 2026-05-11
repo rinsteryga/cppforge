@@ -11,5 +11,8 @@
         <file>images/default_avatar4.png</file>
         <file>images/lb.png</file>
         <file>images/patrick.png</file>
+        <file>images/terry.png</file>
+        <file>images/tony.png</file>
+        <file>images/walter.png</file>
     </qresource>
 </RCC>
