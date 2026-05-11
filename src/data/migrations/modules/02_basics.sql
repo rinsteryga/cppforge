@@ -28,7 +28,7 @@ BEGIN
   unsigned int b = 42;
   double pi = 3.14159;
 
-Важно понимать: размер типов в C не фиксирован строго стандартом, он зависит от архитектуры (Data Model, например LP64 или ILP32). Гарантируется лишь соотношение: sizeof(char) == 1, sizeof(short) <= sizeof(int) <= sizeof(long).', 1)
+Важно понимать: размер типов в C не фиксирован строго стандартом, он зависит от архитектуры (Data Model, например LP64 или ILP32). Гарантируется лишь соотношение: sizeof(char) == 1, sizeof(short) <= sizeof(int) <= sizeof(long). При выборе типа всегда помните про возможность переполнения (integer overflow), если значение превысит лимит памяти типа!', 1)
     RETURNING id INTO v_lesson_id;
 
     -- Lesson 2.2
@@ -74,10 +74,20 @@ BEGIN
     VALUES (
         v_lesson_id, 
         'Сумма двух чисел', 
-        'Напишите программу, которая считывает два целых числа (через пробел) и выводит их сумму.', 
+        'Напишите программу, которая считывает два целых числа (через пробел) и выводит их сумму.
+
+Формат ввода:
+Два целых числа, разделенных пробелом.
+
+Формат вывода:
+Одно целое число — сумма введенных чисел.
+
+Пример:
+Ввод: 5 7
+Вывод: 12', 
         E'#include <stdio.h>\n\nint main(void) {\n    int a, b;\n    // Ваш код\n    return 0;\n}',
         'main,return,int,void,#include,stdio.h,printf,scanf', 
-        '#define,while,goto,do,asm,__asm__,__asm,stdlib.h', 
+        '#define,while,goto,do,asm,__asm__,__asm,stdlib.h,struct,class,*,new,delete', 
         2000, 
         256,
         FALSE
@@ -101,6 +111,37 @@ BEGIN
 
 В C нет логического типа данных (bool появился в C99 через <stdbool.h>, но на низком уровне это всё равно числа). Любое ненулевое значение считается истиной (true), а 0 — ложью (false).', 4)
     RETURNING id INTO v_lesson_id;
+
+    -- Coding Task for 2.4
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
+    VALUES (
+        v_lesson_id, 
+        'Високосный год', 
+        'Напишите программу, которая проверяет, является ли введенный год високосным. Год високосный, если он кратен 4, но не кратен 100, либо кратен 400.
+Выведите "YES", если год високосный, и "NO", если нет.
+
+Формат ввода:
+Одно целое положительное число (год).
+
+Формат вывода:
+Строка YES или NO.
+
+Пример:
+Ввод: 2024
+Вывод: YES', 
+        E'#include <stdio.h>\n\nint main(void) {\n    int year;\n    scanf("%d", &year);\n    // Ваш код\n    return 0;\n}',
+        'main,return,int,void,#include,stdio.h,printf,scanf,if,else', 
+        '#define,while,goto,do,asm,__asm__,__asm,stdlib.h,struct,class,*,new,delete', 
+        2000, 
+        256,
+        FALSE
+    ) RETURNING id INTO v_task_id;
+
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
+    VALUES (v_task_id, '2024', 'YES', TRUE),
+           (v_task_id, '1900', 'NO', TRUE),
+           (v_task_id, '2000', 'YES', TRUE),
+           (v_task_id, '2023', 'NO', TRUE);
 
     -- Lesson 2.5
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
@@ -145,10 +186,20 @@ BEGIN
     VALUES (
         v_lesson_id, 
         'Сумма от 1 до N', 
-        'Напишите программу, которая считывает натуральное число N и выводит сумму всех целых чисел от 1 до N включительно. Используйте цикл.', 
+        'Напишите программу, которая считывает натуральное число N и выводит сумму всех целых чисел от 1 до N включительно. Используйте цикл.
+
+Формат ввода:
+Одно целое положительное число N (до 10^4).
+
+Формат вывода:
+Одно целое число — искомая сумма.
+
+Пример:
+Ввод: 5
+Вывод: 15', 
         E'#include <stdio.h>\n\nint main(void) {\n    int n;\n    scanf("%d", &n);\n    \n    // Ваш код\n    \n    return 0;\n}',
         'main,return,int,void,#include,stdio.h,printf,scanf', 
-        '#define,goto,asm,__asm__,__asm', 
+        '#define,goto,asm,__asm__,__asm,struct,class,*,new,delete', 
         2000, 
         256,
         FALSE
@@ -156,6 +207,7 @@ BEGIN
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
     VALUES (v_task_id, '5', '15', TRUE),
-           (v_task_id, '10', '55', TRUE);
+           (v_task_id, '10', '55', TRUE),
+           (v_task_id, '100', '5050', TRUE);
 
 END $$;
