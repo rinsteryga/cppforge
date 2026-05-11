@@ -62,6 +62,13 @@ namespace cppforge::repositories
         int getSolvedTasksCount(uint64_t userId) const override;
 
         /**
+         * @brief Retrieves the count of unique coding tasks a user has solved today.
+         * @param userId The ID of the user.
+         * @return The count of unique successfully solved coding tasks for the current date.
+         */
+        int getTodaySolvedTasksCount(uint64_t userId) const override;
+
+        /**
          * @brief Retrieves the count of lessons a user has completed.
          * @param userId The ID of the user.
          * @return The count of completed lessons.
