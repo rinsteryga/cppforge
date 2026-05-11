@@ -85,6 +85,8 @@ namespace cppforge::services
             data.initialCode = task.getInitialCode();
             data.testCases = task.getTestCases();
             data.previousCode = m_userRepo->getLastSubmission(userId, task.getId());
+            data.whitelist = task.getWhitelist();
+            data.blacklist = task.getBlacklist();
         }
 
         return data;
