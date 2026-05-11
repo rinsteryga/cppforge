@@ -41,6 +41,34 @@ BEGIN
 Она читает до переноса строки (\n) или конца буфера, гарантированно добавляя нуль-терминатор. Идеально для парсинга конфигураций.', 2)
     RETURNING id INTO v_lesson_id;
 
+    -- Coding Task for 7.1-7.2
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
+    VALUES (
+        v_lesson_id, 
+        'Чтение чисел из файла', 
+        'Напишите функцию `int sum_from_file(FILE *f)`, которая считывает из переданного файла два целых числа и возвращает их сумму. Функция `main` (которая открывает файл и вызывает вашу функцию) уже написана. Считайте, что файл корректен и числа там есть.
+
+Формат ввода:
+(Имитация файла) Два целых числа, разделенных пробелом.
+
+Формат вывода:
+Одно целое число — сумма.
+
+Пример:
+Ввод: 10 20
+Вывод: 30', 
+        E'#include <stdio.h>\n\nint sum_from_file(FILE *f) {\n    // Ваш код\n}\n\nint main(void) {\n    // В тестовой системе stdin используется как файл\n    printf("%d\\n", sum_from_file(stdin));\n    return 0;\n}',
+        'main,return,int,void,#include,stdio.h,printf,fscanf,FILE', 
+        '#define,goto,asm,__asm__,__asm,class,new,delete', 
+        2000, 
+        256,
+        FALSE
+    ) RETURNING id INTO v_task_id;
+
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
+    VALUES (v_task_id, '10 20', '30\n', TRUE),
+           (v_task_id, '-5 5', '0\n', TRUE);
+
     -- Lesson 7.3
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
     (v_mod_id, '7.3. Бинарный режим', 'Текстовый режим ("r", "w") хорош для строк, но ОС Windows делает "магию" с переносами строк (заменяет \n на \r\n при записи и обратно при чтении). В Linux такого нет, \n там всегда один байт.
