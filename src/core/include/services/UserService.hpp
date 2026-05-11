@@ -48,6 +48,13 @@ namespace cppforge::services
         int getSolvedTasksCount(uint64_t userId) const;
 
         /**
+         * @brief Retrieves the total number of unique coding tasks solved by a user today.
+         * @param userId The ID of the user.
+         * @return The count of unique successfully solved coding tasks for the current date.
+         */
+        int getTodaySolvedTasksCount(uint64_t userId) const;
+
+        /**
          * @brief Retrieves the number of lessons completed by a user.
          * @param userId The ID of the user.
          * @return The count of completed lessons.

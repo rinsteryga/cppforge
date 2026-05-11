@@ -14,6 +14,7 @@
 #include "services/DuelManager.hpp"
 
 #include <QApplication>
+#include <QDate>
 #include <QDebug>
 #include <QFont>
 #include <QFrame>
@@ -36,6 +37,7 @@
 #include <QShortcut>
 #include <QSpacerItem>
 #include <QStackedWidget>
+#include <QStringList>
 #include <QStyleOption>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -119,6 +121,29 @@ void MainWindow::setUserId(int id)
     }
 
     loadAllModulesProgress();
+    updateDailyGoal();
+    updateTipOfTheDay();
+}
+
+void MainWindow::updateDailyGoal()
+{
+    if (m_currentUserId == -1 || !m_userService || !dailyProgressBar_ || !dailyProgressLabel_)
+        return;
+
+    int solvedToday = m_userService->getTodaySolvedTasksCount(m_currentUserId);
+
+    dailyProgressBar_->setTextVisible(false);
+    dailyProgressBar_->setValue(std::min(solvedToday, 3));
+
+    dailyProgressLabel_->setText(QString("Solved today: %1 / 3").arg(solvedToday));
+}
+
+void MainWindow::updateTipOfTheDay()
+{
+    if (!m_courseService || !tipLabel_)
+        return;
+
+    tipLabel_->setText(m_courseService->getRandomTip());
 }
 
 void MainWindow::setUserService(cppforge::services::UserService *service)
@@ -241,6 +266,8 @@ void MainWindow::onTaskWindowClosed()
     this->setWindowOpacity(0.0);
     WindowStateManager::instance().applyState(this, QSize(1200, 800));
     loadAllModulesProgress();
+    updateDailyGoal();
+    updateTipOfTheDay();
 
     if (m_currentOpenModuleId != -1)
     {
@@ -347,7 +374,6 @@ void MainWindow::fadeOut()
                     WindowStateManager::instance().captureState(this);
                     this->hide();
                     WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1200, 800));
-                    taskWindow_->fadeIn();
                     pendingModuleId_ = -1;
                     isTransitioning_ = false;
                 }
@@ -456,26 +482,39 @@ void MainWindow::setupCenterPanel()
     eventCard->setProperty("class", "card");
     auto eLayout = new QVBoxLayout(eventCard.get());
     eLayout->setContentsMargins(25, 25, 25, 25);
+    eLayout->setSpacing(10);
 
-    auto eventTitle = new QLabel("Events");
+    auto eventTitle = new QLabel("💡 Tip of the Day");
     eventTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     eLayout->addWidget(eventTitle);
-    eLayout->addWidget(new QLabel("No upcoming events"));
+
+    tipLabel_ = new QLabel("Loading tip...");
+    tipLabel_->setFont(QFont("Roboto", 12));
+    tipLabel_->setWordWrap(true);
+    tipLabel_->setStyleSheet("color: palette(text); line-height: 1.4;");
+
+    eLayout->addWidget(tipLabel_);
     eLayout->addStretch();
 
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", "card");
     auto dLayout = new QVBoxLayout(dailyTaskCard.get());
     dLayout->setContentsMargins(25, 25, 25, 25);
+    dLayout->setSpacing(15);
 
-    auto dailyTitle = new QLabel("Daily Task");
+    auto dailyTitle = new QLabel("🎯 Daily Goal");
     dailyTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     dLayout->addWidget(dailyTitle);
 
-    auto dailyProgress = new QProgressBar();
-    dailyProgress->setFixedHeight(16);
-    dailyProgress->setValue(0);
-    dLayout->addWidget(dailyProgress);
+    dailyProgressLabel_ = new QLabel("Solved today: 0 / 3");
+    dailyProgressLabel_->setFont(QFont("Roboto", 12));
+    dLayout->addWidget(dailyProgressLabel_);
+
+    dailyProgressBar_ = new QProgressBar();
+    dailyProgressBar_->setFixedHeight(16);
+    dailyProgressBar_->setMaximum(3);
+    dailyProgressBar_->setValue(0);
+    dLayout->addWidget(dailyProgressBar_);
     dLayout->addStretch();
 
     centerPanelLayout_->addWidget(eventCard.get());
@@ -609,6 +648,8 @@ void MainWindow::setupUI()
                         [this]()
                         {
                             WindowStateManager::instance().applyState(this, QSize(1200, 800));
+                            updateDailyGoal();
+                            updateTipOfTheDay();
                             this->fadeIn();
                         });
 
@@ -617,6 +658,8 @@ void MainWindow::setupUI()
                         {
                             m_duelTaskWindow = nullptr;
                             WindowStateManager::instance().applyState(this, QSize(1200, 800));
+                            updateDailyGoal();
+                            updateTipOfTheDay();
                             this->fadeIn();
                         });
 
@@ -666,17 +709,6 @@ void MainWindow::setupUI()
     containerLayout->addWidget(contentStack.get(), 4);
 
     mainVerticalLayout->addWidget(contentContainer);
-
-    auto *secretShortcut = new QShortcut(QKeySequence("L, B"), this);
-    secretShortcut->setContext(Qt::ApplicationShortcut);
-    connect(secretShortcut, &QShortcut::activated, this,
-            [this]()
-            {
-                if (contentStack && contentStack->currentWidget() == profilePage)
-                {
-                    onSecretTaskTriggered();
-                }
-            });
 }
 
 void MainWindow::setupStyles()
@@ -780,6 +812,7 @@ void MainWindow::onLearnButtonClicked()
     if (contentStack->currentWidget() == roadmapPage)
     {
         contentStack->setCurrentIndex(0);
+        updateTipOfTheDay();
     }
     else
     {
@@ -915,6 +948,42 @@ void MainWindow::changeEvent(QEvent *event)
     QWidget::changeEvent(event);
 }
 
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_L && !event->isAutoRepeat())
+    {
+        m_keyLDown = true;
+    }
+    if (event->key() == Qt::Key_B && !event->isAutoRepeat())
+    {
+        m_keyBDown = true;
+    }
+
+    if (m_keyLDown && m_keyBDown)
+    {
+        if (contentStack && contentStack->currentWidget() == profilePage)
+        {
+            onSecretTaskTriggered();
+            m_keyLDown = false;
+            m_keyBDown = false;
+        }
+    }
+    QWidget::keyPressEvent(event);
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_L && !event->isAutoRepeat())
+    {
+        m_keyLDown = false;
+    }
+    if (event->key() == Qt::Key_B && !event->isAutoRepeat())
+    {
+        m_keyBDown = false;
+    }
+    QWidget::keyReleaseEvent(event);
+}
+
 void MainWindow::onLogoutClicked()
 {
     QSettings settings("CppForge", "StudyApp");
@@ -1022,7 +1091,13 @@ void MainWindow::onSecretTaskTriggered()
     }
     taskWindow_->setTask(secretTask);
 
+    WindowStateManager::instance().captureState(this);
     this->hide();
-    taskWindow_->show();
-    taskWindow_->fadeIn();
+
+    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
+    {
+        transitionAnimation_->stop();
+    }
+
+    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1200, 800));
 }

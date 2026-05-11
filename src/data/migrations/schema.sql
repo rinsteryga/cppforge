@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS user_progress CASCADE;
 DROP TABLE IF EXISTS user_achievements CASCADE;
 DROP TABLE IF EXISTS achievements CASCADE;
 DROP TABLE IF EXISTS modules CASCADE;
+DROP TABLE IF EXISTS tips CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
@@ -142,4 +143,9 @@ CREATE TABLE user_progress (
     is_completed BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP DEFAULT NOW(),
     UNIQUE (user_id, lesson_id)
+);
+
+CREATE TABLE tips (
+    id BIGSERIAL PRIMARY KEY,
+    content TEXT NOT NULL
 );

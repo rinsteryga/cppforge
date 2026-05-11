@@ -23,7 +23,7 @@ BEGIN
   }
 
 Вызов: `my_max<int>(5, 10)` или просто `my_max(5.5, 3.1)` (компилятор часто сам может вывести тип аргументов).
-Это краеугольный камень библиотеки STL (Standard Template Library), где все контейнеры являются шаблонными классами (например, `std::vector<int>`).');
+Это краеугольный камень библиотеки STL (Standard Template Library), где все контейнеры являются шаблонными классами (например, `std::vector<int>`).')
     RETURNING id INTO v_lesson_id;
 
     -- Coding Task for 11.1

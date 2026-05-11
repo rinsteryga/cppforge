@@ -1,7 +1,9 @@
 #pragma once
 
+#include <QObject>
 #include <QRect>
 #include <QSize>
+#include <QTimer>
 
 class QWidget;
 
@@ -14,8 +16,10 @@ class QWidget;
  * the manager applies the last known state so all windows share the same
  * screen layout. The state is persisted via QSettings.
  */
-class WindowStateManager
+class WindowStateManager : public QObject
 {
+    Q_OBJECT
+
 public:
     /**
      * @brief Returns the global singleton instance.
@@ -107,7 +111,8 @@ private:
      */
     void loadState();
 
-    bool hasState_{false};    ///< Flag indicating if a state has been loaded or captured.
-    bool isMaximized_{false}; ///< Whether the last captured state was maximized.
-    QRect savedGeometry_;     ///< The last captured normal window geometry.
+    bool hasState_{false};          ///< Flag indicating if a state has been loaded or captured.
+    bool isMaximized_{false};       ///< Whether the last captured state was maximized.
+    QRect savedGeometry_;           ///< The last captured normal window geometry.
+    QTimer *persistTimer_{nullptr}; ///< Debounce timer for saving state.
 };

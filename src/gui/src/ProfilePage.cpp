@@ -33,22 +33,24 @@ namespace
     class InfoDialog : public QDialog
     {
     public:
-        InfoDialog(const QString &title, const QString &text, QWidget *parent = nullptr) : QDialog(parent)
+        InfoDialog(const QString &title, const QString &text, bool isDark, QWidget *parent = nullptr) : QDialog(parent)
         {
             setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
             setAttribute(Qt::WA_TranslucentBackground);
 
+            QString highlightColor = isDark ? "#0e639c" : "palette(highlight)";
+
             auto *layout = new QVBoxLayout(this);
             auto *card = new QFrame();
             card->setObjectName("DialogCard");
-            card->setStyleSheet(R"(
+            card->setStyleSheet(QString(R"(
                 #DialogCard {
                     background-color: palette(base);
-                    border: 2px solid palette(highlight);
+                    border: 2px solid %1;
                     border-radius: 15px;
                 }
                 QLabel { color: palette(text); font-size: 16px; }
-                #Title { font-weight: bold; font-size: 20px; color: palette(highlight); }
+                #Title { font-weight: bold; font-size: 20px; color: %1; }
                 QPushButton {
                     background-color: palette(button);
                     color: palette(button-text);
@@ -57,8 +59,9 @@ namespace
                     font-weight: bold;
                     border: none;
                 }
-                QPushButton:hover { background-color: palette(highlight); }
-            )");
+                QPushButton:hover { background-color: %1; color: white; }
+            )")
+                                    .arg(highlightColor));
 
             auto *cardLayout = new QVBoxLayout(card);
             cardLayout->setContentsMargins(25, 25, 25, 25);
@@ -102,6 +105,7 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
     QString finalPath = avatarPath;
 
+    bool avatarGenerated = false;
     if (finalPath.isEmpty() || finalPath == "NULL")
     {
         QDir imagesDir(":/images");
@@ -125,9 +129,14 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         {
             userService_->updateAvatar(userId, finalPath);
         }
+        avatarGenerated = true;
     }
 
     updateAvatarDisplay(finalPath);
+    if (avatarGenerated)
+    {
+        emit avatarChanged(finalPath);
+    }
 
     if (userService_)
     {
@@ -172,6 +181,14 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         clearLayout(achievementsContainer->layout());
         clearLayout(activityContainer->layout());
 
+        bool isDark = false;
+        if (themeService_)
+            isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+        else
+            isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+
+        QString highlightColor = isDark ? "#0e639c" : "palette(highlight)";
+
         auto achievements = userService_->getAllAchievementsStatus(userId);
         auto *achGrid = qobject_cast<QGridLayout *>(achievementsContainer->layout());
 
@@ -195,15 +212,18 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             if (pix.isNull())
             {
                 icon->setText("🏆");
-                icon->setStyleSheet(earned ? "background-color: palette(alternate-base); border: 1px solid "
-                                             "palette(mid); border-radius: 8px; font-size: 24px;"
+                icon->setStyleSheet(earned ? QString("background-color: palette(alternate-base); border: 2px solid %1; "
+                                                     "border-radius: 8px; font-size: 24px;")
+                                                 .arg(highlightColor)
                                            : "background-color: palette(base); border: 1px dashed palette(mid); "
                                              "border-radius: 8px; font-size: 24px; color: palette(mid);");
             }
             else
             {
                 icon->setStyleSheet(
-                    earned ? "background-color: palette(alternate-base); border-radius: 8px;"
+                    earned ? QString(
+                                 "background-color: palette(alternate-base); border: 2px solid %1; border-radius: 8px;")
+                                 .arg(highlightColor)
                            : "background-color: palette(base); border: 1px dashed palette(mid); border-radius: 8px;");
                 if (!earned)
                 {
@@ -418,6 +438,7 @@ void ProfilePage::setupUI()
     themeCombo_ = new QComboBox();
     themeCombo_->addItems({"Light", "Dark"});
     themeCombo_->setCursor(Qt::PointingHandCursor);
+    themeCombo_->setFocusPolicy(Qt::NoFocus);
     themeLayout->addWidget(themeLabel);
     themeLayout->addWidget(themeCombo_);
     themeLayout->addStretch();
@@ -616,6 +637,10 @@ void ProfilePage::onThemeChanged(int index)
     {
         themeService_->setTheme(index == 1 ? cppforge::services::Theme::Dark : cppforge::services::Theme::Light);
     }
+    if (themeCombo_)
+    {
+        themeCombo_->clearFocus();
+    }
 }
 
 void ProfilePage::onChangeAvatarClicked()
@@ -675,13 +700,23 @@ void ProfilePage::onAboutClicked()
         "including PvP mode and practical tasks.\n\n"
         "The development team consists of RANEPA college graduates who brought the idea of a truly "
         "cool learning platform to life.";
-    InfoDialog dlg("About cppforge", aboutText, this);
+    bool isDark = false;
+    if (themeService_)
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    else
+        isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+    InfoDialog dlg("About cppforge", aboutText, isDark, this);
     dlg.exec();
 }
 
 void ProfilePage::onContactsClicked()
 {
-    InfoDialog dlg("Contacts", "rinsterr@yandex.ru — for all questions and suggestions", this);
+    bool isDark = false;
+    if (themeService_)
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    else
+        isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+    InfoDialog dlg("Contacts", "rinsterr@yandex.ru — for all questions and suggestions", isDark, this);
     dlg.exec();
 }
 
@@ -691,7 +726,12 @@ void ProfilePage::onPrivacyClicked()
         "We value your privacy. The application stores your data exclusively locally on your device "
         "and does not transfer it to third parties.\n\n"
         "By using cppforge, you agree to the local storage of learning progress and profile settings.";
-    InfoDialog dlg("Privacy Policy", privacyText, this);
+    bool isDark = false;
+    if (themeService_)
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    else
+        isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+    InfoDialog dlg("Privacy Policy", privacyText, isDark, this);
     dlg.exec();
 }
 

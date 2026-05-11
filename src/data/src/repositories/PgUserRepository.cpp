@@ -225,6 +225,26 @@ namespace cppforge::repositories
         return 0;
     }
 
+    int PgUserRepository::getTodaySolvedTasksCount(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
+            return 0;
+        }
+
+        QSqlQuery query(database_);
+        query.prepare("SELECT COUNT(DISTINCT coding_task_id) FROM submissions WHERE user_id = :id AND is_success = "
+                      "true AND DATE(submitted_at) = CURRENT_DATE");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
+        {
+            return query.value(0).toInt();
+        }
+
+        return 0;
+    }
+
     int PgUserRepository::getCompletedLessonsCount(uint64_t userId) const
     {
         if (!database_.isOpen() || userId == 0)

@@ -20,7 +20,7 @@ BEGIN
   #include <vector>
   std::vector<int> v = {1, 2, 3};
   v.push_back(4); // Добавление в конец
-  std::cout << v.size(); // Текущий размер');
+  std::cout << v.size(); // Текущий размер')
     RETURNING id INTO v_lesson_id;
 
     -- Coding Task for 12.1
@@ -74,7 +74,7 @@ BEGIN
   std::sort(v.begin(), v.end()); // Сортировка по возрастанию
 
 Вы также можете передать свой функтор или лямбду третьим аргументом для кастомной сортировки:
-  std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; }); // По убыванию');
+  std::sort(v.begin(), v.end(), [](int a, int b) { return a > b; }); // По убыванию')
     RETURNING id INTO v_lesson_id;
 
     -- Coding Task for 12.3

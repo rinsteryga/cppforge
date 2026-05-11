@@ -18,6 +18,13 @@ namespace cppforge::services
     {
     }
 
+    QString CourseService::getRandomTip() const
+    {
+        if (!m_lessonRepo)
+            return "Keep learning!";
+        return m_lessonRepo->getRandomTip();
+    }
+
     std::vector<entities::RoadmapNodeData> CourseService::getModuleRoadmap(uint64_t userId, uint64_t moduleId) const
     {
         std::vector<entities::RoadmapNodeData> nodes;

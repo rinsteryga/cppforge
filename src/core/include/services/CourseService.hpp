@@ -3,6 +3,8 @@
 #include "../entities/RoadmapNodeData.hpp"
 #include "../entities/TaskWindowData.hpp"
 
+#include <QString>
+
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -34,6 +36,12 @@ namespace cppforge::services
          */
         CourseService(repositories::ILessonRepository *lessonRepo, repositories::ICodingTaskRepository *taskRepo,
                       repositories::IUserRepository *userRepo);
+
+        /**
+         * @brief Retrieves a random tip from the repository.
+         * @return A random tip content string.
+         */
+        QString getRandomTip() const;
 
         /**
          * @brief Retrieves the sequence of lessons for a specific module as a roadmap.

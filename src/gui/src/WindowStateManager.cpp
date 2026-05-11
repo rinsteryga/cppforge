@@ -14,6 +14,10 @@ WindowStateManager &WindowStateManager::instance()
 WindowStateManager::WindowStateManager()
 {
     loadState();
+    persistTimer_ = new QTimer(this);
+    persistTimer_->setSingleShot(true);
+    persistTimer_->setInterval(500);
+    connect(persistTimer_, &QTimer::timeout, this, &WindowStateManager::persistState);
 }
 
 WindowStateManager::~WindowStateManager() = default;
@@ -38,7 +42,10 @@ void WindowStateManager::captureState(QWidget *window)
     }
 
     hasState_ = true;
-    persistState();
+    if (persistTimer_)
+    {
+        persistTimer_->start();
+    }
 }
 
 void WindowStateManager::applyState(QWidget *window, const QSize &defaultSize)
@@ -52,10 +59,12 @@ void WindowStateManager::applyState(QWidget *window, const QSize &defaultSize)
 
     if (hasState_ && isMaximized_)
     {
+        window->setWindowState(Qt::WindowMaximized);
         window->showMaximized();
     }
     else
     {
+        window->setWindowState(Qt::WindowNoState);
         applyGeometry(window, defaultSize);
         window->showNormal();
     }
@@ -72,11 +81,13 @@ void WindowStateManager::applyGeometry(QWidget *window, const QSize &defaultSize
 
     if (hasState_ && !isMaximized_)
     {
+        window->setWindowState(Qt::WindowNoState);
         QSize targetSize = savedGeometry_.size();
         window->resize(clampSizeToScreen(targetSize));
     }
     else if (!hasState_)
     {
+        window->setWindowState(Qt::WindowNoState);
         window->resize(clampSizeToScreen(defaultSize));
     }
 
