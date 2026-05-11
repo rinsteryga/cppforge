@@ -63,10 +63,20 @@ BEGIN
     VALUES (
         v_lesson_id, 
         'Собственный strlen', 
-        'Напишите функцию int my_strlen(const char *str), которая вычисляет длину строки без использования <string.h>. В функции main реализован ввод строки.', 
+        'Напишите функцию int my_strlen(const char *str), которая вычисляет длину строки без использования <string.h>. В функции main реализован ввод строки.
+
+Формат ввода:
+Одно слово без пробелов (длина не более 99 символов).
+
+Формат вывода:
+Одно целое число — длина строки.
+
+Пример:
+Ввод: Hello
+Вывод: 5', 
         E'#include <stdio.h>\n\nint my_strlen(const char *str) {\n    // Ваш код\n}\n\nint main(void) {\n    char buffer[100];\n    if (scanf("%99s", buffer) == 1) {\n        printf("%d\\n", my_strlen(buffer));\n    }\n    return 0;\n}',
         'main,return,int,void,#include,stdio.h,printf,scanf', 
-        '#define,goto,asm,__asm__,__asm,strlen,string.h', 
+        '#define,goto,asm,__asm__,__asm,strlen,string.h,struct,class,new,delete', 
         2000, 
         256,
         FALSE
@@ -87,5 +97,34 @@ BEGIN
 
 Нюанс: функции <ctype.h> могут вести себя странно при работе с кириллицей (и другими мультибайтными кодировками, такими как UTF-8), если не настроена локаль через setlocale(). В современном C++ для этого используют другие механизмы, а в C для UTF-8 лучше применять специализированные библиотеки, например, ICU.', 5)
     RETURNING id INTO v_lesson_id;
+
+    -- Coding Task for 5.5
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
+    VALUES (
+        v_lesson_id, 
+        'Переворот строки (Reverse)', 
+        'Напишите функцию void my_reverse(char *str), которая переворачивает строку на месте (in-place) без создания новых массивов. Использовать string.h запрещено! Функция main уже написана за вас.
+
+Формат ввода:
+Одно слово (без пробелов).
+
+Формат вывода:
+То же слово, записанное задом наперед.
+
+Пример:
+Ввод: Hello
+Вывод: olleH', 
+        E'#include <stdio.h>\n\nvoid my_reverse(char *str) {\n    // Ваш код\n}\n\nint main(void) {\n    char buffer[100];\n    if (scanf("%99s", buffer) == 1) {\n        my_reverse(buffer);\n        printf("%s\\n", buffer);\n    }\n    return 0;\n}',
+        'main,return,int,void,#include,stdio.h,printf,scanf', 
+        '#define,goto,asm,__asm__,__asm,string.h,strlen,strrev,struct,class,new,delete', 
+        2000, 
+        256,
+        FALSE
+    ) RETURNING id INTO v_task_id;
+
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
+    VALUES (v_task_id, 'Hello', 'olleH\n', TRUE),
+           (v_task_id, 'racecar', 'racecar\n', TRUE),
+           (v_task_id, '12345', '54321\n', TRUE);
 
 END $$;

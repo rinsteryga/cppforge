@@ -35,9 +35,14 @@ Devs: @rinsteryga, @Sernock
    *Make sure to fill in your actual PostgreSQL credentials (`PG_USER` and `PG_PASSWORD`) inside the `.env` file before proceeding.*
 
    ```bash
-   psql -U postgres -d cppforge -f src/data/migrations/schema.sql
-   psql -U postgres -d cppforge -f src/data/migrations/seed.sql
+   sudo -u postgres psql -d cppforge -f src/data/migrations/schema.sql
+   sudo -u postgres psql -d cppforge -f src/data/migrations/seed.sql
    ```
+
+   **Database Reset / Update:**
+   If you need to reset the database (drop, recreate, and seed) during development, use the provided cross-platform scripts in `src/data/migrations/`.
+   - On Windows: Run `reset_db.bat`.
+   - On Linux/macOS: Run `bash reset_db.sh`.
 
 4. **Build the project:**
 

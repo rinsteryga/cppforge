@@ -71,6 +71,34 @@ BEGIN
 3. Под капотом компилятор реализует ссылки через указатели (константные указатели int * const), но синтаксис не требует разыменования (*). Это делает код намного чище при передаче в функции: void update(Player &p) {...}', 4)
     RETURNING id INTO v_lesson_id;
 
+    -- Coding Task for 8.4
+    INSERT INTO coding_tasks (lesson_id, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel)
+    VALUES (
+        v_lesson_id, 
+        'Возведение в квадрат (по ссылке)', 
+        'Напишите функцию `void square(int &num)`, которая возводит переданное число в квадрат. Используйте ссылку, чтобы изменить оригинал. Для ввода и вывода используйте `std::cin` и `std::cout` вместо `scanf` / `printf`.
+
+Формат ввода:
+Одно целое число.
+
+Формат вывода:
+Квадрат этого числа.
+
+Пример:
+Ввод: 5
+Вывод: 25', 
+        E'#include <iostream>\n\n// Напишите функцию square здесь\n\nint main() {\n    int n;\n    if (std::cin >> n) {\n        square(n);\n        std::cout << n << "\\n";\n    }\n    return 0;\n}',
+        'main,return,int,void,#include,iostream,cin,cout', 
+        '#define,goto,asm,__asm__,__asm,scanf,printf,*,class,new,delete', 
+        2000, 
+        256,
+        FALSE
+    ) RETURNING id INTO v_task_id;
+
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
+    VALUES (v_task_id, '5', '25\n', TRUE),
+           (v_task_id, '-4', '16\n', TRUE);
+
     -- Lesson 8.5
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
     (v_mod_id, '8.5. Новые возможности const. constexpr', 'C++ гораздо строже относится к константности (const-correctness), чем C. Использование const защищает от случайных изменений.
