@@ -231,6 +231,23 @@ void TaskWindow::loadModule(int lessonId)
                                 btnSubmit_->setStyleSheet(
                                     "background-color: #2ecc71; color: white; font-weight: bold; border: none;");
                             }
+                            else
+                            {
+                                connect(vBar, &QScrollBar::valueChanged, this,
+                                        [this, vBar]()
+                                        {
+                                            if (!hasCodingTask_ && btnSubmit_ && !btnSubmit_->isEnabled())
+                                            {
+                                                if (vBar->value() >= vBar->maximum() - 20)
+                                                {
+                                                    btnSubmit_->setEnabled(true);
+                                                    btnSubmit_->setStyleSheet(
+                                                        "background-color: #2ecc71; color: "
+                                                        "white; font-weight: bold; border: none;");
+                                                }
+                                            }
+                                        });
+                            }
                         }
                     });
             }
@@ -441,16 +458,17 @@ void TaskWindow::setupUI()
     codeEditor_ = new QTextEdit();
     codeEditor_->setObjectName("codeEditor");
     codeEditor_->setLineWrapMode(QTextEdit::WidgetWidth);
-    codeEditor_->setFont(QFont("Consolas", 12));
+
+    QFont codeFont("Consolas", 13);
+    codeFont.insertSubstitutions("Consolas", {QFontDatabase::systemFont(QFontDatabase::FixedFont).family()});
+    codeFont.setStyleHint(QFont::Monospace);
+    codeEditor_->setFont(codeFont);
 
     highlighter_ = std::make_unique<CppHighlighter>(codeEditor_->document());
     if (themeService_)
     {
         highlighter_->setTheme(themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
     }
-
-    QFont codeFont("Consolas", 13);
-    codeEditor_->setFont(codeFont);
 
     QFontMetrics metrics(codeFont);
     codeEditor_->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
@@ -538,6 +556,12 @@ void TaskWindow::onRunClicked()
     }
 
     auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
+
+    if (btnRun_)
+        btnRun_->setEnabled(false);
+    if (btnSubmit_)
+        btnSubmit_->setEnabled(false);
+
     connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
             [this, watcher]()
             {
@@ -557,6 +581,12 @@ void TaskWindow::onRunClicked()
                                             "</pre>");
                     }
                 }
+
+                if (btnRun_)
+                    btnRun_->setEnabled(true);
+                if (btnSubmit_)
+                    btnSubmit_->setEnabled(true);
+
                 watcher->deleteLater();
             });
 
@@ -594,9 +624,20 @@ void TaskWindow::onSubmitClicked()
                                                        currentTask_.getTestCases().end());
 
     auto watcher = new QFutureWatcher<cppforge::entities::ExecutionResult>(this);
+
+    if (btnRun_)
+        btnRun_->setEnabled(false);
+    if (btnSubmit_)
+        btnSubmit_->setEnabled(false);
+
     connect(watcher, &QFutureWatcher<cppforge::entities::ExecutionResult>::finished,
             [this, watcher, code]()
             {
+                if (btnRun_)
+                    btnRun_->setEnabled(true);
+                if (btnSubmit_)
+                    btnSubmit_->setEnabled(true);
+
                 auto result = watcher->result();
                 if (testOutput_)
                 {
@@ -696,19 +737,6 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
             editor->insertPlainText(QString(p.open) + p.close);
             editor->moveCursor(QTextCursor::Left);
             return true;
-        }
-    }
-
-    if (obj == theoryEdit_ && !hasCodingTask_ && btnSubmit_ && !btnSubmit_->isEnabled())
-    {
-        if (event->type() == QEvent::Wheel || event->type() == QEvent::KeyPress)
-        {
-            QScrollBar *vBar = theoryEdit_->verticalScrollBar();
-            if (vBar->value() >= vBar->maximum() - 20)
-            {
-                btnSubmit_->setEnabled(true);
-                btnSubmit_->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold;");
-            }
         }
     }
 
@@ -842,6 +870,14 @@ void TaskWindow::setupStyles(std::optional<bool> isDarkOverride)
 
 void TaskWindow::setThemeService(cppforge::services::ThemeService *service)
 {
+    if (themeService_ == service)
+        return;
+
+    if (themeService_)
+    {
+        disconnect(themeService_, &cppforge::services::ThemeService::themeChanged, this, nullptr);
+    }
+
     themeService_ = service;
     if (themeService_)
     {
@@ -880,6 +916,10 @@ void TaskWindow::setThemeService(cppforge::services::ThemeService *service)
 
 void TaskWindow::fadeIn()
 {
+    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
+    {
+        transitionAnimation_->stop();
+    }
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(300);
     transitionAnimation_->setStartValue(0.0);
@@ -889,6 +929,10 @@ void TaskWindow::fadeIn()
 
 void TaskWindow::fadeOut()
 {
+    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
+    {
+        transitionAnimation_->stop();
+    }
     transitionAnimation_ = std::make_unique<QPropertyAnimation>(this, "windowOpacity");
     transitionAnimation_->setDuration(250);
     transitionAnimation_->setStartValue(1.0);
