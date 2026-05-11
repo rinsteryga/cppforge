@@ -114,6 +114,18 @@ protected:
      */
     void changeEvent(QEvent *event) override;
 
+    /**
+     * @brief Tracks key press events for custom simultaneous shortcuts.
+     * @param event Key event.
+     */
+    void keyPressEvent(QKeyEvent *event) override;
+
+    /**
+     * @brief Tracks key release events for custom simultaneous shortcuts.
+     * @param event Key event.
+     */
+    void keyReleaseEvent(QKeyEvent *event) override;
+
 public slots:
     /**
      * @brief Starts the window fade-in animation (from transparency).
@@ -244,11 +256,23 @@ private:
      */
     void loadRoadmapForModule(int moduleId);
 
+    /**
+     * @brief Updates the daily goal progress bar and label.
+     */
+    void updateDailyGoal();
+
+    /**
+     * @brief Updates the tip of the day with a random tip from the database.
+     */
+    void updateTipOfTheDay();
+
     std::unique_ptr<CustomTitleBar> customTitleBar_;          ///< Custom title bar.
     std::unique_ptr<QPropertyAnimation> transitionAnimation_; ///< Transition animation.
     std::unique_ptr<QVBoxLayout> centerPanelLayout_;          ///< Main center layout.
     std::unique_ptr<TaskWindow> taskWindow_;                  ///< Task execution window.
-    std::unique_ptr<QStackedWidget> contentStack;             ///< Stack of central pages.
+    bool m_keyLDown = false;
+    bool m_keyBDown = false;
+    std::unique_ptr<QStackedWidget> contentStack; ///< Stack of central pages.
 
     ProfilePage *profilePage{nullptr};          ///< User profile page.
     QWidget *learningPage{nullptr};             ///< Main learning dashboard.
@@ -273,9 +297,14 @@ private:
     cppforge::services::CourseService *m_courseService{nullptr};           ///< Course/content service.
     cppforge::services::ThemeService *m_themeService{nullptr};             ///< Theme service.
 
-    std::unique_ptr<QFrame> sideBar;                ///< Sidebar container.
-    std::unique_ptr<QFrame> eventCard;              ///< UI card for events.
-    std::unique_ptr<QFrame> dailyTaskCard;          ///< UI card for daily tasks.
+    std::unique_ptr<QFrame> sideBar;       ///< Sidebar container.
+    std::unique_ptr<QFrame> eventCard;     ///< UI card for events.
+    std::unique_ptr<QFrame> dailyTaskCard; ///< UI card for daily tasks.
+
+    QProgressBar *dailyProgressBar_{nullptr}; ///< Progress bar for daily goal.
+    QLabel *dailyProgressLabel_{nullptr};     ///< Label for daily goal status.
+    QLabel *tipLabel_{nullptr};               ///< Label for tip of the day.
+
     std::unique_ptr<QScrollArea> modulesScrollArea; ///< Scroll area for module list.
     std::unique_ptr<QWidget> modulesContainer;      ///< Container for module cards.
     std::unique_ptr<QVBoxLayout> modulesLayout;     ///< Layout for module cards.
