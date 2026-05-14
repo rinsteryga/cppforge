@@ -24,6 +24,7 @@ $SkipDbConfig = $false
 $IsInstalled = $false
 $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
 
+# Поиск существующего psql.exe
 $PsqlSearch = Get-ChildItem -Path "C:\Program Files\PostgreSQL\*\bin\psql.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
 if ($PsqlSearch) {
     $PgBinDir = $PsqlSearch.DirectoryName
@@ -40,6 +41,7 @@ if ($PsqlSearch) {
     }
 }
 
+# Если не установлен, проверяем порт 5432, чтобы не было конфликтов
 if (-not $IsInstalled) {
     $portCheck = Get-NetTCPConnection -LocalPort $PG_PORT -ErrorAction SilentlyContinue
     if ($portCheck) {
@@ -58,8 +60,6 @@ if ($IsInstalled) {
         Start-Sleep -Seconds 5
     }
 
-    $env:PGPASSWORD = $PG_PASSWORD
-    
     $env:PGPASSWORD = $PG_PASSWORD
     
     $OldErrorAction = $ErrorActionPreference
@@ -113,7 +113,7 @@ if ($IsInstalled) {
         "--servicename", $PG_SERVICE_NAME,
         "--superpassword", $PG_PASSWORD,
         "--serverport", $PG_PORT,
-        "--disable-components", "pgadmin,stackbuilder"
+        "--disable-components", "pgAdmin,stackbuilder"
     )
     $process = Start-Process -FilePath $InstallerPath -ArgumentList $InstallArgs -Wait -NoNewWindow -PassThru
 
@@ -210,4 +210,42 @@ $EnvPath = "$InstallDir\.env"
 Set-Content -Path $EnvPath -Value $EnvConfig
 
 Write-Host "PostgreSQL setup complete!"
+
+$ToolchainBin = Join-Path $InstallDir "bin"
+
+if (Test-Path $ToolchainBin) {
+    Write-Host "Configuring system PATH for GCC toolchain..."
+    try {
+        $MachinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+        
+        $Paths = $MachinePath -split ";" | Where-Object { $_ -match '\S' }
+        
+        $PathExists = $false
+        foreach ($p in $Paths) {
+            if ($p.TrimEnd('\') -ieq $ToolchainBin.TrimEnd('\')) {
+                $PathExists = $true
+                break
+            }
+        }
+
+        if (-not $PathExists) {
+            Write-Host "Adding $ToolchainBin to Machine PATH..."
+            $NewPath = ($Paths + $ToolchainBin) -join ";"
+            
+            [Environment]::SetEnvironmentVariable("Path", $NewPath, "Machine")
+            
+            $env:Path += ";$ToolchainBin"
+            
+            Write-Host "Toolchain path successfully added."
+        } else {
+            Write-Host "Toolchain path already exists in Machine PATH. Skipping."
+        }
+    } catch {
+        Write-Warning "Failed to add GCC to PATH. Ensure the installer is running with Administrator privileges."
+        Write-Warning $_.Exception.Message
+    }
+} else {
+    Write-Warning "Toolchain bin directory not found at $ToolchainBin. Skipping PATH configuration."
+}
+
 Stop-Transcript
