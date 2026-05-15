@@ -11,7 +11,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Основы', '[ДУЭЛЬ] Четное или Нечетное', 
-        'Напишите программу, которая принимает одно целое число со стандартного ввода и выводит "Even", если оно четное, и "Odd", если нечетное.
+        $description$Напишите программу, которая принимает одно целое число со стандартного ввода и выводит "Even", если оно четное, и "Odd", если нечетное.
 
 Формат ввода:
 Одно целое число.
@@ -21,7 +21,7 @@ BEGIN
 
 Пример:
 Ввод: 4
-Вывод: Even', 
+Вывод: Even$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    if (std::cin >> n) {\n        // Ваш код\n    }\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -35,7 +35,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Математика', '[ДУЭЛЬ] Разворот числа', 
-        'Напишите программу, которая считывает целое число и выводит его же, но прочитанное справа налево. Знак сохраняется (если было отрицательное, остается отрицательным). Если число заканчивается на нули, они отбрасываются (например, 120 -> 21).
+        $description$Напишите программу, которая считывает целое число и выводит его же, но прочитанное справа налево. Знак сохраняется (если было отрицательное, остается отрицательным). Если число заканчивается на нули, они отбрасываются (например, 120 -> 21).
 
 Формат ввода:
 Одно целое 32-битное число.
@@ -45,7 +45,7 @@ BEGIN
 
 Пример:
 Ввод: -123
-Вывод: -321', 
+Вывод: -321$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -59,7 +59,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Алгоритмы', '[ДУЭЛЬ] Палиндром ли число?', 
-        'Определите, является ли введенное целое неотрицательное число палиндромом (читается одинаково слева направо и справа налево).
+        $description$Определите, является ли введенное целое неотрицательное число палиндромом (читается одинаково слева направо и справа налево).
 
 Формат ввода:
 Одно целое число N.
@@ -69,7 +69,7 @@ BEGIN
 
 Пример:
 Ввод: 121
-Вывод: true', 
+Вывод: true$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -83,7 +83,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Структуры данных', '[ДУЭЛЬ] Правильная скобочная последовательность', 
-        'Считайте строку из скобок ''()'', ''{}'', ''[]''. Определите, правильная ли это последовательность (каждая открывающая имеет парную закрывающую в нужном порядке).
+        $description$Считайте строку из скобок '()', '{}', '[]'. Определите, правильная ли это последовательность (каждая открывающая имеет парную закрывающую в нужном порядке).
 
 Формат ввода:
 Строка S (до 10^4 символов).
@@ -93,7 +93,7 @@ BEGIN
 
 Пример:
 Ввод: ()[]{}
-Вывод: Yes', 
+Вывод: Yes$description$, 
         E'#include <iostream>\n#include <string>\n#include <stack>\n\nint main() {\n    std::string s;\n    std::cin >> s;\n    // Ваш код\n    return 0;\n}',
         'string,stack', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -107,7 +107,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Функции', '[ДУЭЛЬ] Факториал', 
-        'Напишите программу, которая считывает число N и выводит его факториал (N!). Гарантируется, что N от 0 до 12.
+        $description$Напишите программу, которая считывает число N и выводит его факториал (N!). Гарантируется, что N от 0 до 12.
 0! = 1.
 
 Формат ввода:
@@ -118,7 +118,7 @@ BEGIN
 
 Пример:
 Ввод: 5
-Вывод: 120', 
+Вывод: 120$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -132,7 +132,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Строки', '[ДУЭЛЬ] Подсчет гласных', 
-        'Считайте одно слово (строку без пробелов). Подсчитайте количество английских гласных букв в нем (a, e, i, o, u) без учета регистра.
+        $description$Считайте одно слово (строку без пробелов). Подсчитайте количество английских гласных букв в нем (a, e, i, o, u) без учета регистра.
 
 Формат ввода:
 Одна строка.
@@ -142,7 +142,7 @@ BEGIN
 
 Пример:
 Ввод: Hello
-Вывод: 2', 
+Вывод: 2$description$, 
         E'#include <iostream>\n#include <string>\n\nint main() {\n    std::string s;\n    std::cin >> s;\n    // Ваш код\n    return 0;\n}',
         'string', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -156,7 +156,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Массивы', '[ДУЭЛЬ] Максимум в векторе', 
-        'Считайте число N. Затем считайте N целых чисел. Найдите и выведите максимальное из них.
+        $description$Считайте число N. Затем считайте N целых чисел. Найдите и выведите максимальное из них.
 
 Формат ввода:
 Число N. Затем N чисел.
@@ -166,7 +166,7 @@ BEGIN
 
 Пример:
 Ввод: 4 5 12 -3 8
-Вывод: 12', 
+Вывод: 12$description$, 
         E'#include <iostream>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         'vector', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -180,7 +180,7 @@ BEGIN
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Алгоритмы', '[ДУЭЛЬ] FizzBuzz', 
-        'Напишите классическую программу FizzBuzz для числа N (N выводится, от 1 до N). Если число делится на 3, выводите Fizz, если на 5 — Buzz, если на оба — FizzBuzz, иначе само число. Каждое слово или число на новой строке.
+        $description$Напишите классическую программу FizzBuzz для числа N (N выводится, от 1 до N). Если число делится на 3, выводите Fizz, если на 5 — Buzz, если на оба — FizzBuzz, иначе само число. Каждое слово или число на новой строке.
 
 Формат ввода:
 Одно целое число N (1 <= N <= 100).
@@ -194,7 +194,7 @@ N строк ответа.
 2
 Fizz
 4
-Buzz', 
+Buzz$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -208,7 +208,7 @@ Buzz',
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'STL', '[ДУЭЛЬ] Сумма двух', 
-        'Дан массив из N целых чисел и число target. Найдите ИНДЕКСЫ (0-based) двух чисел, которые в сумме дают target. Гарантируется, что решение ровно одно. Сначала считайте N, затем N элементов массива, затем target.
+        $description$Дан массив из N целых чисел и число target. Найдите ИНДЕКСЫ (0-based) двух чисел, которые в сумме дают target. Гарантируется, что решение ровно одно. Сначала считайте N, затем N элементов массива, затем target.
 
 Формат ввода:
 Число N. Затем N чисел массива. В конце число target.
@@ -218,7 +218,7 @@ Buzz',
 
 Пример:
 Ввод: 4 2 7 11 15 9
-Вывод: 0 1', 
+Вывод: 0 1$description$, 
         E'#include <iostream>\n#include <vector>\n#include <unordered_map>\n\nint main() {\n    // Ваш код\n    return 0;\n}',
         'vector,unordered_map', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -232,7 +232,7 @@ Buzz',
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Математика', '[ДУЭЛЬ] Сумма цифр', 
-        'Считайте неотрицательное целое число. Выведите сумму его цифр.
+        $description$Считайте неотрицательное целое число. Выведите сумму его цифр.
 
 Формат ввода:
 Одно целое число.
@@ -242,7 +242,7 @@ Buzz',
 
 Пример:
 Ввод: 123
-Вывод: 6', 
+Вывод: 6$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -256,12 +256,12 @@ Buzz',
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Строки', '[ДУЭЛЬ] Палиндром строки', 
-        'Проверьте, является ли введенная строка палиндромом. Выведите YES или NO.
+        $description$Проверьте, является ли введенная строка палиндромом. Выведите YES или NO.
 Строка состоит из строчных латинских букв.
 
 Пример:
 Ввод: abba
-Вывод: YES', 
+Вывод: YES$description$, 
         E'#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    std::string s;\n    std::cin >> s;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -276,16 +276,16 @@ Buzz',
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Алгоритмы', '[ДУЭЛЬ] Одинокий элемент', 
-        'Дан массив из 2N+1 чисел. Каждое число встречается ровно дважды, кроме одного. Найдите его.
+        $description$Дан массив из 2N+1 чисел. Каждое число встречается ровно дважды, кроме одного. Найдите его.
 
 Формат ввода:
 Сначала число M (количество элементов, M = 2N+1). Затем M целых чисел.
 
 Пример:
 Ввод: 3 2 2 1
-Вывод: 1', 
+Вывод: 1$description$, 
         E'#include <iostream>\n#include <vector>\n\nint main() {\n    int m;\n    std::cin >> m;\n    // Ваш код\n    return 0;\n}',
-        '', 
+        'vector', 
         '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
@@ -293,35 +293,38 @@ Buzz',
         (v_task_id, '3 2 2 1', '1', TRUE), 
         (v_task_id, '5 4 1 2 1 2', '4', TRUE);
 
-    -- Task 13: Factorial
+    -- Task 13: Fibonacci Number
     INSERT INTO coding_tasks (
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
-        NULL, 'Математика', '[ДУЭЛЬ] Факториал', 
-        'Вычислите факториал числа N (N! = 1 * 2 * ... * N). N <= 12.
+        NULL, 'Алгоритмы', '[ДУЭЛЬ] Число Фибоначчи', 
+        $description$Выведите N-е число Фибоначчи. F(0)=0, F(1)=1.
+
+Формат ввода:
+Число N (0 <= N <= 30).
 
 Пример:
-Ввод: 5
-Вывод: 120', 
+Ввод: 10
+Вывод: 55$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '5', '120', TRUE), 
-        (v_task_id, '0', '1', TRUE);
+        (v_task_id, '10', '55', TRUE), 
+        (v_task_id, '0', '0', TRUE);
 
     -- Task 14: Power of Two
     INSERT INTO coding_tasks (
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Математика', '[ДУЭЛЬ] Степень двойки', 
-        'Проверьте, является ли целое положительное число N степенью двойки. Выведите YES или NO.
+        $description$Проверьте, является ли число N степенью двойки. Выведите YES или NO.
 
 Пример:
 Ввод: 16
-Вывод: YES', 
+Вывод: YES$description$, 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
@@ -336,14 +339,14 @@ Buzz',
         lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
     ) VALUES (
         NULL, 'Алгоритмы', '[ДУЭЛЬ] Максимум в массиве', 
-        'Найдите максимальный элемент в массиве целых чисел.
+        $description$Найдите максимальный элемент в массиве целых чисел.
 
 Формат ввода:
 Число N (количество элементов), затем N чисел.
 
 Пример:
 Ввод: 4 1 5 2 3
-Вывод: 5', 
+Вывод: 5$description$, 
         E'#include <iostream>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
         '', 
         '#define,goto,asm,__asm__,__asm,system', 
