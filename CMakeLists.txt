@@ -63,8 +63,32 @@ endif()
 install(FILES "src/data/migrations/schema.sql" DESTINATION "${DATA_DESTINATION}")
 install(FILES "src/data/migrations/seed.sql" DESTINATION "${DATA_DESTINATION}")
 install(DIRECTORY "src/data/migrations/modules" DESTINATION "${DATA_DESTINATION}")
-
 if(WIN32)
+    set(PG_INSTALLER_NAME "postgresql-16.4-1-windows-x64.exe")
+    set(PG_INSTALLER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PG_INSTALLER_NAME}")
+    set(PG_INSTALLER_URL "https://get.enterprisedb.com/postgresql/${PG_INSTALLER_NAME}")
+
+    if(NOT EXISTS "${PG_INSTALLER_PATH}")
+        message(STATUS "PostgreSQL installer not found in root. Downloading...")
+        file(DOWNLOAD "${PG_INSTALLER_URL}" "${PG_INSTALLER_PATH}" SHOW_PROGRESS)
+    else()
+        message(STATUS "Found existing PostgreSQL installer: ${PG_INSTALLER_PATH}")
+    endif()
+
+    set(VCREDIST_NAME "vc_redist.x64.exe")
+    set(VCREDIST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${VCREDIST_NAME}")
+    set(VCREDIST_URL "https://aka.ms/vs/17/release/vc_redist.x64.exe")
+
+    if(NOT EXISTS "${VCREDIST_PATH}")
+        message(STATUS "VC++ Redistributable not found in root. Downloading...")
+        file(DOWNLOAD "${VCREDIST_URL}" "${VCREDIST_PATH}" SHOW_PROGRESS)
+    else()
+        message(STATUS "Found existing VC++ Redistributable: ${VCREDIST_PATH}")
+    endif()
+
+    install(FILES "${PG_INSTALLER_PATH}" "${VCREDIST_PATH}" DESTINATION "scripts")
+
+
     install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
     
     get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
@@ -114,8 +138,55 @@ if(WIN32)
         "${MSYS2_BIN_DIR}/libmd4c.dll"
         "${MSYS2_BIN_DIR}/libharfbuzz-*.dll"
         "${MSYS2_BIN_DIR}/zlib*.dll"
+
+        "${MSYS2_BIN_DIR}/libgmp-*.dll"
+        "${MSYS2_BIN_DIR}/libmpfr-*.dll"
+        "${MSYS2_BIN_DIR}/libmpc-*.dll"
+        "${MSYS2_BIN_DIR}/libisl-*.dll"
+        "${MSYS2_BIN_DIR}/libwinpthread-*.dll"
+        "${MSYS2_BIN_DIR}/libgcc_s_seh-*.dll"
+        "${MSYS2_BIN_DIR}/libstdc++-*.dll"
     )
-    install(FILES ${MSYS2_RUNTIME_DLLS} DESTINATION bin)
+
+    file(GLOB GCC_BINARIES
+        "${MSYS2_BIN_DIR}/gcc.exe"
+        "${MSYS2_BIN_DIR}/g++.exe"
+        "${MSYS2_BIN_DIR}/cpp.exe"
+        "${MSYS2_BIN_DIR}/c++.exe"
+        "${MSYS2_BIN_DIR}/ld.exe"
+        "${MSYS2_BIN_DIR}/as.exe"
+        "${MSYS2_BIN_DIR}/ar.exe"
+        "${MSYS2_BIN_DIR}/strip.exe"
+        "${MSYS2_BIN_DIR}/objdump.exe"
+        "${MSYS2_BIN_DIR}/mingw32-make.exe"
+    )
+
+    install(FILES ${MSYS2_RUNTIME_DLLS} ${GCC_BINARIES} DESTINATION bin)
+
+    get_filename_component(MSYS2_ROOT_DIR "${MSYS2_BIN_DIR}" DIRECTORY)
+
+    install(DIRECTORY "${MSYS2_ROOT_DIR}/lib/gcc/" DESTINATION "lib/gcc")
+
+    install(DIRECTORY "${MSYS2_ROOT_DIR}/include/" DESTINATION "include"
+        PATTERN "Qt*" EXCLUDE
+        PATTERN "boost" EXCLUDE
+        PATTERN "opencv*" EXCLUDE
+    )
+
+    install(DIRECTORY "${MSYS2_ROOT_DIR}/lib/" DESTINATION "lib"
+        FILES_MATCHING
+        PATTERN "*.o"
+        PATTERN "*.a"
+        PATTERN "*.def"
+        PATTERN "gcc" EXCLUDE     
+        PATTERN "cmake" EXCLUDE
+        PATTERN "pkgconfig" EXCLUDE
+        PATTERN "libQt5*.a" EXCLUDE 
+        PATTERN "libboost_*.a" EXCLUDE
+        PATTERN "libopencv_*.a" EXCLUDE
+    )
+
+    install(DIRECTORY "${MSYS2_ROOT_DIR}/x86_64-w64-mingw32/" DESTINATION "x86_64-w64-mingw32")
 elseif(APPLE)
     get_target_property(QT_QMAKE_EXECUTABLE Qt5::qmake LOCATION)
     get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXECUTABLE}" DIRECTORY)
