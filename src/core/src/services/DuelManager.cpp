@@ -49,7 +49,7 @@ namespace cppforge::services
         connect(socket_, &QTcpSocket::connected, this,
                 [this]()
                 {
-                    sendIdentity(m_localPlayerName);
+                    sendIdentity(m_localPlayerName, m_localAvatarPath);
 
                     emit opponentConnected(socket_->peerAddress().toString());
                 });
@@ -120,7 +120,7 @@ namespace cppforge::services
             connect(socket_, &QAbstractSocket::errorOccurred, this, &DuelManager::onSocketError);
             connect(socket_, &QTcpSocket::disconnected, this, &DuelManager::onSocketDisconnected);
 
-            sendIdentity(m_localPlayerName);
+            sendIdentity(m_localPlayerName, m_localAvatarPath);
             emit opponentConnected(socket_->peerAddress().toString());
         }
     }
@@ -151,6 +151,7 @@ namespace cppforge::services
     void DuelManager::sendIdentity(const QString &myName, const QString &avatarPath)
     {
         m_localPlayerName = myName;
+        m_localAvatarPath = avatarPath;
         QJsonObject json;
         json["type"] = "IDENTIFY";
         QJsonObject payload;
