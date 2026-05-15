@@ -15,48 +15,51 @@ BEGIN
 
     -- Lesson 6.1
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
-    (v_mod_id, '6.1. struct. Объявление, доступ к полям. typedef', 'Структуры (struct) позволяют объединять разные типы данных в один логический объект. Это первый шаг к объектно-ориентированному программированию (в C это называется абстракцией данных).
+(v_mod_id, '6.1. Структуры (struct)', 'Структуры позволяют объединять разные типы данных в один логический объект.
 
-  struct Player {
-      int id;
-      int health;
-      char name[50];
-  };
+```cpp
+struct Player {
+    int id;
+    int health;
+    char name[50];
+};
+```
 
-Доступ к полям переменной-структуры осуществляется через оператор точка (.):
-  struct Player p1;
-  p1.health = 100;
+**Особенности памяти**:
+Поля в структуре лежат в памяти последовательно. Но будьте осторожны: компилятор может добавлять "дырки" (padding) между полями для выравнивания данных. Это значит, что `sizeof(struct)` может быть больше, чем сумма размеров его полей.
 
-Нюанс языка C: чтобы не писать каждый раз слово "struct", используют typedef — создание псевдонима типа:
-  typedef struct {
-      int x, y;
-  } Point;
-Теперь можно объявлять переменные просто как Point p;.', 1)
+**typedef**: Чтобы не писать каждый раз `struct Player`, можно создать псевдоним:
+`typedef struct Player Player;` или сразу при объявлении.', 1)
     RETURNING id INTO v_lesson_id;
 
     -- Lesson 6.2
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
-    (v_mod_id, '6.2. Указатели на структуры, оператор "->"', 'При передаче большой структуры в функцию по значению происходит копирование всех её байтов. Это неэффективно. Лучше передавать указатель на структуру.
+(v_mod_id, '6.2. Указатели на структуры и "->"', 'Передавать структуру в функцию "целиком" — плохая идея, так как она будет полностью скопирована. Лучше передать указатель.
 
-Если у нас есть указатель Point *ptr = &p;, чтобы обратиться к полю, мы должны сначала разыменовать указатель, а потом использовать точку: (*ptr).x = 10. Скобки обязательны, так как приоритет точки выше, чем у звездочки.
-
-В C для этого есть специальный оператор-стрелочка ->:
-  ptr->x = 10;
-Это абсолютно эквивалентно (*ptr).x, но читается гораздо легче.', 2)
+Для работы с полями через указатель используется оператор стрелочка `->`.
+```cpp
+Player *ptr = &p1;
+ptr->health = 80; // То же самое, что (*ptr).health = 80
+```
+Стрелочка — это просто удобный способ разыменовать указатель и сразу обратиться к полю.', 2)
     RETURNING id INTO v_lesson_id;
 
     -- Lesson 6.3
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
-    (v_mod_id, '6.3. Куча. Функции malloc, calloc, free', 'До сих пор все наши переменные жили на стеке (Stack). Стек быстр, но его размер ограничен (обычно несколько мегабайт), и переменные уничтожаются при выходе из функции.
-Для хранения больших объемов данных (или данных с динамическим временем жизни) используется "Куча" (Heap) — большая область памяти, предоставляемая операционной системой.
+(v_mod_id, '6.3. Динамическая память (Куча)', 'Для хранения данных с динамическим временем жизни используется **Куча**.
 
-В заголовочном файле <stdlib.h> есть функции:
-- void* malloc(size_t size) — выделяет size байт неинициализированной ("грязной") памяти.
-- void* calloc(size_t num, size_t size) — выделяет память и заполняет её нулями.
+**Полный цикл работы**:
+```cpp
+int *arr = (int*)malloc(10 * sizeof(int));
+if (arr == NULL) {
+    return 1; // Ошибка выделения
+}
 
-Функции возвращают бестиповый указатель (void*). Если память не удалось выделить (например, кончилась ОЗУ), вернется NULL. Нюанс: всегда проверяйте результат malloc на NULL!
+arr[0] = 42; // Используем
+free(arr);   // ОБЯЗАТЕЛЬНО освобождаем
+```
 
-После использования динамическую память нужно ОБЯЗАТЕЛЬНО вернуть ОС с помощью функции free(ptr). Если этого не сделать, произойдет утечка памяти (Memory Leak) — программа будет потреблять всё больше ОЗУ, пока не упадет.', 3)
+**Memory Leak**: Если не вызвать `free`, память останется занятой до конца работы программы.', 3)
     RETURNING id INTO v_lesson_id;
 
     -- Coding Task for 6.1-6.3
@@ -76,7 +79,7 @@ BEGIN
 Ввод: 42
 Вывод: 42', 
         E'#include <stdio.h>\n#include <stdlib.h>\n\n// Определите структуру Node\n\nint main(void) {\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,stdio.h,stdlib.h,printf,scanf,malloc,free,struct,NULL', 
+        'struct,malloc,free', 
         '#define,goto,asm,__asm__,__asm,class,new,delete', 
         2000, 
         256,
@@ -84,8 +87,8 @@ BEGIN
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
-    VALUES (v_task_id, '42', '42\n', TRUE),
-           (v_task_id, '-99', '-99\n', TRUE);
+    VALUES (v_task_id, '42', '42', TRUE),
+           (v_task_id, '-99', '-99', TRUE);
 
     -- Lesson 6.4
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
@@ -117,7 +120,7 @@ BEGIN
 Ввод: 10
 Вывод: 10', 
         E'#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int n;\n    if (scanf("%d", &n) != 1) return 0;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,stdio.h,printf,scanf,stdlib.h,malloc,free', 
+        'malloc,free', 
         '#define,goto,asm,__asm__,__asm,class,new,delete', 
         2000, 
         256,
@@ -125,8 +128,8 @@ BEGIN
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
-    VALUES (v_task_id, '10', '10\n', TRUE),
-           (v_task_id, '1', '1\n', TRUE);
+    VALUES (v_task_id, '10', '10', TRUE),
+           (v_task_id, '1', '1', TRUE);
 
     -- Lesson 6.5
     INSERT INTO lessons (module_id, title, content, order_index) VALUES
