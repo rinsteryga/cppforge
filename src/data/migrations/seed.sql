@@ -83,6 +83,7 @@ INSERT INTO achievements (name, description, icon_path, condition_type, conditio
 ('Expert', 'Solve 10 tasks to become an expert.', ':/images/terry.png', 'LEVELS_COMPLETED', 10),
 ('Persistent', 'Solve tasks 2 days in a row.', ':/images/tony.png', 'STREAK_DAYS', 2),
 ('Tenacious', 'Solve tasks 5 days in a row.', ':/images/walter.png', 'STREAK_DAYS', 5),
+('Course Master', 'Complete all modules in the course!', ':/images/kanye.png', 'COURSE_COMPLETED', 1),
 ('Easter Egg Finder', 'Find the hidden secret.', ':/images/lb.png', 'CUSTOM_EVENT', 0);
 
 COMMIT;
