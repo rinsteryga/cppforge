@@ -251,5 +251,107 @@ Buzz',
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
         (v_task_id, '123', '6', TRUE), (v_task_id, '0', '0', TRUE);
 
+    -- Task 11: Palindrome String
+    INSERT INTO coding_tasks (
+        lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
+    ) VALUES (
+        NULL, 'Строки', '[ДУЭЛЬ] Палиндром строки', 
+        'Проверьте, является ли введенная строка палиндромом. Выведите YES или NO.
+Строка состоит из строчных латинских букв.
+
+Пример:
+Ввод: abba
+Вывод: YES', 
+        E'#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    std::string s;\n    std::cin >> s;\n    // Ваш код\n    return 0;\n}',
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
+        2000, 256, TRUE
+    ) RETURNING id INTO v_task_id;
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
+        (v_task_id, 'abba', 'YES', TRUE), 
+        (v_task_id, 'abc', 'NO', TRUE);
+
+    -- Task 12: Single Number
+    INSERT INTO coding_tasks (
+        lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
+    ) VALUES (
+        NULL, 'Алгоритмы', '[ДУЭЛЬ] Одинокий элемент', 
+        'Дан массив из 2N+1 чисел. Каждое число встречается ровно дважды, кроме одного. Найдите его.
+
+Формат ввода:
+Сначала число M (количество элементов, M = 2N+1). Затем M целых чисел.
+
+Пример:
+Ввод: 3 2 2 1
+Вывод: 1', 
+        E'#include <iostream>\n#include <vector>\n\nint main() {\n    int m;\n    std::cin >> m;\n    // Ваш код\n    return 0;\n}',
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
+        2000, 256, TRUE
+    ) RETURNING id INTO v_task_id;
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
+        (v_task_id, '3 2 2 1', '1', TRUE), 
+        (v_task_id, '5 4 1 2 1 2', '4', TRUE);
+
+    -- Task 13: Factorial
+    INSERT INTO coding_tasks (
+        lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
+    ) VALUES (
+        NULL, 'Математика', '[ДУЭЛЬ] Факториал', 
+        'Вычислите факториал числа N (N! = 1 * 2 * ... * N). N <= 12.
+
+Пример:
+Ввод: 5
+Вывод: 120', 
+        E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
+        2000, 256, TRUE
+    ) RETURNING id INTO v_task_id;
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
+        (v_task_id, '5', '120', TRUE), 
+        (v_task_id, '0', '1', TRUE);
+
+    -- Task 14: Power of Two
+    INSERT INTO coding_tasks (
+        lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
+    ) VALUES (
+        NULL, 'Математика', '[ДУЭЛЬ] Степень двойки', 
+        'Проверьте, является ли целое положительное число N степенью двойки. Выведите YES или NO.
+
+Пример:
+Ввод: 16
+Вывод: YES', 
+        E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
+        2000, 256, TRUE
+    ) RETURNING id INTO v_task_id;
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
+        (v_task_id, '16', 'YES', TRUE), 
+        (v_task_id, '18', 'NO', TRUE);
+
+    -- Task 15: Maximum of Array
+    INSERT INTO coding_tasks (
+        lesson_id, duel_topic, title, description, initial_code, whitelist, blacklist, time_limit, memory_limit, is_duel
+    ) VALUES (
+        NULL, 'Алгоритмы', '[ДУЭЛЬ] Максимум в массиве', 
+        'Найдите максимальный элемент в массиве целых чисел.
+
+Формат ввода:
+Число N (количество элементов), затем N чисел.
+
+Пример:
+Ввод: 4 1 5 2 3
+Вывод: 5', 
+        E'#include <iostream>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
+        2000, 256, TRUE
+    ) RETURNING id INTO v_task_id;
+    INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
+        (v_task_id, '4 1 5 2 3', '5', TRUE), 
+        (v_task_id, '3 -1 -5 -2', '-1', TRUE);
+
     RAISE NOTICE 'Seeding completed. Last ID: %', v_task_id;
 END $$;
