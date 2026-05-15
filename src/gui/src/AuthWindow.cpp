@@ -10,6 +10,7 @@
 #include <QFont>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
@@ -434,4 +435,12 @@ void AuthWindow::setThemeService(cppforge::services::ThemeService *service)
             signUpWindow_->setThemeService(themeService_);
         }
     }
+}
+void AuthWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape)
+    {
+        qApp->quit();
+    }
+    QWidget::keyPressEvent(event);
 }
