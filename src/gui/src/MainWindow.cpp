@@ -971,6 +971,28 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             m_keyBDown = false;
         }
     }
+
+    if (event->key() == Qt::Key_1)
+    {
+        onLearnButtonClicked();
+    }
+    else if (event->key() == Qt::Key_2)
+    {
+        if (ratingBtn)
+            ratingBtn->click();
+    }
+    else if (event->key() == Qt::Key_3)
+    {
+        onProfileButtonClicked();
+    }
+    else if (event->key() == Qt::Key_Escape)
+    {
+        if (contentStack && contentStack->currentWidget() == roadmapPage)
+        {
+            onBackToModulesClicked();
+        }
+    }
+
     QWidget::keyPressEvent(event);
 }
 
