@@ -64,6 +64,31 @@ install(FILES "src/data/migrations/schema.sql" DESTINATION "${DATA_DESTINATION}"
 install(FILES "src/data/migrations/seed.sql" DESTINATION "${DATA_DESTINATION}")
 install(DIRECTORY "src/data/migrations/modules" DESTINATION "${DATA_DESTINATION}")
 if(WIN32)
+    set(PG_INSTALLER_NAME "postgresql-16.4-1-windows-x64.exe")
+    set(PG_INSTALLER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PG_INSTALLER_NAME}")
+    set(PG_INSTALLER_URL "https://get.enterprisedb.com/postgresql/${PG_INSTALLER_NAME}")
+
+    if(NOT EXISTS "${PG_INSTALLER_PATH}")
+        message(STATUS "PostgreSQL installer not found in root. Downloading...")
+        file(DOWNLOAD "${PG_INSTALLER_URL}" "${PG_INSTALLER_PATH}" SHOW_PROGRESS)
+    else()
+        message(STATUS "Found existing PostgreSQL installer: ${PG_INSTALLER_PATH}")
+    endif()
+
+    set(VCREDIST_NAME "vc_redist.x64.exe")
+    set(VCREDIST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${VCREDIST_NAME}")
+    set(VCREDIST_URL "https://aka.ms/vs/17/release/vc_redist.x64.exe")
+
+    if(NOT EXISTS "${VCREDIST_PATH}")
+        message(STATUS "VC++ Redistributable not found in root. Downloading...")
+        file(DOWNLOAD "${VCREDIST_URL}" "${VCREDIST_PATH}" SHOW_PROGRESS)
+    else()
+        message(STATUS "Found existing VC++ Redistributable: ${VCREDIST_PATH}")
+    endif()
+
+    install(FILES "${PG_INSTALLER_PATH}" "${VCREDIST_PATH}" DESTINATION "scripts")
+
+
     install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
     
     get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
