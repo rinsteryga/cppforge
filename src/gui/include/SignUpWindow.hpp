@@ -85,6 +85,11 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
     /**
+     * @brief Handles key press events for shortcuts.
+     */
+    void keyPressEvent(QKeyEvent *event) override;
+
+    /**
      * @brief Initializes the UI components.
      */
     void setupUI();
