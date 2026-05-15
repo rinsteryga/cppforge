@@ -71,7 +71,7 @@ If you prefer not to build from source, you can install the pre-compiled package
 1. Download the `cppforge-*-Linux.deb` package.
 2. Install it using `apt` so that dependencies (like `libqt5sql5-psql` and PostgreSQL) are automatically resolved and installed:
    ```bash
-   sudo apt install ./cppforge-1.0.2-Linux.deb
+   sudo apt install ./cppforge-1.0.3-Linux.deb
    ```
 3. The installation script will configure the PostgreSQL database and environment automatically.
 
@@ -79,8 +79,8 @@ If you prefer not to build from source, you can install the pre-compiled package
 1. Download the `cppforge-*-Linux.tar.gz` archive.
 2. Extract the archive:
    ```bash
-   tar -xzf cppforge-1.0.2-Linux.tar.gz
-   cd cppforge-1.0.2-Linux
+   tar -xzf cppforge-1.0.3-Linux.tar.gz
+   cd cppforge-1.0.3-Linux
    ```
 3. Run the installation script with root privileges to install dependencies and set up the database:
    ```bash
