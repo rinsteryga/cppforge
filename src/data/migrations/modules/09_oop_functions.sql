@@ -13,15 +13,17 @@ BEGIN
     RETURNING id INTO v_mod_id;
 
     -- 9.1
-    INSERT INTO lessons (module_id, title, content) VALUES
-    (v_mod_id, '9.1. Function overloading', 'Перегрузка функций позволяет создавать несколько функций с одним и тем же именем, но разным набором параметров (по типу или количеству). Компилятор C++ умеет по переданным аргументам во время компиляции определять, какую именно функцию вызвать.
-Это называется статическим полиморфизмом (Static Polymorphism).
+    INSERT INTO lessons (module_id, title, content, order_index) VALUES
+(v_mod_id, '9.1. Перегрузка функций', 'Перегрузка (Overloading) позволяет создавать функции с одним именем, но разными параметрами. 
+**Как это работает?** Компилятор применяет "декорирование имен" (Name Mangling), создавая уникальные внутренние имена для каждой версии функции на основе типов её аргументов.
+
+**Важно**: возвращаемый тип **не участвует** в перегрузке. Нельзя создать две функции `int foo()` и `void foo()`, так как компилятор не поймет, какую вызывать при обычном вызове `foo();`.
 
 Пример:
-  int add(int a, int b) { return a + b; }
-  double add(double a, double b) { return a + b; }
-  
-Вызов add(5, 5) вызовет первую функцию, а add(2.5, 3.1) — вторую. Важно понимать, что возвращаемый тип не участвует в разрешении перегрузки — функции должны отличаться именно списком параметров!')
+```cpp
+void print(int x);
+void print(double x);
+```', 1)
     RETURNING id INTO v_lesson_id;
 
     -- Coding Task for 9.1
@@ -41,7 +43,7 @@ BEGIN
 Ввод: 42
 Вывод: int: 42', 
         E'#include <iostream>\n\n// Ваши функции print\n\nint main() {\n    int a;\n    double b;\n    if (std::cin >> a >> b) {\n        print(a);\n        print(b);\n    }\n    return 0;\n}',
-        'main,return,int,void,double,#include,iostream,cin,cout', 
+        'print', 
         '#define,goto,asm,__asm__,__asm,scanf,printf', 
         2000, 
         256,
@@ -49,42 +51,45 @@ BEGIN
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
-    VALUES (v_task_id, '10 3.14', 'int: 10\ndouble: 3.14\n', TRUE);
+    VALUES (v_task_id, '10 3.14', E'int: 10\ndouble: 3.14', TRUE);
 
     -- 9.2
-    INSERT INTO lessons (module_id, title, content) VALUES
-    (v_mod_id, '9.2. Параметры по умолчанию', 'В C++ можно задавать значения по умолчанию для параметров функции. Это избавляет от необходимости писать несколько перегруженных функций.
-
-Значения по умолчанию должны указываться в объявлении функции и строго с конца списка параметров (справа налево).
-Пример:
-  void printMessage(std::string msg, int count = 1) { ... }
-
-Вы можете вызвать эту функцию как printMessage("Hello", 3) или просто printMessage("Hello") — во втором случае count автоматически станет равен 1.');
+    INSERT INTO lessons (module_id, title, content, order_index) VALUES
+(v_mod_id, '9.2. Параметры по умолчанию', 'C++ позволяет задавать значения "по умолчанию". Если аргумент не передан при вызове, используется это значение.
+ 
+ **Правило**: параметры со значениями по умолчанию должны идти **строго в конце** списка (справа налево).
+ 
+ ```cpp
+ void log(std::string msg, int level = 0); 
+ log("Hello"); // level будет 0
+ ```', 2);
 
     -- 9.3
-    INSERT INTO lessons (module_id, title, content) VALUES
-    (v_mod_id, '9.3. inline. Некоторые особенности компиляторов', 'Ключевое слово inline является подсказкой (hint) компилятору встроить тело функции прямо в место её вызова, вместо того чтобы выполнять дорогостоящую инструкцию CALL (прыжок в памяти). Это может ускорить программу.
-
-Однако современные компиляторы (GCC, Clang) настолько умны, что часто игнорируют inline и сами решают, какую функцию встраивать (особенно с флагами оптимизации -O2, -O3). Тем не менее, inline имеет и другой важный эффект: он позволяет определять функцию прямо в заголовочном файле без получения ошибки "Multiple definition" от линковщика.');
+    INSERT INTO lessons (module_id, title, content, order_index) VALUES
+(v_mod_id, '9.3. inline-функции', 'Ключевое слово `inline` — это рекомендация компилятору встроить код функции прямо в место вызова вместо создания отдельного прыжка (jump) в памяти.
+ 
+ **Зачем это нужно?**
+ 1. **Производительность**: убирает накладные расходы на вызов функции (актуально для очень маленьких функций).
+ 2. **ODR (One Definition Rule)**: `inline` позволяет определять функцию в заголовочных файлах без ошибок "multiple definition" при линковке.', 3);
 
     -- 9.4
-    INSERT INTO lessons (module_id, title, content) VALUES
-    (v_mod_id, '9.4. class. Основы инкапсуляции', 'Классы — это фундаментальная концепция ООП в C++. Класс объединяет данные (поля) и функции, которые с ними работают (методы), в одну сущность.
+    INSERT INTO lessons (module_id, title, content, order_index) VALUES
+(v_mod_id, '9.4. Инкапсуляция и классы', 'Класс — это чертеж объекта. Инкапсуляция позволяет скрыть детали реализации и защитить данные.
+ 
+ **Спецификаторы доступа**:
+ - `public`: доступно всем.
+ - `private`: доступно только внутри класса.
+ 
+ **Разница между class и struct**:
+ Единственное отличие в C++ — это доступ по умолчанию. В `class` всё `private`, в `struct` — `public`. 
 
-Инкапсуляция (сокрытие данных) обеспечивается спецификаторами доступа:
-- public: доступно из любого места.
-- private: доступно только из методов этого же класса.
-
-По умолчанию в C++ все члены `class` являются private, а все члены `struct` — public. Это единственное реальное отличие struct от class в C++!
-
-Пример:
-  class BankAccount {
-  private:
-      int balance;
-  public:
-      void deposit(int amount) { balance += amount; }
-  };
-Мы не можем напрямую изменить balance снаружи, только через метод deposit.')
+```cpp
+class Player {
+    int health; // private по умолчанию
+public:
+    void heal(int hp) { health += hp; }
+};
+```', 4)
     RETURNING id INTO v_lesson_id;
 
     -- Coding Task for 9.4
@@ -104,7 +109,7 @@ BEGIN
 Ввод: 5
 Вывод: 5', 
         E'#include <iostream>\n\n// Ваш класс Counter\n\nint main() {\n    int n;\n    if (std::cin >> n) {\n        Counter c;\n        for(int i = 0; i < n; ++i) c.increment();\n        std::cout << c.get() << "\\n";\n    }\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout,class,private,public', 
+        'class,private,public', 
         '#define,goto,asm,__asm__,__asm,scanf,printf', 
         2000, 
         256,
@@ -112,38 +117,44 @@ BEGIN
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
-    VALUES (v_task_id, '5', '5\n', TRUE),
-           (v_task_id, '0', '0\n', TRUE);
+    VALUES (v_task_id, '5', '5', TRUE),
+           (v_task_id, '0', '0', TRUE);
 
     -- 9.5
-    INSERT INTO lessons (module_id, title, content) VALUES
+    INSERT INTO lessons (module_id, title, content, order_index) VALUES
     (v_mod_id, '9.5. Неявный указатель this', 'Внутри нестатических методов класса всегда доступен неявный указатель `this`. Он содержит адрес объекта, для которого был вызван метод.
 
 Когда вы пишете:
-  void setValue(int value) {
-      this->value = value;
-  }
-Компилятор понимает, что `this->value` относится к полю класса, а `value` — к параметру функции. Это полезно для разрешения конфликта имен.');
+```cpp
+void setValue(int value) {
+    this->value = value;
+}
+```
+Компилятор понимает, что `this->value` относится к полю класса, а `value` — к параметру функции. Это полезно для разрешения конфликта имен.', 5);
 
     -- 9.6
-    INSERT INTO lessons (module_id, title, content) VALUES
-    (v_mod_id, '9.6. Лямбда-выражения', 'Лямбда-выражения (появились в C++11) позволяют создавать анонимные функции (замыкания) прямо в месте их использования.
-Синтаксис: [захват](параметры) -> возвращаемый_тип { тело }
+    INSERT INTO lessons (module_id, title, content, order_index) VALUES
+(v_mod_id, '9.6. Лямбда-выражения', 'Лямбды — это анонимные функции, которые можно создавать "на лету". Они незаменимы для алгоритмов STL.
+ 
+ **Синтаксис**: `[захват](параметры) { тело }`
+ 
+ **Захват переменных**:
+ - `[=]` — копирует внешние переменные внутрь лямбды (по значению).
+ - `[&]` — передает переменные по ссылке.
+ - `[this]` — захватывает текущий объект класса.
 
-Захват (capture list) позволяет лямбде "видеть" переменные из окружающей области:
-- [=] — захват всего по значению (копия).
-- [&] — захват всего по ссылке.
-- [x] — захват только переменной x по значению.
-
-Пример:
-  int factor = 2;
-  auto multiply = [factor](int n) { return n * factor; };
-  std::cout << multiply(5); // Выведет 10');
+```cpp
+int limit = 10;
+auto is_over = [limit](int x) { return x > limit; };
+```', 6);
 
     -- 9.7
-    INSERT INTO lessons (module_id, title, content) VALUES
-    (v_mod_id, '9.7. static', 'Ключевое слово static имеет два основных применения в C++:
-1. Локальные статические переменные в функциях сохраняют свое значение между вызовами. Они инициализируются только один раз.
-2. Статические члены класса. Поля и методы, помеченные static, принадлежат самому классу, а не конкретному объекту. Для их вызова не нужен экземпляр: `ClassName::staticMethod()`.');
+    INSERT INTO lessons (module_id, title, content, order_index) VALUES
+(v_mod_id, '9.7. Ключевое слово static', '`static` в C++ имеет два лица:
+ 
+ 1. **Статические поля**: переменная принадлежит не объекту, а всему классу. Она существует в единственном экземпляре для всех созданных объектов.
+ 2. **Статические методы**: методы, которые можно вызывать без создания объекта (`ClassName::method()`). У них нет неявного указателя `this`.
+ 
+ Это полезно для создания глобальных счетчиков или утилит.', 7);
 
 END $$;
