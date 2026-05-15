@@ -127,7 +127,7 @@ int main(void) {
 Ввод: (пусто)
 Вывод: (пусто)', 
         E'// Напишите вашу первую программу ниже\n',
-        'main,int,void', 
+        'main', 
         '#include,#define,while,goto,do,asm,__asm__,__asm,FILE,fopen,fclose,fread,fwrite,system,exec,struct,class', 
         2000, 
         256,
@@ -172,7 +172,7 @@ Hello, cppforge!
 Ввод: 
 Вывод: Hello, cppforge!', 
         E'#include <stdio.h>\n\nint main(void) {\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,stdio.h,printf', 
+        'main,#include,stdio.h,printf', 
         '#define,while,goto,do,asm,__asm__,__asm,stdlib.h,string.h,math.h', 
         2000, 
         256,
@@ -180,7 +180,7 @@ Hello, cppforge!
     ) RETURNING id INTO v_task_id;
 
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public)
-    VALUES (v_task_id, '', E'Hello, cppforge!\n', TRUE);
+    VALUES (v_task_id, '', 'Hello, cppforge!', TRUE);
 
 
     RAISE NOTICE 'Seeding module Знакомство с платформой и первые шаги completed successfully.';
