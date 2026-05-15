@@ -490,6 +490,8 @@ void ProfilePage::setupUI()
     footerLayout->addWidget(createFooterBtn("Contacts", &ProfilePage::onContactsClicked));
     footerLayout->addWidget(createSeparator());
     footerLayout->addWidget(createFooterBtn("Privacy Policy", &ProfilePage::onPrivacyClicked));
+    footerLayout->addWidget(createSeparator());
+    footerLayout->addWidget(createFooterBtn("Hot Keys", &ProfilePage::onHotKeysClicked));
 
     rightSection->addSpacing(30);
     rightSection->addLayout(footerLayout);
@@ -732,6 +734,27 @@ void ProfilePage::onPrivacyClicked()
     else
         isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
     InfoDialog dlg("Privacy Policy", privacyText, isDark, this);
+    dlg.exec();
+}
+
+void ProfilePage::onHotKeysClicked()
+{
+    QString keysText = "<b>Global Shortcuts:</b><br>"
+                       "• <b>Esc</b>: Close window / Back to dashboard<br><br>"
+                       "<b>Navigation:</b><br>"
+                       "• <b>1</b>: Learn Page<br>"
+                       "• <b>2</b>: Duels Page<br>"
+                       "• <b>3</b>: Profile Page<br>"
+                       "<b>Code Editor:</b><br>"
+                       "• <b>Tab</b>: Insert 4 spaces<br>"
+                       "• <b>Ctrl + / -</b>: Zoom In/Out theory/practice<br>";
+
+    bool isDark = false;
+    if (themeService_)
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    else
+        isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+    InfoDialog dlg("Hot Keys", keysText, isDark, this);
     dlg.exec();
 }
 
