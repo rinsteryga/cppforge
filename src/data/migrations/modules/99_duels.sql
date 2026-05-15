@@ -23,12 +23,12 @@ BEGIN
 Ввод: 4
 Вывод: Even', 
         E'#include <iostream>\n\nint main() {\n    int n;\n    if (std::cin >> n) {\n        // Ваш код\n    }\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout', 
-        '#define,goto,asm,__asm__,__asm,scanf,printf', 
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '4', E'Even\n', TRUE), (v_task_id, '7', E'Odd\n', TRUE);
+        (v_task_id, '4', 'Even', TRUE), (v_task_id, '7', 'Odd', TRUE);
 
     -- Task 2: Reverse Integer
     INSERT INTO coding_tasks (
@@ -47,12 +47,12 @@ BEGIN
 Ввод: -123
 Вывод: -321', 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout', 
-        '#define,goto,asm,__asm__,__asm,string', 
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '-123', E'-321\n', TRUE), (v_task_id, '120', E'21\n', TRUE), (v_task_id, '0', E'0\n', TRUE);
+        (v_task_id, '-123', '-321', TRUE), (v_task_id, '120', '21', TRUE), (v_task_id, '0', '0', TRUE);
 
     -- Task 3: Palindrome Number
     INSERT INTO coding_tasks (
@@ -71,12 +71,12 @@ BEGIN
 Ввод: 121
 Вывод: true', 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout', 
-        '#define,goto,asm,__asm__,__asm,string', 
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '121', E'true\n', TRUE), (v_task_id, '10', E'false\n', TRUE);
+        (v_task_id, '121', 'true', TRUE), (v_task_id, '10', 'false', TRUE);
 
     -- Task 4: Valid Parentheses
     INSERT INTO coding_tasks (
@@ -95,12 +95,12 @@ BEGIN
 Ввод: ()[]{}
 Вывод: Yes', 
         E'#include <iostream>\n#include <string>\n#include <stack>\n\nint main() {\n    std::string s;\n    std::cin >> s;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout,string,stack', 
-        '#define,goto,asm,__asm__,__asm', 
+        'string,stack', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '()[]{}', E'Yes\n', TRUE), (v_task_id, '([)]', E'No\n', TRUE), (v_task_id, '{[]}', E'Yes\n', TRUE);
+        (v_task_id, '()[]{}', 'Yes', TRUE), (v_task_id, '([)]', 'No', TRUE), (v_task_id, '{[]}', 'Yes', TRUE);
 
     -- Task 5: Factorial
     INSERT INTO coding_tasks (
@@ -120,12 +120,12 @@ BEGIN
 Ввод: 5
 Вывод: 120', 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout', 
-        '#define,goto,asm,__asm__,__asm', 
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '5', E'120\n', TRUE), (v_task_id, '0', E'1\n', TRUE);
+        (v_task_id, '5', '120', TRUE), (v_task_id, '0', '1', TRUE);
 
     -- Task 6: Count Vowels
     INSERT INTO coding_tasks (
@@ -144,12 +144,12 @@ BEGIN
 Ввод: Hello
 Вывод: 2', 
         E'#include <iostream>\n#include <string>\n\nint main() {\n    std::string s;\n    std::cin >> s;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout,string', 
-        '#define,goto,asm,__asm__,__asm', 
+        'string', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, 'Hello', E'2\n', TRUE), (v_task_id, 'CPP', E'0\n', TRUE);
+        (v_task_id, 'Hello', '2', TRUE), (v_task_id, 'CPP', '0', TRUE);
 
     -- Task 7: Max Element Array
     INSERT INTO coding_tasks (
@@ -165,15 +165,15 @@ BEGIN
 Максимальное число.
 
 Пример:
-Ввод: 4\n5 12 -3 8
+Ввод: 4 5 12 -3 8
 Вывод: 12', 
         E'#include <iostream>\n#include <vector>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout,vector', 
-        '#define,goto,asm,__asm__,__asm', 
+        'vector', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '4\n5 12 -3 8', E'12\n', TRUE);
+        (v_task_id, '4 5 12 -3 8', '12', TRUE);
 
     -- Task 8: FizzBuzz
     INSERT INTO coding_tasks (
@@ -190,19 +190,18 @@ N строк ответа.
 
 Пример:
 Ввод: 5
-Вывод: 
-1
+Вывод: 1
 2
 Fizz
 4
 Buzz', 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout', 
-        '#define,goto,asm,__asm__,__asm', 
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '5', E'1\n2\nFizz\n4\nBuzz\n', TRUE);
+        (v_task_id, '5', E'1\n2\nFizz\n4\nBuzz', TRUE);
 
     -- Task 9: Two Sum
     INSERT INTO coding_tasks (
@@ -218,15 +217,15 @@ Buzz',
 Два индекса через пробел (в порядке возрастания индексов).
 
 Пример:
-Ввод: 4\n2 7 11 15\n9
+Ввод: 4 2 7 11 15 9
 Вывод: 0 1', 
         E'#include <iostream>\n#include <vector>\n#include <unordered_map>\n\nint main() {\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout,vector,unordered_map', 
-        '#define,goto,asm,__asm__,__asm', 
+        'vector,unordered_map', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '4\n2 7 11 15\n9', E'0 1\n', TRUE), (v_task_id, '3\n3 2 4\n6', E'1 2\n', TRUE);
+        (v_task_id, '4 2 7 11 15 9', '0 1', TRUE), (v_task_id, '3 3 2 4 6', '1 2', TRUE);
 
     -- Task 10: Sum of Digits
     INSERT INTO coding_tasks (
@@ -245,12 +244,12 @@ Buzz',
 Ввод: 123
 Вывод: 6', 
         E'#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код\n    return 0;\n}',
-        'main,return,int,void,#include,iostream,cin,cout', 
-        '#define,goto,asm,__asm__,__asm', 
+        '', 
+        '#define,goto,asm,__asm__,__asm,system', 
         2000, 256, TRUE
     ) RETURNING id INTO v_task_id;
     INSERT INTO test_cases (coding_task_id, input, expected_output, is_public) VALUES 
-        (v_task_id, '123', E'6\n', TRUE), (v_task_id, '0', E'0\n', TRUE);
+        (v_task_id, '123', '6', TRUE), (v_task_id, '0', '0', TRUE);
 
     RAISE NOTICE 'Seeding completed. Last ID: %', v_task_id;
 END $$;
