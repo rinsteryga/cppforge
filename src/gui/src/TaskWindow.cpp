@@ -756,6 +756,23 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::KeyPress)
     {
         auto *keyEvent = static_cast<QKeyEvent *>(event);
+
+        if (obj == codeEditor_ && (keyEvent->modifiers() & Qt::ControlModifier))
+        {
+            if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter)
+            {
+                if (keyEvent->modifiers() & Qt::ShiftModifier)
+                {
+                    onSubmitClicked();
+                }
+                else
+                {
+                    onRunClicked();
+                }
+                return true;
+            }
+        }
+
         if (keyEvent->modifiers() & Qt::ControlModifier)
         {
             if (keyEvent->key() == Qt::Key_Plus || keyEvent->key() == Qt::Key_Equal)
@@ -772,6 +789,47 @@ bool TaskWindow::eventFilter(QObject *obj, QEvent *event)
     }
 
     return QWidget::eventFilter(obj, event);
+}
+
+void TaskWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape)
+    {
+        fadeOut();
+        return;
+    }
+
+    bool editorFocused = codeEditor_ && codeEditor_->hasFocus();
+
+    if (!editorFocused)
+    {
+        if (event->key() == Qt::Key_Right)
+        {
+            if (btnNext_ && btnNext_->isEnabled())
+            {
+                onNextTask();
+                return;
+            }
+        }
+        else if (event->key() == Qt::Key_Left)
+        {
+            if (btnPrev_ && btnPrev_->isEnabled())
+            {
+                onPrevTask();
+                return;
+            }
+        }
+        else if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter)
+        {
+            if (!hasCodingTask_ && btnSubmit_ && btnSubmit_->isEnabled())
+            {
+                onSubmitClicked();
+                return;
+            }
+        }
+    }
+
+    QWidget::keyPressEvent(event);
 }
 
 void TaskWindow::setupStyles(std::optional<bool> isDarkOverride)
@@ -808,8 +866,8 @@ void TaskWindow::setupStyles(std::optional<bool> isDarkOverride)
         R"(; font-family: 'Outfit', 'Inter', sans-serif; font-size: 18px; font-weight: 600; margin-top: 20px; }
         QTextEdit#theoryEdit p, QTextEdit#practiceEdit p { line-height: 1.6; margin-bottom: 12px; }
         QTextEdit#theoryEdit li, QTextEdit#practiceEdit li { margin-bottom: 8px; }
-        QTextEdit#theoryEdit pre, QTextEdit#practiceEdit pre { background-color: palette(alternate-base); padding: 15px; border-radius: 10px; border: 1px solid palette(mid); font-family: 'Consolas', monospace; font-size: 13px; margin: 10px 0; }
-        QTextEdit#theoryEdit code, QTextEdit#practiceEdit code { background-color: palette(alternate-base); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; }
+        QTextEdit#theoryEdit pre, QTextEdit#practiceEdit pre { background-color: palette(alternate-base); padding: 15px; border-radius: 10px; border: 1px solid palette(mid); font-family: 'Consolas', monospace; margin: 10px 0; font-size: 13px; }
+        QTextEdit#theoryEdit code, QTextEdit#practiceEdit code { background-color: palette(alternate-base); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; font-size: 13px; }
         
         QPushButton#backButton {
             background-color: palette(alternate-base);

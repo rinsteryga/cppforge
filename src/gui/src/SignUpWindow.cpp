@@ -12,6 +12,7 @@
 #include <QFontMetrics>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
@@ -454,4 +455,12 @@ void SignUpWindow::setThemeService(cppforge::services::ThemeService *service)
             customTitleBar_->setThemeService(themeService_);
         }
     }
+}
+void SignUpWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape)
+    {
+        onBackToLoginClicked();
+    }
+    QWidget::keyPressEvent(event);
 }

@@ -97,6 +97,11 @@ private slots:
     void onPrivacyClicked();
 
     /**
+     * @brief Shows information about hot keys.
+     */
+    void onHotKeysClicked();
+
+    /**
      * @brief Handles theme selection from the dropdown menu.
      * @param index The selected index in the combobox.
      */

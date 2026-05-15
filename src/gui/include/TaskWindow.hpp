@@ -139,6 +139,7 @@ protected:
      * @return true if filtered.
      */
     bool eventFilter(QObject *obj, QEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
     /**
