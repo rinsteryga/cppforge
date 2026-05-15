@@ -204,6 +204,13 @@ namespace cppforge
              * @return The completion percentage (0-100).
              */
             virtual int getModuleProgress(uint64_t userId, uint64_t moduleId) const = 0;
+
+            /**
+             * @brief Checks if a user has completed all lessons in the course.
+             * @param userId The ID of the user.
+             * @return True if all lessons are completed.
+             */
+            virtual bool isCourseCompleted(uint64_t userId) const = 0;
         };
     } // namespace repositories
 } // namespace cppforge
