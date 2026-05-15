@@ -24,7 +24,6 @@ $SkipDbConfig = $false
 $IsInstalled = $false
 $PgBinDir = "C:\Program Files\PostgreSQL\16\bin"
 
-# Поиск существующего psql.exe
 $PsqlSearch = Get-ChildItem -Path "C:\Program Files\PostgreSQL\*\bin\psql.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
 if ($PsqlSearch) {
     $PgBinDir = $PsqlSearch.DirectoryName
@@ -41,7 +40,7 @@ if ($PsqlSearch) {
     }
 }
 
-# Если не установлен, проверяем порт 5432, чтобы не было конфликтов
+
 if (-not $IsInstalled) {
     $portCheck = Get-NetTCPConnection -LocalPort $PG_PORT -ErrorAction SilentlyContinue
     if ($portCheck) {
