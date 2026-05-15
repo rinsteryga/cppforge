@@ -178,6 +178,13 @@ namespace cppforge::repositories
          */
         int getModuleProgress(uint64_t userId, uint64_t moduleId) const override;
 
+        /**
+         * @brief Checks if a user has completed all lessons in the course.
+         * @param userId The ID of the user.
+         * @return True if all lessons are completed.
+         */
+        bool isCourseCompleted(uint64_t userId) const override;
+
     private:
         QSqlDatabase &database_;
 
