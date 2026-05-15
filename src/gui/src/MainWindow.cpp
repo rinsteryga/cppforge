@@ -99,10 +99,6 @@ void MainWindow::setUserId(int id)
             m_currentUsername = userOpt->getUsername();
             QString avatar = userOpt->getAvatarPath();
 
-            if (profilePage)
-            {
-                profilePage->setUserData(id, m_currentUsername, avatar);
-            }
             if (duelPage)
             {
                 duelPage->setUserId(id);
@@ -116,6 +112,11 @@ void MainWindow::setUserId(int id)
                 }
 
                 duelPage->updateUserStats(m_currentUsername, userOpt->getDuelPoints(), winrate, avatar);
+            }
+
+            if (profilePage)
+            {
+                profilePage->setUserData(id, m_currentUsername, avatar);
             }
         }
     }
@@ -484,7 +485,7 @@ void MainWindow::setupCenterPanel()
     eLayout->setContentsMargins(25, 25, 25, 25);
     eLayout->setSpacing(10);
 
-    auto eventTitle = new QLabel("💡 Tip of the Day");
+    auto eventTitle = new QLabel("💡 Interesting fact");
     eventTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     eLayout->addWidget(eventTitle);
 
@@ -630,7 +631,9 @@ void MainWindow::setupUI()
             {
                 auto manager = duelPage->getDuelManager();
 
-                manager->sendIdentity(m_currentUsername);
+                auto userOpt = m_userService->getUser(m_currentUsername);
+                QString avatarPath = userOpt ? userOpt->getAvatarPath() : "";
+                manager->sendIdentity(m_currentUsername, avatarPath);
 
                 m_duelTaskWindow = new DuelTaskWindow(manager);
                 m_duelTaskWindow->setThemeService(m_themeService);
