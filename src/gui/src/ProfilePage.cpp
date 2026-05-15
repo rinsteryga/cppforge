@@ -33,22 +33,24 @@ namespace
     class InfoDialog : public QDialog
     {
     public:
-        InfoDialog(const QString &title, const QString &text, QWidget *parent = nullptr) : QDialog(parent)
+        InfoDialog(const QString &title, const QString &text, bool isDark, QWidget *parent = nullptr) : QDialog(parent)
         {
             setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
             setAttribute(Qt::WA_TranslucentBackground);
 
+            QString highlightColor = isDark ? "#0e639c" : "palette(highlight)";
+
             auto *layout = new QVBoxLayout(this);
             auto *card = new QFrame();
             card->setObjectName("DialogCard");
-            card->setStyleSheet(R"(
+            card->setStyleSheet(QString(R"(
                 #DialogCard {
                     background-color: palette(base);
-                    border: 2px solid palette(highlight);
+                    border: 2px solid %1;
                     border-radius: 15px;
                 }
                 QLabel { color: palette(text); font-size: 16px; }
-                #Title { font-weight: bold; font-size: 20px; color: palette(highlight); }
+                #Title { font-weight: bold; font-size: 20px; color: %1; }
                 QPushButton {
                     background-color: palette(button);
                     color: palette(button-text);
@@ -57,8 +59,9 @@ namespace
                     font-weight: bold;
                     border: none;
                 }
-                QPushButton:hover { background-color: palette(highlight); }
-            )");
+                QPushButton:hover { background-color: %1; color: white; }
+            )")
+                                    .arg(highlightColor));
 
             auto *cardLayout = new QVBoxLayout(card);
             cardLayout->setContentsMargins(25, 25, 25, 25);
@@ -87,9 +90,6 @@ ProfilePage::ProfilePage(QWidget *parent) : QWidget(parent)
 {
     setupUI();
     applyStyles();
-
-    auto *secretShortcut = new QShortcut(QKeySequence("Alt+L, B"), this);
-    connect(secretShortcut, &QShortcut::activated, this, &ProfilePage::secretTaskTriggered);
 }
 
 ProfilePage::~ProfilePage() = default;
@@ -105,6 +105,7 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
     QString finalPath = avatarPath;
 
+    bool avatarGenerated = false;
     if (finalPath.isEmpty() || finalPath == "NULL")
     {
         QDir imagesDir(":/images");
@@ -128,9 +129,14 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         {
             userService_->updateAvatar(userId, finalPath);
         }
+        avatarGenerated = true;
     }
 
     updateAvatarDisplay(finalPath);
+    if (avatarGenerated)
+    {
+        emit avatarChanged(finalPath);
+    }
 
     if (userService_)
     {
@@ -175,6 +181,14 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
         clearLayout(achievementsContainer->layout());
         clearLayout(activityContainer->layout());
 
+        bool isDark = false;
+        if (themeService_)
+            isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+        else
+            isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+
+        QString highlightColor = isDark ? "#0e639c" : "palette(highlight)";
+
         auto achievements = userService_->getAllAchievementsStatus(userId);
         auto *achGrid = qobject_cast<QGridLayout *>(achievementsContainer->layout());
 
@@ -198,15 +212,18 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             if (pix.isNull())
             {
                 icon->setText("🏆");
-                icon->setStyleSheet(earned ? "background-color: palette(alternate-base); border: 1px solid "
-                                             "palette(mid); border-radius: 8px; font-size: 24px;"
+                icon->setStyleSheet(earned ? QString("background-color: palette(alternate-base); border: 2px solid %1; "
+                                                     "border-radius: 8px; font-size: 24px;")
+                                                 .arg(highlightColor)
                                            : "background-color: palette(base); border: 1px dashed palette(mid); "
                                              "border-radius: 8px; font-size: 24px; color: palette(mid);");
             }
             else
             {
                 icon->setStyleSheet(
-                    earned ? "background-color: palette(alternate-base); border-radius: 8px;"
+                    earned ? QString(
+                                 "background-color: palette(alternate-base); border: 2px solid %1; border-radius: 8px;")
+                                 .arg(highlightColor)
                            : "background-color: palette(base); border: 1px dashed palette(mid); border-radius: 8px;");
                 if (!earned)
                 {
@@ -231,7 +248,12 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
             v->addWidget(name, 0, Qt::AlignCenter);
             v->addStretch();
 
-            achWidget->setToolTip(ach.getName() + (earned ? "" : " (Locked)") + ": " + ach.getDescription());
+            icon->setAttribute(Qt::WA_TransparentForMouseEvents);
+            name->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+            achWidget->setProperty("customTooltipText",
+                                   ach.getName() + (earned ? "" : " (Locked)") + ":\n" + ach.getDescription());
+            achWidget->installEventFilter(this);
 
             if (achGrid)
             {
@@ -280,9 +302,20 @@ void ProfilePage::setUserData(uint64_t userId, const QString &name, const QStrin
 
 void ProfilePage::setupUI()
 {
-    auto *mainLayout = new QHBoxLayout(this);
-    mainLayout->setContentsMargins(50, 50, 50, 50);
-    mainLayout->setSpacing(60);
+    auto *rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameStyle(QFrame::NoFrame);
+    scrollArea->setStyleSheet("background: transparent;");
+
+    contentWidget_ = new QWidget();
+    contentWidget_->setObjectName("contentWidget");
+    contentWidget_->setStyleSheet("background: transparent;");
+    auto *mainLayout = new QHBoxLayout(contentWidget_);
+    mainLayout->setContentsMargins(30, 30, 30, 30);
+    mainLayout->setSpacing(40);
 
     auto *leftSection = new QVBoxLayout();
     leftSection->setSpacing(30);
@@ -405,6 +438,7 @@ void ProfilePage::setupUI()
     themeCombo_ = new QComboBox();
     themeCombo_->addItems({"Light", "Dark"});
     themeCombo_->setCursor(Qt::PointingHandCursor);
+    themeCombo_->setFocusPolicy(Qt::NoFocus);
     themeLayout->addWidget(themeLabel);
     themeLayout->addWidget(themeCombo_);
     themeLayout->addStretch();
@@ -464,7 +498,14 @@ void ProfilePage::setupUI()
     mainLayout->addLayout(leftSection, 3);
     mainLayout->addLayout(rightSection, 2);
 
+    scrollArea->setWidget(contentWidget_);
+    rootLayout->addWidget(scrollArea);
+
     connect(changeAvatarBtn, &QPushButton::clicked, this, &ProfilePage::onChangeAvatarClicked);
+
+    customTooltipLabel_ = new QLabel(this);
+    customTooltipLabel_->setObjectName("CustomTooltip");
+    customTooltipLabel_->hide();
 }
 
 void ProfilePage::applyStyles()
@@ -479,19 +520,14 @@ void ProfilePage::applyStyles()
         QSettings settings("CppForge", "StudyApp");
         isDark = (settings.value("app/theme", 0).toInt() == 1);
     }
-    QString hoverColor, hoverText;
-    if (isDark)
-    {
-        hoverColor = "#0e639c";
-        hoverText = "white";
-    }
-    else
-    {
-        hoverColor = "#f3e8ff";
-        hoverText = "black";
-    }
 
-    setStyleSheet(QString(R"(
+    QString hoverText;
+    QString btnColor = isDark ? "#0e639c" : "#62639b";
+    QString btnHover = isDark ? "#1177bb" : "#f3e8ff";
+    hoverText = isDark ? "white" : "black";
+
+    QString style = QString(R"(
+        #contentWidget { background-color: palette(window); border: none; }
         #UserNameLabel { font-size: 28px; font-weight: bold; color: palette(text); }
         #StatTitle { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; }
         #AvatarSquare { 
@@ -527,16 +563,16 @@ void ProfilePage::applyStyles()
             padding: 2px 5px;
             text-align: right;
         }
-        #FooterBtn:hover { color: %1; text-decoration: underline; background: transparent; }
+        #FooterBtn:hover { color: %2; text-decoration: underline; background: transparent; }
         #ChangeAvatarBtn {
-            background-color: palette(button); 
-            color: palette(button-text); 
-            border: 1px solid palette(mid);
+            background-color: %1; 
+            color: white; 
+            border: none;
             border-radius: 8px; 
             padding: 8px 16px; 
             font-weight: 600;
         }
-        #ChangeAvatarBtn:hover { background-color: %1; color: %2; }
+        #ChangeAvatarBtn:hover { background-color: %2; color: %3; }
         #BoxContent { 
             background: transparent; 
             border: none; 
@@ -559,11 +595,25 @@ void ProfilePage::applyStyles()
             background-color: palette(base);
             border: 1px solid palette(mid);
             selection-background-color: %1;
-            color: %2;
+            color: white;
+        }
+
+        #CustomTooltip {
+            background-color: rgb(255, 255, 255);
+            color: rgb(0, 0, 0);
+            border: 1px solid rgb(150, 150, 150);
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 12px;
         }
     )")
-                      .arg(hoverColor)
-                      .arg(hoverText));
+                        .arg(btnColor)
+                        .arg(btnHover)
+                        .arg(hoverText);
+
+    setStyleSheet(style);
+    if (contentWidget_)
+        contentWidget_->setStyleSheet(style);
 }
 
 void ProfilePage::setThemeService(cppforge::services::ThemeService *service)
@@ -586,6 +636,10 @@ void ProfilePage::onThemeChanged(int index)
     if (themeService_)
     {
         themeService_->setTheme(index == 1 ? cppforge::services::Theme::Dark : cppforge::services::Theme::Light);
+    }
+    if (themeCombo_)
+    {
+        themeCombo_->clearFocus();
     }
 }
 
@@ -646,13 +700,23 @@ void ProfilePage::onAboutClicked()
         "including PvP mode and practical tasks.\n\n"
         "The development team consists of RANEPA college graduates who brought the idea of a truly "
         "cool learning platform to life.";
-    InfoDialog dlg("About cppforge", aboutText, this);
+    bool isDark = false;
+    if (themeService_)
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    else
+        isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+    InfoDialog dlg("About cppforge", aboutText, isDark, this);
     dlg.exec();
 }
 
 void ProfilePage::onContactsClicked()
 {
-    InfoDialog dlg("Contacts", "rinsterr@yandex.ru — for all questions and suggestions", this);
+    bool isDark = false;
+    if (themeService_)
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    else
+        isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+    InfoDialog dlg("Contacts", "rinsterr@yandex.ru — for all questions and suggestions", isDark, this);
     dlg.exec();
 }
 
@@ -662,6 +726,50 @@ void ProfilePage::onPrivacyClicked()
         "We value your privacy. The application stores your data exclusively locally on your device "
         "and does not transfer it to third parties.\n\n"
         "By using cppforge, you agree to the local storage of learning progress and profile settings.";
-    InfoDialog dlg("Privacy Policy", privacyText, this);
+    bool isDark = false;
+    if (themeService_)
+        isDark = (themeService_->getCurrentTheme() == cppforge::services::Theme::Dark);
+    else
+        isDark = QSettings("CppForge", "StudyApp").value("app/theme", 0).toInt() == 1;
+    InfoDialog dlg("Privacy Policy", privacyText, isDark, this);
     dlg.exec();
+}
+
+bool ProfilePage::eventFilter(QObject *watched, QEvent *event)
+{
+    if (!customTooltipLabel_)
+        return QWidget::eventFilter(watched, event);
+
+    if (event->type() == QEvent::Enter)
+    {
+        QString text = watched->property("customTooltipText").toString();
+        if (!text.isEmpty())
+        {
+            customTooltipLabel_->setText(text);
+            customTooltipLabel_->adjustSize();
+            customTooltipLabel_->raise();
+
+            QWidget *w = qobject_cast<QWidget *>(watched);
+            if (w)
+            {
+                QPoint pos = w->mapTo(this, QPoint(0, w->height() + 5));
+                if (pos.x() + customTooltipLabel_->width() > this->width())
+                {
+                    pos.setX(this->width() - customTooltipLabel_->width() - 5);
+                }
+                if (pos.y() + customTooltipLabel_->height() > this->height())
+                {
+                    pos.setY(w->mapTo(this, QPoint(0, -customTooltipLabel_->height() - 5)).y());
+                }
+                customTooltipLabel_->move(pos);
+            }
+            customTooltipLabel_->show();
+        }
+    }
+    else if (event->type() == QEvent::Leave)
+    {
+        customTooltipLabel_->hide();
+    }
+
+    return QWidget::eventFilter(watched, event);
 }

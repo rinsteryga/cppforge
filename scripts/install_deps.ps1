@@ -40,6 +40,7 @@ if ($PsqlSearch) {
     }
 }
 
+
 if (-not $IsInstalled) {
     $portCheck = Get-NetTCPConnection -LocalPort $PG_PORT -ErrorAction SilentlyContinue
     if ($portCheck) {
@@ -58,8 +59,6 @@ if ($IsInstalled) {
         Start-Sleep -Seconds 5
     }
 
-    $env:PGPASSWORD = $PG_PASSWORD
-    
     $env:PGPASSWORD = $PG_PASSWORD
     
     $OldErrorAction = $ErrorActionPreference
@@ -83,47 +82,41 @@ if ($IsInstalled) {
         $SkipDbConfig = $false
     }
 } else {
-    Write-Host "Checking for Visual C++ Redistributable..."
-    $VcRedistPath = "$env:TEMP\vc_redist.x64.exe"
-    if (!(Test-Path $VcRedistPath)) {
-        Write-Host "Downloading VC++ Redistributable (Required for PostgreSQL)..."
-        Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile $VcRedistPath -UseBasicParsing
-    }
-    Write-Host "Installing VC++ Redistributable..."
-    Start-Process -FilePath $VcRedistPath -ArgumentList "/install /quiet /norestart" -Wait -NoNewWindow
     
-    $PostgresInstallerUrl = "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
-    $InstallerPath = "$env:TEMP\postgresql-installer.exe"
-
-    Write-Host "Downloading PostgreSQL installer (can take a few minutes)..."
-    if (!(Test-Path $InstallerPath) -or ((Get-Item $InstallerPath).Length -lt 50MB)) {
-        Invoke-WebRequest -Uri $PostgresInstallerUrl -OutFile $InstallerPath -UseBasicParsing
-        
-        if ((Get-Item $InstallerPath).Length -lt 50MB) {
-            throw "Download failed! File is too small. URL might be broken."
-        }
+    Write-Host "Installing Visual C++ Redistributable (Required for PostgreSQL)..."
+    $VcRedistPath = Join-Path $InstallDir "scripts\vc_redist.x64.exe"
+    
+    if (Test-Path $VcRedistPath) {
+        Start-Process -FilePath $VcRedistPath -ArgumentList "/install /quiet /norestart" -Wait -NoNewWindow
     } else {
-        Write-Host "Using cached PostgreSQL installer."
+        Write-Warning "VC++ Redistributable not found in package at $VcRedistPath! Skipping..."
+    }
+    
+    $InstallerPath = Join-Path $InstallDir "scripts\postgresql-16.4-1-windows-x64.exe"
+
+    if (-not (Test-Path $InstallerPath)) {
+        throw "Bundled PostgreSQL installer not found at $InstallerPath!"
     }
 
-    Write-Host "Installing PostgreSQL (progress window will be hidden, please wait 3-10 minutes)..."
+    Write-Host "Installing PostgreSQL (progress window will be hidden, please wait 1-3 minutes)..."
     $InstallArgs = @(
         "--mode", "unattended",
         "--unattendedmodeui", "none",
         "--servicename", $PG_SERVICE_NAME,
         "--superpassword", $PG_PASSWORD,
         "--serverport", $PG_PORT,
-        "--disable-components", "pgadmin,stackbuilder"
+        "--disable-components", "pgAdmin,stackbuilder"
     )
     $process = Start-Process -FilePath $InstallerPath -ArgumentList $InstallArgs -Wait -NoNewWindow -PassThru
 
     if ($process.ExitCode -ne 0) {
-        throw "PostgreSQL installation failed with Exit Code $($process.ExitCode). You may need to install Microsoft Visual C++ Redistributable."
+        throw "PostgreSQL installation failed with Exit Code $($process.ExitCode)."
     }
 
     if (!(Test-Path $PgBinDir)) {
         throw "Cannot find expected PostgreSQL bin directory at $PgBinDir"
     }
+
 
     $env:PGPASSWORD = $PG_PASSWORD
     $env:PGCLIENTENCODING = "utf8"
@@ -186,13 +179,6 @@ if (-not $SkipDbConfig) {
         Write-Host "WARNING: Seed file not found at $SeedFile"
     }
 
-    $ModulesDir = "$InstallDir\data\migrations\modules"
-    if (Test-Path $ModulesDir) {
-        $ModuleFiles = Get-ChildItem -Path $ModulesDir -Filter "*.sql" | Sort-Object Name
-        foreach ($ModFile in $ModuleFiles) {
-            & "$PgBinDir\psql.exe" -U $PG_USER -d $PG_DB -p $PG_PORT -f $ModFile.FullName
-        }
-    }
 } else {
     Write-Warning "Skipped database setup because PostgreSQL connection failed."
 }
@@ -207,7 +193,45 @@ PG_PASSWORD=$PG_PASSWORD
 "@
 
 $EnvPath = "$InstallDir\.env"
-Set-Content -Path $EnvPath -Value $EnvConfig
+Set-Content -Path $EnvPath -Value $EnvConfig -Encoding UTF8
 
 Write-Host "PostgreSQL setup complete!"
+
+$ToolchainBin = Join-Path $InstallDir "bin"
+
+if (Test-Path $ToolchainBin) {
+    Write-Host "Configuring system PATH for GCC toolchain..."
+    try {
+        $MachinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+        
+        $Paths = $MachinePath -split ";" | Where-Object { $_ -match '\S' }
+        
+        $PathExists = $false
+        foreach ($p in $Paths) {
+            if ($p.TrimEnd('\') -ieq $ToolchainBin.TrimEnd('\')) {
+                $PathExists = $true
+                break
+            }
+        }
+
+        if (-not $PathExists) {
+            Write-Host "Adding $ToolchainBin to Machine PATH..."
+            $NewPath = ($Paths + $ToolchainBin) -join ";"
+            
+            [Environment]::SetEnvironmentVariable("Path", $NewPath, "Machine")
+            
+            $env:Path += ";$ToolchainBin"
+            
+            Write-Host "Toolchain path successfully added."
+        } else {
+            Write-Host "Toolchain path already exists in Machine PATH. Skipping."
+        }
+    } catch {
+        Write-Warning "Failed to add GCC to PATH. Ensure the installer is running with Administrator privileges."
+        Write-Warning $_.Exception.Message
+    }
+} else {
+    Write-Warning "Toolchain bin directory not found at $ToolchainBin. Skipping PATH configuration."
+}
+
 Stop-Transcript

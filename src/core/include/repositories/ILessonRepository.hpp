@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QString>
+
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -30,6 +32,12 @@ namespace cppforge
             ILessonRepository &operator=(const ILessonRepository &) = delete;
             ILessonRepository(ILessonRepository &&) = delete;
             ILessonRepository &operator=(ILessonRepository &&) = delete;
+
+            /**
+             * @brief Retrieves a random tip from the database.
+             * @return A random tip content string.
+             */
+            virtual QString getRandomTip() const = 0;
 
             /**
              * @brief Retrieves an ordered collection of all lessons inside a specified module.

@@ -40,6 +40,10 @@ namespace
         {
             return cppforge::entities::ConditionType::StreakDays;
         }
+        if (str == "COURSE_COMPLETED")
+        {
+            return cppforge::entities::ConditionType::CourseCompleted;
+        }
         return cppforge::entities::ConditionType::CustomEvent;
     }
 } // namespace
@@ -215,6 +219,26 @@ namespace cppforge::repositories
         QSqlQuery query(database_);
         query.prepare(
             "SELECT COUNT(DISTINCT coding_task_id) FROM submissions WHERE user_id = :id AND is_success = true");
+        query.bindValue(":id", QVariant::fromValue(userId));
+
+        if (query.exec() && query.next())
+        {
+            return query.value(0).toInt();
+        }
+
+        return 0;
+    }
+
+    int PgUserRepository::getTodaySolvedTasksCount(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+        {
+            return 0;
+        }
+
+        QSqlQuery query(database_);
+        query.prepare("SELECT COUNT(DISTINCT coding_task_id) FROM submissions WHERE user_id = :id AND is_success = "
+                      "true AND DATE(submitted_at) = CURRENT_DATE");
         query.bindValue(":id", QVariant::fromValue(userId));
 
         if (query.exec() && query.next())
@@ -604,5 +628,25 @@ namespace cppforge::repositories
             return (completed * 100) / total;
         }
         return 0;
+    }
+
+    bool PgUserRepository::isCourseCompleted(uint64_t userId) const
+    {
+        if (!database_.isOpen() || userId == 0)
+            return false;
+
+        QSqlQuery query(database_);
+        query.prepare(R"(
+            SELECT 
+                (SELECT COUNT(*) FROM lessons) <= 
+                (SELECT COUNT(*) FROM user_progress WHERE user_id = :uid AND is_completed = true)
+        )");
+        query.bindValue(":uid", static_cast<qulonglong>(userId));
+
+        if (query.exec() && query.next())
+        {
+            return query.value(0).toBool();
+        }
+        return false;
     }
 } // namespace cppforge::repositories

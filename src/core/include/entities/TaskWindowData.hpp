@@ -44,5 +44,11 @@ namespace cppforge::entities
 
         /** @brief The collection of test cases used to validate the coding task. */
         std::set<TestCase> testCases;
+
+        /** @brief (Optional) Whitelist of required keywords. */
+        std::optional<std::set<QString>> whitelist;
+
+        /** @brief (Optional) Blacklist of forbidden keywords. */
+        std::optional<std::set<QString>> blacklist;
     };
 } // namespace cppforge::entities

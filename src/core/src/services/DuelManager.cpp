@@ -49,7 +49,7 @@ namespace cppforge::services
         connect(socket_, &QTcpSocket::connected, this,
                 [this]()
                 {
-                    sendIdentity(m_localPlayerName);
+                    sendIdentity(m_localPlayerName, m_localAvatarPath);
 
                     emit opponentConnected(socket_->peerAddress().toString());
                 });
@@ -103,14 +103,24 @@ namespace cppforge::services
 
     void DuelManager::onNewConnection()
     {
-        if (server_->hasPendingConnections())
+        while (server_->hasPendingConnections())
         {
-            socket_ = server_->nextPendingConnection();
+            QTcpSocket *pending = server_->nextPendingConnection();
+
+            if (socket_ != nullptr && socket_->state() == QAbstractSocket::ConnectedState)
+            {
+                qDebug() << "DuelManager: Rejecting incoming connection - room is full.";
+                pending->disconnectFromHost();
+                pending->deleteLater();
+                continue;
+            }
+
+            socket_ = pending;
             connect(socket_, &QTcpSocket::readyRead, this, &DuelManager::onReadyRead);
+            connect(socket_, &QAbstractSocket::errorOccurred, this, &DuelManager::onSocketError);
             connect(socket_, &QTcpSocket::disconnected, this, &DuelManager::onSocketDisconnected);
 
-            sendIdentity(m_localPlayerName);
-
+            sendIdentity(m_localPlayerName, m_localAvatarPath);
             emit opponentConnected(socket_->peerAddress().toString());
         }
     }
@@ -141,6 +151,7 @@ namespace cppforge::services
     void DuelManager::sendIdentity(const QString &myName, const QString &avatarPath)
     {
         m_localPlayerName = myName;
+        m_localAvatarPath = avatarPath;
         QJsonObject json;
         json["type"] = "IDENTIFY";
         QJsonObject payload;

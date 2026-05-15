@@ -33,6 +33,10 @@ namespace cppforge::repositories
                 {
                     return entities::ConditionType::StreakDays;
                 }
+                if (typeStr == "COURSE_COMPLETED")
+                {
+                    return entities::ConditionType::CourseCompleted;
+                }
                 return entities::ConditionType::CustomEvent;
             };
 

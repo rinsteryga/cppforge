@@ -26,6 +26,8 @@ namespace cppforge::services
              { return userRepo_.getSolvedTasksCount(user.getId()) >= static_cast<int>(val); }},
             {entities::ConditionType::StreakDays,
              [](const entities::User &user, uint32_t val) { return user.getCurrentStreakDays() >= val; }},
+            {entities::ConditionType::CourseCompleted,
+             [&](const entities::User &user, uint32_t) { return userRepo_.isCourseCompleted(user.getId()); }},
             {entities::ConditionType::CustomEvent, [](const entities::User &, uint32_t) { return false; }}};
 
         for (const auto &achievement : systemAchievements)

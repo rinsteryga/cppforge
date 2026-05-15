@@ -106,8 +106,8 @@ void DuelPage::clearLobbyList()
 void DuelPage::setupUI()
 {
     auto mainLayout = new QHBoxLayout(this);
-    mainLayout->setContentsMargins(25, 25, 25, 25);
-    mainLayout->setSpacing(30);
+    mainLayout->setContentsMargins(15, 15, 15, 15);
+    mainLayout->setSpacing(20);
 
     auto leftColumn = new QVBoxLayout();
     leftColumn->setSpacing(25);
@@ -141,9 +141,10 @@ QFrame *DuelPage::createProfileHeader()
 {
     auto frame = new QFrame();
     frame->setObjectName("card");
-    frame->setFixedHeight(110);
+    frame->setMinimumHeight(80);
+    frame->setMaximumHeight(120);
     auto layout = new QHBoxLayout(frame);
-    layout->setContentsMargins(25, 0, 25, 0);
+    layout->setContentsMargins(20, 0, 20, 0);
 
     m_lblAvatar = new QLabel();
     m_lblAvatar->setFixedSize(55, 55);
@@ -175,8 +176,8 @@ QFrame *DuelPage::createActionPanel()
     auto frame = new QFrame();
     frame->setObjectName("card");
     auto layout = new QVBoxLayout(frame);
-    layout->setContentsMargins(50, 40, 50, 40);
-    layout->setSpacing(20);
+    layout->setContentsMargins(30, 20, 30, 20);
+    layout->setSpacing(15);
 
     auto title = new QLabel("LEAGUE");
     title->setAlignment(Qt::AlignCenter);
@@ -185,16 +186,19 @@ QFrame *DuelPage::createActionPanel()
     m_btnCreateLobby = new QPushButton("CREATE LOBBY");
     m_btnCreateLobby->setObjectName("btnCreate");
     m_btnCreateLobby->setProperty("state", "default");
-    m_btnCreateLobby->setFixedHeight(70);
+    m_btnCreateLobby->setMinimumHeight(50);
+    m_btnCreateLobby->setMaximumHeight(70);
     m_btnCreateLobby->setCursor(Qt::PointingHandCursor);
 
     m_btnJoinLobby = new QPushButton("JOIN LOBBY");
-    m_btnJoinLobby->setFixedHeight(70);
+    m_btnJoinLobby->setMinimumHeight(50);
+    m_btnJoinLobby->setMaximumHeight(70);
     m_btnJoinLobby->setCursor(Qt::PointingHandCursor);
 
     m_btnStartDuel = new QPushButton("START DUEL");
     m_btnStartDuel->setObjectName("btnStart");
-    m_btnStartDuel->setFixedHeight(70);
+    m_btnStartDuel->setMinimumHeight(50);
+    m_btnStartDuel->setMaximumHeight(70);
     m_btnStartDuel->setStyleSheet("background-color: #27ae60; color: white; border: none; font-size: 18px;");
     m_btnStartDuel->setCursor(Qt::PointingHandCursor);
     m_btnStartDuel->setVisible(false);
@@ -264,33 +268,33 @@ void DuelPage::addLeaderboardEntry(const QString &name, bool isHost, const QStri
     auto avatar = new QLabel();
     avatar->setFixedSize(32, 32);
 
-    if (!avatarPath.isEmpty())
+    QString finalAvatarPath = avatarPath;
+    if (finalAvatarPath.isEmpty() || finalAvatarPath == "NULL")
     {
-        QPixmap pix(avatarPath);
-        if (!pix.isNull())
-        {
-            QPixmap scaled = pix.scaled(32, 32, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-            QPixmap out(32, 32);
-            out.fill(Qt::transparent);
-            QPainter p(&out);
-            p.setRenderHint(QPainter::Antialiasing);
-            p.setBrush(QBrush(scaled));
-            p.setPen(Qt::NoPen);
-            p.drawEllipse(0, 0, 32, 32);
-            p.end();
-            avatar->setPixmap(out);
-        }
-        else
-        {
-            avatar->setStyleSheet("background-color: palette(button); border-radius: 16px;");
-        }
+        finalAvatarPath = ":/images/default_avatar1.png";
+    }
+
+    QPixmap pix(finalAvatarPath);
+    if (!pix.isNull())
+    {
+        QPixmap scaled = pix.scaled(32, 32, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        QPixmap out(32, 32);
+        out.fill(Qt::transparent);
+        QPainter p(&out);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(QBrush(scaled));
+        p.setPen(Qt::NoPen);
+        p.drawEllipse(0, 0, 32, 32);
+        p.end();
+        avatar->setPixmap(out);
     }
     else
     {
         avatar->setStyleSheet("background-color: palette(button); border-radius: 16px;");
     }
 
-    auto lblName = new QLabel(name + (isHost ? " (You)" : ""));
+    bool isMe = (name == m_lblUsername->text());
+    auto lblName = new QLabel(name + (isMe ? " (You)" : ""));
     lblName->setFont(QFont("Roboto", 11, isHost ? QFont::Bold : QFont::Normal));
 
     layout->addWidget(avatar);
@@ -309,8 +313,16 @@ void DuelPage::addLeaderboardEntry(const QString &name, bool isHost, const QStri
 void DuelPage::handleOpponentIdentified(const QString &name, const QString &avatarPath)
 {
     clearLobbyList();
-    addLeaderboardEntry(m_lblUsername->text(), true, m_currentAvatarPath);
-    addLeaderboardEntry(name, false, avatarPath);
+    if (m_isHosting)
+    {
+        addLeaderboardEntry(m_lblUsername->text(), true, m_currentAvatarPath);
+        addLeaderboardEntry(name, false, avatarPath);
+    }
+    else
+    {
+        addLeaderboardEntry(name, true, avatarPath);
+        addLeaderboardEntry(m_lblUsername->text(), false, m_currentAvatarPath);
+    }
 }
 
 void DuelPage::onCreateLobbyClicked()
@@ -337,8 +349,12 @@ void DuelPage::resetLobby()
 {
     m_duelManager->disconnectAll();
     m_isHosting = false;
+    m_btnCreateLobby->setEnabled(true);
     m_btnCreateLobby->setText("CREATE LOBBY");
     m_btnCreateLobby->setProperty("state", "default");
+    m_btnCreateLobby->style()->unpolish(m_btnCreateLobby);
+    m_btnCreateLobby->style()->polish(m_btnCreateLobby);
+
     m_btnJoinLobby->setEnabled(true);
     m_btnJoinLobby->setText("JOIN LOBBY");
     m_btnStartDuel->setVisible(false);
@@ -500,7 +516,10 @@ void DuelPage::updateUserStats(const QString &username, int rating, double winra
     m_lblRating->setText(QString("PTS: %1").arg(rating));
     m_lblWinrate->setText(QString("WR: %1%").arg(winrate, 0, 'f', 1));
 
-    m_currentAvatarPath = avatarPath;
+    if (!avatarPath.isEmpty() && avatarPath != "NULL")
+    {
+        m_currentAvatarPath = avatarPath;
+    }
     if (m_duelManager)
     {
         m_duelManager->sendIdentity(username, avatarPath);

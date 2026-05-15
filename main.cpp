@@ -31,8 +31,14 @@ namespace cppforge::data
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
     Q_INIT_RESOURCE(resources);
     QApplication app(argc, argv);
+
+    app.setStyleSheet("QToolTip { background-color: rgb(255, 255, 255); color: rgb(0, 0, 0); border: 1px solid "
+                      "rgb(150, 150, 150); padding: 5px; }");
 
     app.setQuitOnLastWindowClosed(false);
 
@@ -84,7 +90,7 @@ int main(int argc, char *argv[])
         mainWindow.setUserId(userId);
 
         authWindow.hide();
-        WindowStateManager::instance().applyState(&mainWindow, QSize(1400, 950));
+        WindowStateManager::instance().applyState(&mainWindow, QSize(1200, 800));
         mainWindow.fadeIn();
     };
 
@@ -113,7 +119,7 @@ int main(int argc, char *argv[])
 
     if (!autoLoginValid)
     {
-        WindowStateManager::instance().applyState(&authWindow, QSize(1280, 900));
+        WindowStateManager::instance().applyState(&authWindow, QSize(1024, 720));
     }
 
     return app.exec();

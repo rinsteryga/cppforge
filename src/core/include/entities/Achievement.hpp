@@ -14,7 +14,8 @@ namespace cppforge::entities
     {
         LevelsCompleted,
         StreakDays,
-        CustomEvent
+        CustomEvent,
+        CourseCompleted
     };
 
     /**

@@ -21,6 +21,12 @@ namespace cppforge::repositories
         explicit PgLessonRepository(QSqlDatabase &database);
 
         /**
+         * @brief Retrieves a random tip from the database.
+         * @return A random tip content string.
+         */
+        QString getRandomTip() const override;
+
+        /**
          * @brief Retrieves all lessons belonging to a specific module.
          * @param moduleId The ID of the parent module.
          * @return A vector of Lesson entities.

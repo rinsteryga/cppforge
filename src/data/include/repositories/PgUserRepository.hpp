@@ -62,6 +62,13 @@ namespace cppforge::repositories
         int getSolvedTasksCount(uint64_t userId) const override;
 
         /**
+         * @brief Retrieves the count of unique coding tasks a user has solved today.
+         * @param userId The ID of the user.
+         * @return The count of unique successfully solved coding tasks for the current date.
+         */
+        int getTodaySolvedTasksCount(uint64_t userId) const override;
+
+        /**
          * @brief Retrieves the count of lessons a user has completed.
          * @param userId The ID of the user.
          * @return The count of completed lessons.
@@ -170,6 +177,13 @@ namespace cppforge::repositories
          * @return The completion percentage (0-100).
          */
         int getModuleProgress(uint64_t userId, uint64_t moduleId) const override;
+
+        /**
+         * @brief Checks if a user has completed all lessons in the course.
+         * @param userId The ID of the user.
+         * @return True if all lessons are completed.
+         */
+        bool isCourseCompleted(uint64_t userId) const override;
 
     private:
         QSqlDatabase &database_;

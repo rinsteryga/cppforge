@@ -35,9 +35,14 @@ Devs: @rinsteryga, @Sernock
    *Make sure to fill in your actual PostgreSQL credentials (`PG_USER` and `PG_PASSWORD`) inside the `.env` file before proceeding.*
 
    ```bash
-   psql -U postgres -d cppforge -f src/data/migrations/schema.sql
-   psql -U postgres -d cppforge -f src/data/migrations/seed.sql
+   sudo -u postgres psql -d cppforge -f src/data/migrations/schema.sql
+   sudo -u postgres psql -d cppforge -f src/data/migrations/seed.sql
    ```
+
+   **Database Reset / Update:**
+   If you need to reset the database (drop, recreate, and seed) during development, use the provided cross-platform scripts in `src/data/migrations/`.
+   - On Windows: Run `reset_db.bat`.
+   - On Linux/macOS: Run `bash reset_db.sh`.
 
 4. **Build the project:**
 
@@ -66,7 +71,7 @@ If you prefer not to build from source, you can install the pre-compiled package
 1. Download the `cppforge-*-Linux.deb` package.
 2. Install it using `apt` so that dependencies (like `libqt5sql5-psql` and PostgreSQL) are automatically resolved and installed:
    ```bash
-   sudo apt install ./cppforge-1.0.0-Linux.deb
+   sudo apt install ./cppforge-1.0.2-Linux.deb
    ```
 3. The installation script will configure the PostgreSQL database and environment automatically.
 
@@ -74,8 +79,8 @@ If you prefer not to build from source, you can install the pre-compiled package
 1. Download the `cppforge-*-Linux.tar.gz` archive.
 2. Extract the archive:
    ```bash
-   tar -xzf cppforge-1.0.0-Linux.tar.gz
-   cd cppforge-1.0.0-Linux
+   tar -xzf cppforge-1.0.2-Linux.tar.gz
+   cd cppforge-1.0.2-Linux
    ```
 3. Run the installation script with root privileges to install dependencies and set up the database:
    ```bash

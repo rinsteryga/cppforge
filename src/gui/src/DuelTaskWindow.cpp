@@ -37,8 +37,8 @@ DuelTaskWindow::~DuelTaskWindow() = default;
 void DuelTaskWindow::setupUI()
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setMinimumSize(900, 600);
-    resize(1300, 900);
+    setMinimumSize(800, 580);
+    resize(1200, 800);
     setObjectName("DuelEditorWindow");
 
     auto rootLayout = new QVBoxLayout(this);
@@ -80,6 +80,7 @@ void DuelTaskWindow::setupUI()
     mainSplitter->setHandleWidth(4);
 
     practiceEdit_ = new QTextEdit();
+    practiceEdit_->setObjectName("practiceEdit");
     practiceEdit_->setReadOnly(true);
     practiceEdit_->setFrameStyle(QFrame::NoFrame);
     practiceEdit_->setFont(QFont("Inter", 12));
@@ -88,7 +89,6 @@ void DuelTaskWindow::setupUI()
         background-color: palette(base); 
         border-right: 1px solid palette(mid);
         color: palette(text);
-        line-height: 1.6;
     )");
     practiceEdit_->installEventFilter(this);
 
@@ -133,10 +133,14 @@ void DuelTaskWindow::setupUI()
     btnExit_->setObjectName("exitButton");
     btnExit_->setVisible(false);
 
-    btnRun_->setFixedSize(100, 45);
-    btnSubmit_->setFixedSize(140, 45);
-    btnSurrender_->setFixedSize(120, 45);
-    btnExit_->setFixedSize(100, 45);
+    btnRun_->setMinimumSize(80, 40);
+    btnRun_->setMaximumSize(120, 50);
+    btnSubmit_->setMinimumSize(120, 40);
+    btnSubmit_->setMaximumSize(160, 50);
+    btnSurrender_->setMinimumSize(100, 40);
+    btnSurrender_->setMaximumSize(140, 50);
+    btnExit_->setMinimumSize(80, 40);
+    btnExit_->setMaximumSize(120, 50);
 
     codeActions->addStretch();
     codeActions->addWidget(btnRun_);
@@ -234,6 +238,24 @@ void DuelTaskWindow::setupStyles(std::optional<bool> isDarkOverride)
         }
         #codeEditor, #testOutput { background-color: transparent; border: none; padding: 10px; color: palette(text); }
         
+        QTextEdit#practiceEdit {
+            padding: 30px;
+        }
+        QTextEdit#practiceEdit h1 { color: )" +
+        accentColor +
+        R"(; font-family: 'Outfit', 'Inter', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 15px; }
+        QTextEdit#practiceEdit h2 { color: )" +
+        accentColor +
+        R"(; font-family: 'Outfit', 'Inter', sans-serif; font-size: 20px; font-weight: 700; border-left: 5px solid )" +
+        accentColor + R"(; padding-left: 12px; margin-top: 25px; margin-bottom: 10px; }
+        QTextEdit#practiceEdit h3 { color: )" +
+        accentColor +
+        R"(; font-family: 'Outfit', 'Inter', sans-serif; font-size: 18px; font-weight: 600; margin-top: 20px; }
+        QTextEdit#practiceEdit p { line-height: 1.6; margin-bottom: 12px; }
+        QTextEdit#practiceEdit li { margin-bottom: 8px; }
+        QTextEdit#practiceEdit pre { background-color: palette(alternate-base); padding: 15px; border-radius: 10px; border: 1px solid palette(mid); font-family: 'Consolas', monospace; font-size: 13px; margin: 10px 0; }
+        QTextEdit#practiceEdit code { background-color: palette(alternate-base); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-weight: bold; }
+
         QPushButton#runButton { 
             background-color: palette(base); 
             border: 1px solid palette(mid);
@@ -302,7 +324,7 @@ void DuelTaskWindow::setTask(const cppforge::entities::CodingTask &task)
 {
     currentTask_ = task;
     customTitleBar_->setTitle("DUEL: " + task.getTitle());
-    practiceEdit_->setPlainText(task.getDescription());
+    practiceEdit_->setMarkdown(task.getDescription());
     codeEditor_->setPlainText(task.getInitialCode());
 
     timeLeft_ = 600;

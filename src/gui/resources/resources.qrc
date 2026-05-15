@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>icons/main_logo.ico</file>
         <file>icons/main_logo_dark.ico</file>
+        <file>icons/main_logo_pale.ico</file>
         <file>images/eye_open.png</file>
         <file>images/eye_slash.png</file>
         <file>images/default_avatar1.png</file>
@@ -10,5 +11,9 @@
         <file>images/default_avatar4.png</file>
         <file>images/lb.png</file>
         <file>images/patrick.png</file>
+        <file>images/terry.png</file>
+        <file>images/tony.png</file>
+        <file>images/walter.png</file>
+        <file>images/kanye.png</file>
     </qresource>
 </RCC>

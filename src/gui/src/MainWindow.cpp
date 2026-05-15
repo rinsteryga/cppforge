@@ -14,6 +14,7 @@
 #include "services/DuelManager.hpp"
 
 #include <QApplication>
+#include <QDate>
 #include <QDebug>
 #include <QFont>
 #include <QFrame>
@@ -33,8 +34,10 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSettings>
+#include <QShortcut>
 #include <QSpacerItem>
 #include <QStackedWidget>
+#include <QStringList>
 #include <QStyleOption>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -96,10 +99,6 @@ void MainWindow::setUserId(int id)
             m_currentUsername = userOpt->getUsername();
             QString avatar = userOpt->getAvatarPath();
 
-            if (profilePage)
-            {
-                profilePage->setUserData(id, m_currentUsername, avatar);
-            }
             if (duelPage)
             {
                 duelPage->setUserId(id);
@@ -114,10 +113,38 @@ void MainWindow::setUserId(int id)
 
                 duelPage->updateUserStats(m_currentUsername, userOpt->getDuelPoints(), winrate, avatar);
             }
+
+            if (profilePage)
+            {
+                profilePage->setUserData(id, m_currentUsername, avatar);
+            }
         }
     }
 
     loadAllModulesProgress();
+    updateDailyGoal();
+    updateTipOfTheDay();
+}
+
+void MainWindow::updateDailyGoal()
+{
+    if (m_currentUserId == -1 || !m_userService || !dailyProgressBar_ || !dailyProgressLabel_)
+        return;
+
+    int solvedToday = m_userService->getTodaySolvedTasksCount(m_currentUserId);
+
+    dailyProgressBar_->setTextVisible(false);
+    dailyProgressBar_->setValue(std::min(solvedToday, 3));
+
+    dailyProgressLabel_->setText(QString("Solved today: %1 / 3").arg(solvedToday));
+}
+
+void MainWindow::updateTipOfTheDay()
+{
+    if (!m_courseService || !tipLabel_)
+        return;
+
+    tipLabel_->setText(m_courseService->getRandomTip());
 }
 
 void MainWindow::setUserService(cppforge::services::UserService *service)
@@ -238,8 +265,10 @@ void MainWindow::updateModuleProgress(int moduleId, int progress)
 void MainWindow::onTaskWindowClosed()
 {
     this->setWindowOpacity(0.0);
-    WindowStateManager::instance().applyState(this, QSize(1400, 950));
+    WindowStateManager::instance().applyState(this, QSize(1200, 800));
     loadAllModulesProgress();
+    updateDailyGoal();
+    updateTipOfTheDay();
 
     if (m_currentOpenModuleId != -1)
     {
@@ -345,8 +374,7 @@ void MainWindow::fadeOut()
                     taskWindow_->loadModule(pendingModuleId_);
                     WindowStateManager::instance().captureState(this);
                     this->hide();
-                    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1300, 900));
-                    taskWindow_->fadeIn();
+                    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1200, 800));
                     pendingModuleId_ = -1;
                     isTransitioning_ = false;
                 }
@@ -356,8 +384,8 @@ void MainWindow::fadeOut()
 
 void MainWindow::setupWindowProperties()
 {
-    setMinimumSize(1100, 800);
-    resize(1400, 950);
+    setMinimumSize(1000, 680);
+    resize(1200, 800);
     setWindowTitle("cppforge - Main Menu");
     setWindowIcon(QIcon(":/icons/main_logo.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
@@ -404,22 +432,19 @@ void MainWindow::setupLeftPanel()
     layout->addWidget(logoContainer, 0, Qt::AlignCenter);
     layout->addSpacing(20);
 
-    learnBtn = new QPushButton("Learn");
-    ratingBtn = new QPushButton("Duel");
-    profileBtn = new QPushButton("Profile");
-    logoutBtn = new QPushButton("Logout");
+    learnBtn = new QPushButton("LEARN");
+    ratingBtn = new QPushButton("DUELS");
+    profileBtn = new QPushButton("PROFILE");
+    logoutBtn = new QPushButton("LOGOUT");
 
-    QFont btnFont("Roboto", 13, QFont::Medium);
+    QFont btnFont("Roboto", 11, QFont::Black);
     for (auto btn : {learnBtn, ratingBtn, profileBtn, logoutBtn})
     {
         btn->setFont(btnFont);
         btn->setCursor(Qt::PointingHandCursor);
-        btn->setFixedHeight(52);
-        btn->setObjectName("navButton");
+        btn->setFixedHeight(54);
+        btn->setObjectName("sideBarButton");
     }
-
-    logoutBtn->setStyleSheet("QPushButton#navButton { color: #d9534f; } "
-                             "QPushButton#navButton:hover { background-color: #fff1f0; color: #d9534f; }");
 
     layout->addWidget(learnBtn);
     layout->addWidget(ratingBtn);
@@ -429,6 +454,7 @@ void MainWindow::setupLeftPanel()
 
     layout->addWidget(logoutBtn);
 
+    learnBtn->setProperty("active", true);
     connect(learnBtn, &QPushButton::clicked, this, &MainWindow::onLearnButtonClicked);
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::onProfileButtonClicked);
     connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogoutClicked);
@@ -439,6 +465,9 @@ void MainWindow::setupLeftPanel()
                 if (duelPage)
                 {
                     contentStack->setCurrentWidget(duelPage);
+                    for (auto b : {learnBtn, ratingBtn, profileBtn, logoutBtn})
+                        b->setProperty("active", b == ratingBtn);
+                    setupStyles();
                 }
             });
 }
@@ -454,26 +483,39 @@ void MainWindow::setupCenterPanel()
     eventCard->setProperty("class", "card");
     auto eLayout = new QVBoxLayout(eventCard.get());
     eLayout->setContentsMargins(25, 25, 25, 25);
+    eLayout->setSpacing(10);
 
-    auto eventTitle = new QLabel("Events");
+    auto eventTitle = new QLabel("💡 Interesting fact");
     eventTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     eLayout->addWidget(eventTitle);
-    eLayout->addWidget(new QLabel("No upcoming events"));
+
+    tipLabel_ = new QLabel("Loading tip...");
+    tipLabel_->setFont(QFont("Roboto", 12));
+    tipLabel_->setWordWrap(true);
+    tipLabel_->setStyleSheet("color: palette(text); line-height: 1.4;");
+
+    eLayout->addWidget(tipLabel_);
     eLayout->addStretch();
 
     dailyTaskCard = std::make_unique<QFrame>();
     dailyTaskCard->setProperty("class", "card");
     auto dLayout = new QVBoxLayout(dailyTaskCard.get());
     dLayout->setContentsMargins(25, 25, 25, 25);
+    dLayout->setSpacing(15);
 
-    auto dailyTitle = new QLabel("Daily Task");
+    auto dailyTitle = new QLabel("🎯 Daily Goal");
     dailyTitle->setFont(QFont("Roboto", 18, QFont::Bold));
     dLayout->addWidget(dailyTitle);
 
-    auto dailyProgress = new QProgressBar();
-    dailyProgress->setFixedHeight(16);
-    dailyProgress->setValue(0);
-    dLayout->addWidget(dailyProgress);
+    dailyProgressLabel_ = new QLabel("Solved today: 0 / 3");
+    dailyProgressLabel_->setFont(QFont("Roboto", 12));
+    dLayout->addWidget(dailyProgressLabel_);
+
+    dailyProgressBar_ = new QProgressBar();
+    dailyProgressBar_->setFixedHeight(16);
+    dailyProgressBar_->setMaximum(3);
+    dailyProgressBar_->setValue(0);
+    dLayout->addWidget(dailyProgressBar_);
     dLayout->addStretch();
 
     centerPanelLayout_->addWidget(eventCard.get());
@@ -551,8 +593,8 @@ void MainWindow::setupUI()
     auto contentContainer = new QWidget();
     contentContainer->setObjectName("contentContainer");
     auto containerLayout = new QHBoxLayout(contentContainer);
-    containerLayout->setContentsMargins(30, 30, 30, 30);
-    containerLayout->setSpacing(30);
+    containerLayout->setContentsMargins(20, 20, 20, 20);
+    containerLayout->setSpacing(20);
 
     setupLeftPanel();
     setupRightPanel();
@@ -589,7 +631,9 @@ void MainWindow::setupUI()
             {
                 auto manager = duelPage->getDuelManager();
 
-                manager->sendIdentity(m_currentUsername);
+                auto userOpt = m_userService->getUser(m_currentUsername);
+                QString avatarPath = userOpt ? userOpt->getAvatarPath() : "";
+                manager->sendIdentity(m_currentUsername, avatarPath);
 
                 m_duelTaskWindow = new DuelTaskWindow(manager);
                 m_duelTaskWindow->setThemeService(m_themeService);
@@ -606,7 +650,9 @@ void MainWindow::setupUI()
                 connect(m_duelTaskWindow, &DuelTaskWindow::sessionClosed, this,
                         [this]()
                         {
-                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
+                            WindowStateManager::instance().applyState(this, QSize(1200, 800));
+                            updateDailyGoal();
+                            updateTipOfTheDay();
                             this->fadeIn();
                         });
 
@@ -614,13 +660,15 @@ void MainWindow::setupUI()
                         [this]()
                         {
                             m_duelTaskWindow = nullptr;
-                            WindowStateManager::instance().applyState(this, QSize(1400, 950));
+                            WindowStateManager::instance().applyState(this, QSize(1200, 800));
+                            updateDailyGoal();
+                            updateTipOfTheDay();
                             this->fadeIn();
                         });
 
                 WindowStateManager::instance().captureState(this);
                 this->hide();
-                WindowStateManager::instance().applyState(m_duelTaskWindow, QSize(1300, 900));
+                WindowStateManager::instance().applyState(m_duelTaskWindow, QSize(1200, 800));
             });
 
     roadmapPage = new QWidget();
@@ -670,45 +718,81 @@ void MainWindow::setupStyles()
 {
     bool isDark = (palette().color(QPalette::Window).lightness() < 128);
 
-    QString hoverColor, accentColor;
-    QString hoverText = "white";
+    QString sidebarBg, buttonColor, buttonHover, buttonActive, buttonText, activeBorder, hoverColor, accentColor,
+        hoverText;
+
+    activeBorder = isDark ? "#0e639c" : "#62639b";
+    hoverColor = isDark ? "#1177bb" : "#f3e8ff";
+    hoverText = isDark ? "white" : "black";
 
     if (isDark)
     {
-        hoverColor = "#0e639c";
+        sidebarBg = "#1a1a1a";
+        buttonColor = "transparent";
+        buttonHover = hoverColor;
+        buttonActive = "transparent";
+        buttonText = "#afafaf";
         accentColor = "#0e639c";
     }
     else
     {
-        hoverColor = "#f3e8ff";
+        sidebarBg = "white";
+        buttonColor = "transparent";
+        buttonHover = hoverColor;
+        buttonActive = "transparent";
+        buttonText = "#777777";
         accentColor = "#62639b";
-        hoverText = "black";
     }
 
     setStyleSheet(QString(R"(
-        QWidget { background-color: palette(alternate-base); font-family: 'Roboto'; color: palette(text); }
+        #MainWindow, #contentContainer, #sideBar { 
+            background-color: palette(alternate-base); 
+            font-family: 'Roboto'; 
+            color: palette(text); 
+        }
         #MainWindow { background-color: palette(base); border: 1px solid palette(mid); }
         
-        QFrame#sideBar { background-color: palette(base); border: 1px solid palette(mid); }
+        QFrame#sideBar { background-color: %1; border-right: 2px solid palette(mid); }
         
         QLabel { background-color: transparent; border: none; }
 
-        QPushButton#navButton { background-color: transparent; border: none; color: palette(window-text); text-align: left; padding-left: 20px; }
-        QPushButton#navButton:hover { background-color: %1; color: %2; }
+        QPushButton#sideBarButton { 
+            background-color: %2; 
+            border: 2px solid transparent; 
+            color: %5; 
+            text-align: left; 
+            padding-left: 20px; 
+            border-radius: 12px; 
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        QPushButton#sideBarButton:hover { background-color: %3; }
+        QPushButton#sideBarButton[active="true"] { 
+            background-color: %4; 
+            border: 2px solid %6; 
+            border-bottom: 4px solid %6; 
+            color: %6; 
+        }
         
         QFrame[class="card"] { background-color: palette(base); border: 1px solid palette(mid); border-radius: 8px; }
         
         QProgressBar { background: palette(alternate-base); border: 1px solid palette(mid); text-align: center; color: palette(text); border-radius: 4px; }
-        QProgressBar::chunk { background: %3; border-radius: 4px; }
+        QProgressBar::chunk { background: %8; border-radius: 4px; }
         
         QPushButton { background: palette(button); color: palette(button-text); border: 1px solid palette(mid); border-radius: 4px; padding: 5px 15px; font-weight: bold; }
-        QPushButton:hover { background: %1; color: %2; }
+        QPushButton:hover { background: %7; color: %9; }
         QPushButton#logoutButton:hover { background: palette(link); color: palette(highlighted-text); }
         QPushButton:disabled { background: palette(disabled, button); color: palette(disabled, button-text); }
     )")
+                      .arg(sidebarBg)
+                      .arg(buttonColor)
+                      .arg(buttonHover)
+                      .arg(buttonActive)
+                      .arg(buttonText)
+                      .arg(activeBorder)
                       .arg(hoverColor)
-                      .arg(hoverText)
-                      .arg(accentColor));
+                      .arg(accentColor)
+                      .arg(hoverText));
 
     style()->unpolish(this);
     style()->polish(this);
@@ -728,7 +812,53 @@ void MainWindow::onModuleButtonClicked()
 
 void MainWindow::onLearnButtonClicked()
 {
-    contentStack->setCurrentIndex(0);
+    if (contentStack->currentWidget() == roadmapPage)
+    {
+        contentStack->setCurrentIndex(0);
+        updateTipOfTheDay();
+    }
+    else
+    {
+        if (m_courseService && m_currentUserId != -1)
+        {
+            std::vector<int> progresses = m_courseService->getAllModulesProgress(m_currentUserId);
+            int targetModuleId = 1;
+            for (size_t i = 0; i < progresses.size(); ++i)
+            {
+                if (progresses[i] < 100)
+                {
+                    targetModuleId = static_cast<int>(i + 1);
+                    break;
+                }
+            }
+
+            loadRoadmapForModule(targetModuleId);
+            contentStack->setCurrentWidget(roadmapPage);
+
+            QTimer::singleShot(100,
+                               [this]()
+                               {
+                                   if (roadmapWidget)
+                                   {
+                                       int targetY = roadmapWidget->getFirstIncompleteY();
+                                       QScrollArea *scroll = roadmapPage->findChild<QScrollArea *>();
+                                       if (scroll && scroll->verticalScrollBar())
+                                       {
+                                           int scrollValue = targetY - (scroll->height() / 2);
+                                           scroll->verticalScrollBar()->setValue(scrollValue);
+                                       }
+                                   }
+                               });
+        }
+        else
+        {
+            contentStack->setCurrentIndex(0);
+        }
+    }
+
+    for (auto b : {learnBtn, ratingBtn, profileBtn, logoutBtn})
+        b->setProperty("active", b == learnBtn);
+    setupStyles();
 }
 
 void MainWindow::onProfileButtonClicked()
@@ -746,6 +876,9 @@ void MainWindow::onProfileButtonClicked()
         }
     }
     contentStack->setCurrentIndex(1);
+    for (auto b : {learnBtn, ratingBtn, profileBtn, logoutBtn})
+        b->setProperty("active", b == profileBtn);
+    setupStyles();
 }
 
 void MainWindow::animateToTaskWindow(int moduleId)
@@ -810,15 +943,48 @@ void MainWindow::changeEvent(QEvent *event)
             return;
         }
 
-        if (this->isMaximized())
-        {
-        }
-        else
+        if (!this->isMaximized())
         {
             this->setContentsMargins(0, 0, 0, 0);
         }
     }
     QWidget::changeEvent(event);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_L && !event->isAutoRepeat())
+    {
+        m_keyLDown = true;
+    }
+    if (event->key() == Qt::Key_B && !event->isAutoRepeat())
+    {
+        m_keyBDown = true;
+    }
+
+    if (m_keyLDown && m_keyBDown)
+    {
+        if (contentStack && contentStack->currentWidget() == profilePage)
+        {
+            onSecretTaskTriggered();
+            m_keyLDown = false;
+            m_keyBDown = false;
+        }
+    }
+    QWidget::keyPressEvent(event);
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_L && !event->isAutoRepeat())
+    {
+        m_keyLDown = false;
+    }
+    if (event->key() == Qt::Key_B && !event->isAutoRepeat())
+    {
+        m_keyBDown = false;
+    }
+    QWidget::keyReleaseEvent(event);
 }
 
 void MainWindow::onLogoutClicked()
@@ -881,6 +1047,7 @@ void MainWindow::onSecretTaskTriggered()
     QString initCode = "#include <iostream>\n#include <string>\n#include <vector>\n#include <iomanip>\n\n"
                        "using namespace std;\n\n"
                        "int main() {\n"
+                       "    // Хэ! Удачи!\n"
                        "    \n"
                        "    return 0;\n"
                        "}\n";
@@ -921,9 +1088,19 @@ void MainWindow::onSecretTaskTriggered()
     }
 
     taskWindow_->setUserId(m_currentUserId);
+    if (m_themeService)
+    {
+        taskWindow_->setThemeService(m_themeService);
+    }
     taskWindow_->setTask(secretTask);
 
+    WindowStateManager::instance().captureState(this);
     this->hide();
-    taskWindow_->show();
-    taskWindow_->fadeIn();
+
+    if (transitionAnimation_ && transitionAnimation_->state() == QAbstractAnimation::Running)
+    {
+        transitionAnimation_->stop();
+    }
+
+    WindowStateManager::instance().applyState(taskWindow_.get(), QSize(1200, 800));
 }

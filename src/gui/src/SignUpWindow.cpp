@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QEvent>
 #include <QFile>
 #include <QFont>
 #include <QFontMetrics>
@@ -14,7 +15,9 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
+#include <QRegularExpression>
 #include <QScreen>
+#include <QScrollArea>
 #include <QSettings>
 #include <QSizePolicy>
 #include <QStyleOption>
@@ -79,10 +82,9 @@ void SignUpWindow::setupUI()
 
 void SignUpWindow::setupWindowProperties()
 {
-    setMinimumSize(900, 600);
-    resize(1280, 900);
+    setMinimumSize(600, 500);
     setWindowTitle("Sign Up - cppforge");
-    setWindowIcon(QIcon(":/icons/main_logo.ico"));
+    setWindowIcon(QIcon(":/icons/main_logo_pale.ico"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setObjectName("SignUpWindow");
     setupStyles();
@@ -103,38 +105,50 @@ void SignUpWindow::setupStyles()
 
     QString btnColor = isDark ? "#0e639c" : "#62639b";
     QString btnHover = isDark ? "#1177bb" : "#f3e8ff";
-    QString btnText = "white";
     QString hoverText = isDark ? "white" : "black";
-    QString linkColor = isDark ? "#3794ff" : "#4f46e5";
+    QString linkColor = isDark ? "#3794ff" : "#62639b";
 
-    setStyleSheet(QString(R"(
-        #SignUpWindow { background-color: palette(window); border: 1px solid palette(mid); border-radius: 20px; }
+    QString style = QString(R"(
+        #SignUpWindow, #centerContainer { background-color: palette(window); border: none; }
         
         QPushButton#signUpButton { 
             background-color: %1; 
-            color: %3; 
+            color: white; 
             border-radius: 12px; 
             font-size: 24px; 
             font-weight: bold; 
             border: none; 
         }
-        QPushButton#signUpButton:hover { background-color: %2; color: %4; }
+        QPushButton#signUpButton:hover { background-color: %2; color: %3; }
         
         QPushButton#backToLoginButton { 
-            color: %5; 
+            color: %4; 
             background-color: transparent; 
             border: none; 
             border-bottom: 1px solid transparent; 
             font-size: 18px; 
             padding: 15px; 
         }
-        QPushButton#backToLoginButton:hover { border-bottom: 1px solid %5; }
+        QPushButton#backToLoginButton:hover { color: %2; border-bottom: 1px solid %2; }
+        
+        QLineEdit { 
+            background-color: palette(alternate-base); 
+            color: palette(text); 
+            padding: 12px 20px; 
+            border: 2px solid palette(mid); 
+            border-radius: 10px; 
+            font-size: 18px; 
+        }
+        QLineEdit:focus { border: 2px solid %1; }
     )")
-                      .arg(btnColor)
-                      .arg(btnHover)
-                      .arg(btnText)
-                      .arg(hoverText)
-                      .arg(linkColor));
+                        .arg(btnColor)
+                        .arg(btnHover)
+                        .arg(hoverText)
+                        .arg(linkColor);
+
+    setStyleSheet(style);
+    if (centerContainer_)
+        centerContainer_->setStyleSheet(style);
 }
 
 void SignUpWindow::setupTitleBar()
@@ -149,23 +163,30 @@ void SignUpWindow::setupLogo()
     if (!iconLabel_)
     {
         iconLabel_ = std::make_unique<QLabel>(this);
-        iconLabel_->setFixedSize(200, 200);
+        iconLabel_->setMinimumSize(120, 120);
+        iconLabel_->setMaximumSize(200, 200);
+        iconLabel_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     }
 
-    QString logoPath = ":/icons/main_logo.ico";
+    QString logoPath = ":/icons/main_logo_pale.ico";
     if (themeService_ && themeService_->getCurrentTheme() == cppforge::services::Theme::Dark)
     {
         logoPath = ":/icons/main_logo_dark.ico";
     }
 
-    QPixmap pixmap(logoPath);
-    if (pixmap.isNull())
+    QIcon logoIcon(logoPath);
+    QPixmap pixmap = logoIcon.pixmap(200, 200);
+
+    if (!pixmap.isNull())
     {
-        showFallbackLogo();
+        iconLabel_->setPixmap(pixmap);
+        iconLabel_->setText("");
+        iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     }
     else
     {
-        iconLabel_->setPixmap(pixmap.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        iconLabel_->clear();
+        iconLabel_->setStyleSheet("background-color: transparent; border: none;");
     }
     iconLabel_->setAlignment(Qt::AlignCenter);
     if (customTitleBar_)
@@ -176,11 +197,8 @@ void SignUpWindow::setupLogo()
 
 void SignUpWindow::showFallbackLogo()
 {
-    iconLabel_->setFixedSize(200, 200);
-    iconLabel_->setStyleSheet("QLabel { background-color: #4285f4; border-radius: 20px; border: 4px solid #356ac3; "
-                              "color: white; font-size: 48px; font-weight: bold; }");
-    iconLabel_->setText("C++");
-    iconLabel_->setAlignment(Qt::AlignCenter);
+    iconLabel_->setStyleSheet("background-color: transparent; border: none;");
+    iconLabel_->setText("");
 }
 
 void SignUpWindow::setupTitle()
@@ -197,35 +215,35 @@ void SignUpWindow::setupInputFields()
 {
     usernameInput_ = std::make_unique<QLineEdit>();
     usernameInput_->setPlaceholderText("Username");
-    usernameInput_->setFixedHeight(65);
-    usernameInput_->setFixedWidth(500);
+    usernameInput_->setMinimumSize(300, 50);
+    usernameInput_->setMaximumSize(500, 65);
 
     QFont inputFont("Roboto", 16);
     usernameInput_->setFont(inputFont);
     usernameInput_->setStyleSheet(
-        "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 18px 20px; border: 2px "
+        "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 12px 20px; border: 2px "
         "solid palette(mid); border-radius: 10px; "
         "font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; outline: none; } "
         "QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     emailInput_ = std::make_unique<QLineEdit>();
     emailInput_->setPlaceholderText("Email address");
-    emailInput_->setFixedHeight(65);
-    emailInput_->setFixedWidth(500);
+    emailInput_->setMinimumSize(300, 50);
+    emailInput_->setMaximumSize(500, 65);
     emailInput_->setFont(inputFont);
     emailInput_->setStyleSheet("QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: "
-                               "18px 20px; border: 2px solid palette(mid); border-radius: 10px; "
+                               "12px 20px; border: 2px solid palette(mid); border-radius: 10px; "
                                "font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; outline: none; } "
                                "QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
 
     passwordInput_ = std::make_unique<QLineEdit>();
     passwordInput_->setPlaceholderText("Password");
     passwordInput_->setEchoMode(QLineEdit::Password);
-    passwordInput_->setFixedHeight(65);
-    passwordInput_->setFixedWidth(500);
+    passwordInput_->setMinimumSize(300, 50);
+    passwordInput_->setMaximumSize(500, 65);
     passwordInput_->setFont(inputFont);
     passwordInput_->setStyleSheet(
-        "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 18px 50px 18px 20px; "
+        "QLineEdit { background-color: palette(alternate-base); color: palette(text); padding: 12px 50px 12px 20px; "
         "border: 2px solid palette(mid); border-radius: "
         "10px; font-size: 18px; } QLineEdit:focus { border: 2px solid #007acc; outline: "
         "none; } QLineEdit::placeholder { font-size: 18px; color: palette(window-text); }");
@@ -261,8 +279,8 @@ void SignUpWindow::togglePasswordVisibility()
 void SignUpWindow::setupSignUpButton()
 {
     signUpButton_ = std::make_unique<QPushButton>("Create Account");
-    signUpButton_->setFixedHeight(85);
-    signUpButton_->setFixedWidth(500);
+    signUpButton_->setMinimumSize(300, 60);
+    signUpButton_->setMaximumSize(500, 85);
     QFont buttonFont("Roboto", 22, QFont::Bold);
     signUpButton_->setFont(buttonFont);
     signUpButton_->setCursor(Qt::PointingHandCursor);
@@ -285,35 +303,53 @@ void SignUpWindow::setupLayout()
     mainLayout_->setContentsMargins(0, 0, 0, 0);
     mainLayout_->addWidget(customTitleBar_.get());
 
-    auto centerContainer = std::make_unique<QWidget>();
-    auto centerLayout = std::make_unique<QVBoxLayout>();
+    auto *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameStyle(QFrame::NoFrame);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setStyleSheet("background: transparent;");
+
+    centerContainer_ = new QWidget();
+    centerContainer_->setObjectName("centerContainer");
+    centerContainer_->setStyleSheet("background: transparent;");
+    auto centerLayout = new QVBoxLayout(centerContainer_);
     centerLayout->setAlignment(Qt::AlignCenter);
     centerLayout->setSpacing(25);
+    centerLayout->setContentsMargins(40, 20, 40, 40);
 
+    centerLayout->addStretch(1);
     centerLayout->addWidget(iconLabel_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(20);
+    centerLayout->addSpacing(5);
     centerLayout->addWidget(titleLabel_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(40);
+    centerLayout->addSpacing(30);
     centerLayout->addWidget(usernameInput_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(20);
+    centerLayout->addSpacing(15);
     centerLayout->addWidget(emailInput_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(20);
+    centerLayout->addSpacing(15);
 
     auto passwordContainer = std::make_unique<QWidget>();
-    passwordContainer->setFixedSize(500, 65);
+    passwordContainer->setMinimumSize(300, 50);
+    passwordContainer->setMaximumSize(500, 65);
     passwordInput_->setParent(passwordContainer.get());
-    passwordInput_->setGeometry(0, 0, 500, 65);
     passwordToggleButton_->setParent(passwordContainer.get());
-    passwordToggleButton_->setGeometry(500 - 42, 16, 32, 32);
+
+    auto *pLayout = new QHBoxLayout(passwordContainer.get());
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->addWidget(passwordInput_.get());
+    passwordToggleButton_->raise();
+
+    passwordContainer->installEventFilter(this);
 
     centerLayout->addWidget(passwordContainer.release(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(40);
+    centerLayout->addSpacing(35);
     centerLayout->addWidget(signUpButton_.get(), 0, Qt::AlignCenter);
-    centerLayout->addSpacing(30);
+    centerLayout->addSpacing(25);
     centerLayout->addWidget(backToLoginButton_.get(), 0, Qt::AlignCenter);
+    centerLayout->addStretch(1);
 
-    centerContainer->setLayout(centerLayout.release());
-    mainLayout_->addWidget(centerContainer.release());
+    centerContainer_->setLayout(centerLayout);
+    scrollArea->setWidget(centerContainer_);
+    mainLayout_->addWidget(scrollArea);
 }
 
 void SignUpWindow::setupConnections()
@@ -328,13 +364,39 @@ void SignUpWindow::setupConnections()
 
 void SignUpWindow::onSignUpButtonClicked()
 {
-    if (usernameInput_->text().isEmpty() || emailInput_->text().isEmpty() || passwordInput_->text().isEmpty())
+    QString username = usernameInput_->text().trimmed();
+    QString email = emailInput_->text().trimmed();
+    QString password = passwordInput_->text();
+
+    if (username.isEmpty() || email.isEmpty() || password.isEmpty())
     {
-        QMessageBox::warning(this, "Error", "Please fill all fields");
+        QMessageBox::warning(this, "Error", "Please fill all fields.");
         return;
     }
 
-    if (authManager_ && authManager_->registerUser(usernameInput_->text(), emailInput_->text(), passwordInput_->text()))
+    QRegularExpression usernameRegex("^[a-zA-Z0-9_]{3,20}$");
+    if (!usernameRegex.match(username).hasMatch())
+    {
+        QMessageBox::warning(
+            this, "Invalid Username",
+            "Username must be 3-20 characters long and contain only letters, numbers, and underscores.");
+        return;
+    }
+
+    QRegularExpression emailRegex("^[\\w\\.-]+@[\\w\\.-]+\\.[a-zA-Z]{2,}$");
+    if (!emailRegex.match(email).hasMatch())
+    {
+        QMessageBox::warning(this, "Invalid Email", "Please enter a valid email address.");
+        return;
+    }
+
+    if (password.length() < 6)
+    {
+        QMessageBox::warning(this, "Weak Password", "Password must be at least 6 characters long.");
+        return;
+    }
+
+    if (authManager_ && authManager_->registerUser(username, email, password))
     {
         QMessageBox::information(this, "Success", "Account created successfully!");
         WindowStateManager::instance().captureState(this);
@@ -354,6 +416,19 @@ void SignUpWindow::onBackToLoginClicked()
     WindowStateManager::instance().captureState(this);
     this->hide();
     emit switchToLogin();
+}
+
+bool SignUpWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::Resize || event->type() == QEvent::Move)
+    {
+        if (passwordInput_ && passwordToggleButton_ && passwordInput_->parentWidget())
+        {
+            QWidget *container = passwordInput_->parentWidget();
+            passwordToggleButton_->move(container->width() - 42, (container->height() - 32) / 2);
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void SignUpWindow::setThemeService(cppforge::services::ThemeService *service)

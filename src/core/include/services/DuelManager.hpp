@@ -215,6 +215,7 @@ namespace cppforge::services
         QTcpSocket *socket_ = nullptr;
         QByteArray buffer_;
         QString m_localPlayerName;
+        QString m_localAvatarPath;
         QString m_opponentName;
         bool m_isHost = false;
         bool m_isIntentionalDisconnect = false;
