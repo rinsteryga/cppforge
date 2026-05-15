@@ -268,33 +268,33 @@ void DuelPage::addLeaderboardEntry(const QString &name, bool isHost, const QStri
     auto avatar = new QLabel();
     avatar->setFixedSize(32, 32);
 
-    if (!avatarPath.isEmpty())
+    QString finalAvatarPath = avatarPath;
+    if (finalAvatarPath.isEmpty() || finalAvatarPath == "NULL")
     {
-        QPixmap pix(avatarPath);
-        if (!pix.isNull())
-        {
-            QPixmap scaled = pix.scaled(32, 32, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-            QPixmap out(32, 32);
-            out.fill(Qt::transparent);
-            QPainter p(&out);
-            p.setRenderHint(QPainter::Antialiasing);
-            p.setBrush(QBrush(scaled));
-            p.setPen(Qt::NoPen);
-            p.drawEllipse(0, 0, 32, 32);
-            p.end();
-            avatar->setPixmap(out);
-        }
-        else
-        {
-            avatar->setStyleSheet("background-color: palette(button); border-radius: 16px;");
-        }
+        finalAvatarPath = ":/images/default_avatar1.png";
+    }
+
+    QPixmap pix(finalAvatarPath);
+    if (!pix.isNull())
+    {
+        QPixmap scaled = pix.scaled(32, 32, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        QPixmap out(32, 32);
+        out.fill(Qt::transparent);
+        QPainter p(&out);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(QBrush(scaled));
+        p.setPen(Qt::NoPen);
+        p.drawEllipse(0, 0, 32, 32);
+        p.end();
+        avatar->setPixmap(out);
     }
     else
     {
         avatar->setStyleSheet("background-color: palette(button); border-radius: 16px;");
     }
 
-    auto lblName = new QLabel(name + (isHost ? " (You)" : ""));
+    bool isMe = (name == m_lblUsername->text());
+    auto lblName = new QLabel(name + (isMe ? " (You)" : ""));
     lblName->setFont(QFont("Roboto", 11, isHost ? QFont::Bold : QFont::Normal));
 
     layout->addWidget(avatar);
@@ -313,8 +313,16 @@ void DuelPage::addLeaderboardEntry(const QString &name, bool isHost, const QStri
 void DuelPage::handleOpponentIdentified(const QString &name, const QString &avatarPath)
 {
     clearLobbyList();
-    addLeaderboardEntry(m_lblUsername->text(), true, m_currentAvatarPath);
-    addLeaderboardEntry(name, false, avatarPath);
+    if (m_isHosting)
+    {
+        addLeaderboardEntry(m_lblUsername->text(), true, m_currentAvatarPath);
+        addLeaderboardEntry(name, false, avatarPath);
+    }
+    else
+    {
+        addLeaderboardEntry(name, true, avatarPath);
+        addLeaderboardEntry(m_lblUsername->text(), false, m_currentAvatarPath);
+    }
 }
 
 void DuelPage::onCreateLobbyClicked()
@@ -341,8 +349,12 @@ void DuelPage::resetLobby()
 {
     m_duelManager->disconnectAll();
     m_isHosting = false;
+    m_btnCreateLobby->setEnabled(true);
     m_btnCreateLobby->setText("CREATE LOBBY");
     m_btnCreateLobby->setProperty("state", "default");
+    m_btnCreateLobby->style()->unpolish(m_btnCreateLobby);
+    m_btnCreateLobby->style()->polish(m_btnCreateLobby);
+
     m_btnJoinLobby->setEnabled(true);
     m_btnJoinLobby->setText("JOIN LOBBY");
     m_btnStartDuel->setVisible(false);
@@ -504,7 +516,10 @@ void DuelPage::updateUserStats(const QString &username, int rating, double winra
     m_lblRating->setText(QString("PTS: %1").arg(rating));
     m_lblWinrate->setText(QString("WR: %1%").arg(winrate, 0, 'f', 1));
 
-    m_currentAvatarPath = avatarPath;
+    if (!avatarPath.isEmpty() && avatarPath != "NULL")
+    {
+        m_currentAvatarPath = avatarPath;
+    }
     if (m_duelManager)
     {
         m_duelManager->sendIdentity(username, avatarPath);
