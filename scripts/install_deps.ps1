@@ -83,30 +83,23 @@ if ($IsInstalled) {
         $SkipDbConfig = $false
     }
 } else {
-    Write-Host "Checking for Visual C++ Redistributable..."
-    $VcRedistPath = "$env:TEMP\vc_redist.x64.exe"
-    if (!(Test-Path $VcRedistPath)) {
-        Write-Host "Downloading VC++ Redistributable (Required for PostgreSQL)..."
-        Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile $VcRedistPath -UseBasicParsing
-    }
-    Write-Host "Installing VC++ Redistributable..."
-    Start-Process -FilePath $VcRedistPath -ArgumentList "/install /quiet /norestart" -Wait -NoNewWindow
     
-    $PostgresInstallerUrl = "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
-    $InstallerPath = "$env:TEMP\postgresql-installer.exe"
-
-    Write-Host "Downloading PostgreSQL installer (can take a few minutes)..."
-    if (!(Test-Path $InstallerPath) -or ((Get-Item $InstallerPath).Length -lt 50MB)) {
-        Invoke-WebRequest -Uri $PostgresInstallerUrl -OutFile $InstallerPath -UseBasicParsing
-        
-        if ((Get-Item $InstallerPath).Length -lt 50MB) {
-            throw "Download failed! File is too small. URL might be broken."
-        }
+    Write-Host "Installing Visual C++ Redistributable (Required for PostgreSQL)..."
+    $VcRedistPath = Join-Path $InstallDir "scripts\vc_redist.x64.exe"
+    
+    if (Test-Path $VcRedistPath) {
+        Start-Process -FilePath $VcRedistPath -ArgumentList "/install /quiet /norestart" -Wait -NoNewWindow
     } else {
-        Write-Host "Using cached PostgreSQL installer."
+        Write-Warning "VC++ Redistributable not found in package at $VcRedistPath! Skipping..."
+    }
+    
+    $InstallerPath = Join-Path $InstallDir "scripts\postgresql-16.4-1-windows-x64.exe"
+
+    if (-not (Test-Path $InstallerPath)) {
+        throw "Bundled PostgreSQL installer not found at $InstallerPath!"
     }
 
-    Write-Host "Installing PostgreSQL (progress window will be hidden, please wait 3-10 minutes)..."
+    Write-Host "Installing PostgreSQL (progress window will be hidden, please wait 1-3 minutes)..."
     $InstallArgs = @(
         "--mode", "unattended",
         "--unattendedmodeui", "none",
@@ -118,12 +111,13 @@ if ($IsInstalled) {
     $process = Start-Process -FilePath $InstallerPath -ArgumentList $InstallArgs -Wait -NoNewWindow -PassThru
 
     if ($process.ExitCode -ne 0) {
-        throw "PostgreSQL installation failed with Exit Code $($process.ExitCode). You may need to install Microsoft Visual C++ Redistributable."
+        throw "PostgreSQL installation failed with Exit Code $($process.ExitCode)."
     }
 
     if (!(Test-Path $PgBinDir)) {
         throw "Cannot find expected PostgreSQL bin directory at $PgBinDir"
     }
+
 
     $env:PGPASSWORD = $PG_PASSWORD
     $env:PGCLIENTENCODING = "utf8"
