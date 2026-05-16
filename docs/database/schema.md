@@ -1,14 +1,14 @@
 # Database Schema Documentation  
 
 **Project:** cppforge  
-**Version:** 1.0  
+**Version:** 1.0.3  
 
 ---
 
 ## 1. Overview
 
 The schema is designed to support a modular learning platform containing lessons, coding tasks, automated testing, execution results, and user progress tracking.  
-It also provides a flexible achievement system and detailed submission history.
+It also provides a flexible achievement system, detailed submission history, and a duel system.
 
 ---
 
@@ -18,17 +18,23 @@ It also provides a flexible achievement system and detailed submission history.
 
 ## 2.1. `users`
 
-Stores basic account information.
+Stores basic account information and statistics.
 
-| Column        | Type        | Notes                              |
-|---------------|-------------|------------------------------------|
-| id            | BIGSERIAL   | Primary key                        |
-| username      | TEXT        | Unique, required                   |
-| email         | TEXT        | Unique, required                   |
-| password_hash | TEXT        | Required                           |
-| avatar_path   | TEXT        | Optional                           |
-| bio           | TEXT        | Optional                           |
-| created_at    | TIMESTAMP   | Defaults to `NOW()`                |
+| Column                | Type        | Notes                               |
+|-----------------------|-------------|-------------------------------------|
+| id                    | BIGSERIAL   | Primary key                         |
+| username              | TEXT        | Unique, required                    |
+| email                 | TEXT        | Unique, required                    |
+| password_hash         | TEXT        | Required                            |
+| salt                  | TEXT        | Required for password hashing       |
+| avatar_path           | TEXT        | Optional                            |
+| bio                   | TEXT        | Optional                            |
+| current_streak_days   | INT         | Default: 0                          |
+| duel_points           | INT         | Default: 0                          |
+| duel_wins             | INT         | Default: 0                          |
+| duel_losses           | INT         | Default: 0                          |
+| last_level_solved_at  | TIMESTAMP   | Optional                            |
+| created_at            | TIMESTAMP   | Defaults to `NOW()`                 |
 
 ---
 
@@ -36,12 +42,14 @@ Stores basic account information.
 
 Achievement definitions.
 
-| Column      | Type        | Notes                     |
-|-------------|-------------|---------------------------|
-| id          | BIGSERIAL   | Primary key               |
-| name        | TEXT        | Required                  |
-| description | TEXT        | Optional                  |
-| icon_path   | TEXT        | Optional                  |
+| Column          | Type        | Notes                     |
+|-----------------|-------------|---------------------------|
+| id              | BIGSERIAL   | Primary key               |
+| name            | TEXT        | Required                  |
+| description     | TEXT        | Optional                  |
+| icon_path       | TEXT        | Optional                  |
+| condition_type  | TEXT        | Required (e.g., 'STREAK')  |
+| condition_value | INT         | Required                  |
 
 ---
 
@@ -75,12 +83,13 @@ High-level grouping units.
 
 Lessons within modules.
 
-| Column    | Type      | Notes                               |
-|-----------|-----------|-------------------------------------|
-| id        | BIGSERIAL | Primary key                         |
-| module_id | BIGINT    | FK → modules(id), cascade delete    |
-| title     | TEXT      | Required                            |
-| content   | TEXT      | Optional                            |
+| Column      | Type      | Notes                               |
+|-------------|-----------|-------------------------------------|
+| id          | BIGSERIAL | Primary key                         |
+| module_id   | BIGINT    | FK → modules(id), cascade delete    |
+| title       | TEXT      | Required                            |
+| content     | TEXT      | Optional                            |
+| order_index | INT       | Default: 0. Controls lesson sequence|
 
 Index: `module_id`.
 
@@ -88,7 +97,7 @@ Index: `module_id`.
 
 ## 2.6. `coding_tasks`
 
-Coding exercises linked to lessons.
+Coding exercises linked to lessons or duels.
 
 | Column        | Type      | Notes                                |
 |---------------|-----------|--------------------------------------|
@@ -98,8 +107,8 @@ Coding exercises linked to lessons.
 | title         | TEXT      | Required                             |
 | description   | TEXT      | Optional                             |
 | initial_code  | TEXT      | Optional                             |
-| whitelist     | TEXT      | Optional                             |
-| blacklist     | TEXT      | Optional                             |
+| whitelist     | TEXT      | Optional. Allowed keywords/headers   |
+| blacklist     | TEXT      | Optional. Forbidden keywords/headers |
 | time_limit    | INT       | Default: 2000 ms                     |
 | memory_limit  | INT       | Default: 256 MB                      |
 | is_duel       | BOOLEAN   | Default: FALSE                       |
@@ -229,6 +238,17 @@ Unique constraint: `(user_id, lesson_id)`.
 
 ---
 
+## 2.11. `tips`
+
+Daily or general tips for users.
+
+| Column  | Type      | Notes       |
+|---------|-----------|-------------|
+| id      | BIGSERIAL | Primary key |
+| content | TEXT      | Required    |
+
+---
+
 ## 3. Relationships Summary
 
 - **User ↔ Achievement:** many-to-many  
@@ -246,8 +266,6 @@ Unique constraint: `(user_id, lesson_id)`.
 ## 4. Notes
 
 - All foreign keys apply **ON DELETE CASCADE**, simplifying cleanup.  
-- Schema is stable and not expected to change often.  
+- Schema is updated to support the duel system and detailed user stats.
 - Indexes are added for frequent relations to optimize lookups.  
 - Designed to work well with Qt SQL modules (QSqlDatabase, QSqlQuery).
-
----
