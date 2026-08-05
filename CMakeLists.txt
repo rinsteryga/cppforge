@@ -21,6 +21,7 @@ enable_testing()
 
 add_subdirectory(src)
 add_subdirectory(tests)
+add_subdirectory(server)
 
 if(WIN32)
     set(APP_ICON_RESOURCE "src/gui/resources/windows_icon.rc")
