@@ -1,0 +1,8 @@
+FROM alpine:latest
+
+# Install C/C++ build tools, bash, and musl headers
+RUN apk add --no-cache g++ make cmake bash musl-dev
+
+# Set up working directory with open permissions for mounted host volumes
+WORKDIR /sandbox
+RUN chmod 777 /sandbox

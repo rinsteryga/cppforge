@@ -40,6 +40,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev ccache
 
+    - name: Build Docker Runner Image (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        docker build -t cppforge-runner:latest -f docker/Dockerfile.runner .
+
     - name: Install Qt5 and Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
@@ -85,4 +90,3 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: cd build && ctest --output-on-failure
-      
