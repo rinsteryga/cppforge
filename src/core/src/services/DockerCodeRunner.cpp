@@ -40,6 +40,10 @@ namespace cppforge::services
         sourceFile.write(code.toUtf8());
         sourceFile.close();
 
+        sourceFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ReadUser |
+                                  QFileDevice::WriteUser | QFileDevice::ReadGroup | QFileDevice::WriteGroup |
+                                  QFileDevice::ReadOther | QFileDevice::WriteOther);
+
         try
         {
             compileInDocker(tempDir.path());
@@ -72,7 +76,13 @@ namespace cppforge::services
             throw std::runtime_error("Compilation Error (Docker Sandbox):\n" + errorLog.toStdString());
         }
 
-        return workDir + "/app";
+        QString exePath = workDir + "/app";
+        QFile::setPermissions(exePath, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner |
+                                           QFileDevice::ReadUser | QFileDevice::WriteUser | QFileDevice::ExeUser |
+                                           QFileDevice::ReadGroup | QFileDevice::WriteGroup | QFileDevice::ExeGroup |
+                                           QFileDevice::ReadOther | QFileDevice::WriteOther | QFileDevice::ExeOther);
+
+        return exePath;
     }
 
     entities::ExecutionResult DockerCodeRunner::runTestsInDocker(const QString &workDir,
