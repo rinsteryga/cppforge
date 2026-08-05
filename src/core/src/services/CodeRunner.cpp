@@ -1,9 +1,9 @@
 #include "../../include/services/CodeRunner.hpp"
 
-#include "../../include/services/DockerCodeRunner.hpp"
-#include "../../include/services/LocalCodeRunner.hpp"
 #include "../../include/entities/ExecutionResult.hpp"
 #include "../../include/entities/TestCase.hpp"
+#include "../../include/services/DockerCodeRunner.hpp"
+#include "../../include/services/LocalCodeRunner.hpp"
 
 #include <QDebug>
 #include <QtConcurrent>
@@ -46,8 +46,7 @@ namespace cppforge::services
         return QtConcurrent::run([this, code, tests] { return runBlocking(code, tests); });
     }
 
-    entities::ExecutionResult CodeRunner::runBlocking(const QString &code,
-                                                       const std::vector<entities::TestCase> &tests)
+    entities::ExecutionResult CodeRunner::runBlocking(const QString &code, const std::vector<entities::TestCase> &tests)
     {
         if (!m_engine)
         {

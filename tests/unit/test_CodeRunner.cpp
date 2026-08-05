@@ -35,10 +35,7 @@ int main() {
 }
 )";
 
-        std::vector<TestCase> testCases = {
-            TestCase(1, "5 7", "12", false),
-            TestCase(2, "100 200", "300", false)
-        };
+        std::vector<TestCase> testCases = {TestCase(1, "5 7", "12", false), TestCase(2, "100 200", "300", false)};
 
         ExecutionResult result = runner.runBlocking(code, testCases);
         qDebug() << "Output log:" << result.getOutput();

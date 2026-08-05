@@ -27,7 +27,8 @@ namespace cppforge::services
         QTemporaryDir tempDir;
         if (!tempDir.isValid())
         {
-            return entities::ExecutionResult(0, false, "", "Failed to create temporary directory for Docker execution", 0, 0);
+            return entities::ExecutionResult(0, false, "", "Failed to create temporary directory for Docker execution",
+                                             0, 0);
         }
 
         QString sourceFilePath = tempDir.path() + "/main.cpp";
@@ -56,16 +57,8 @@ namespace cppforge::services
         QString nativeWorkDir = QDir::toNativeSeparators(workDir);
         QString volumeArgument = QString("%1:/sandbox").arg(nativeWorkDir);
 
-        QStringList args = {
-            "run", "--rm",
-            "--network", "none",
-            "--memory=256m",
-            "--cpus=1.0",
-            "-v", volumeArgument,
-            "-w", "/sandbox",
-            m_imageName,
-            "g++", "-O2", "main.cpp", "-o", "app"
-        };
+        QStringList args = {"run", "--rm",     "--network", "none", "--memory=256m", "--cpus=1.0", "-v", volumeArgument,
+                            "-w",  "/sandbox", m_imageName, "g++",  "-O2",           "main.cpp",   "-o", "app"};
 
         compiler.start("docker", args);
 
@@ -97,16 +90,8 @@ namespace cppforge::services
             QProcess process;
             process.setProcessChannelMode(QProcess::MergedChannels);
 
-            QStringList args = {
-                "run", "--rm", "-i",
-                "--network", "none",
-                "--memory=128m",
-                "--cpus=0.5",
-                "-v", volumeArgument,
-                "-w", "/sandbox",
-                m_imageName,
-                "./app"
-            };
+            QStringList args = {"run", "--rm",         "-i", "--network", "none",      "--memory=128m", "--cpus=0.5",
+                                "-v",  volumeArgument, "-w", "/sandbox",  m_imageName, "./app"};
 
             process.start("docker", args);
 
@@ -127,16 +112,9 @@ namespace cppforge::services
                 QProcess process;
                 process.setProcessChannelMode(QProcess::MergedChannels);
 
-                QStringList args = {
-                    "run", "--rm", "-i",
-                    "--network", "none",
-                    "--memory=128m",
-                    "--cpus=0.5",
-                    "-v", volumeArgument,
-                    "-w", "/sandbox",
-                    m_imageName,
-                    "./app"
-                };
+                QStringList args = {"run",           "--rm",       "-i",   "--network",    "none",
+                                    "--memory=128m", "--cpus=0.5", "-v",   volumeArgument, "-w",
+                                    "/sandbox",      m_imageName,  "./app"};
 
                 process.start("docker", args);
 

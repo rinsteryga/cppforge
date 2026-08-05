@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ICodeExecutionEngine.hpp"
 #include "../entities/ExecutionResult.hpp"
 #include "../entities/TestCase.hpp"
+#include "ICodeExecutionEngine.hpp"
 
 #include <QFuture>
 #include <QObject>
@@ -28,11 +28,9 @@ namespace cppforge::services
         explicit CodeRunner(std::unique_ptr<ICodeExecutionEngine> engine, QObject *parent = nullptr);
         ~CodeRunner() override;
 
-        QFuture<entities::ExecutionResult> runAsync(const QString &code,
-                                                   const std::vector<entities::TestCase> &tests);
+        QFuture<entities::ExecutionResult> runAsync(const QString &code, const std::vector<entities::TestCase> &tests);
 
-        entities::ExecutionResult runBlocking(const QString &code,
-                                               const std::vector<entities::TestCase> &tests);
+        entities::ExecutionResult runBlocking(const QString &code, const std::vector<entities::TestCase> &tests);
 
         /**
          * @brief Checks if Docker sandbox mode is active.

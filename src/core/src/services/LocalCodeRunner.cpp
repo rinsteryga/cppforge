@@ -20,7 +20,7 @@ namespace cppforge::services
     }
 
     entities::ExecutionResult LocalCodeRunner::runBlocking(const QString &code,
-                                                            const std::vector<entities::TestCase> &tests)
+                                                           const std::vector<entities::TestCase> &tests)
     {
         try
         {
@@ -63,7 +63,7 @@ namespace cppforge::services
     }
 
     entities::ExecutionResult LocalCodeRunner::runTestsBlocking(const QString &executablePath,
-                                                                 const std::vector<entities::TestCase> &tests)
+                                                                const std::vector<entities::TestCase> &tests)
     {
         uint32_t passedCount = 0;
         QString lastOutput;
