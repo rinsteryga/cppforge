@@ -1,0 +1,11 @@
+FROM alpine:latest
+
+# Install g++, make, cmake, bash, and C/C++ build tools
+RUN apk add --no-cache g++ make cmake bash musl-dev
+
+# Set up working directory
+WORKDIR /sandbox
+
+# Create unprivileged runner user
+RUN adduser -D -u 1000 runner
+USER runner
