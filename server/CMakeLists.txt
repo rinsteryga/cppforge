@@ -1,4 +1,4 @@
-find_package(Qt5 REQUIRED COMPONENTS Core Sql Concurrent Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Sql Concurrent Network)
 
 include(FetchContent)
 
@@ -47,10 +47,10 @@ target_link_libraries(cppforge_server PRIVATE
     Crow::Crow
     cppforge_core
     cppforge_data
-    Qt5::Core
-    Qt5::Sql
-    Qt5::Concurrent
-    Qt5::Network
+    Qt6::Core
+    Qt6::Sql
+    Qt6::Concurrent
+    Qt6::Network
 )
 
 if(WIN32)

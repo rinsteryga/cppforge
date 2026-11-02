@@ -2,7 +2,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Core Sql Network)
 
 file(GLOB_RECURSE GUI_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
@@ -24,10 +24,10 @@ target_include_directories(cppforge_gui PUBLIC
 
 target_link_libraries(cppforge_gui
     PRIVATE 
-    Qt5::Widgets 
-    Qt5::Core 
-    Qt5::Sql
-    Qt5::Network
+    Qt6::Widgets 
+    Qt6::Core 
+    Qt6::Sql
+    Qt6::Network
     cppforge_core
     cppforge_data
 )
