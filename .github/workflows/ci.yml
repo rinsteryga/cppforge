@@ -34,22 +34,22 @@ jobs:
       with:
         key: ${{ matrix.os }}-ccache
 
-    - name: Install Qt5 and Dependencies (Ubuntu)
+    - name: Install Qt6 and Dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y qtbase5-dev qt5-qmake cmake build-essential qtdeclarative5-dev qttools5-dev ccache
+        sudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-tools-dev libqt6sql6-psql cmake build-essential ccache
 
     - name: Build Docker Runner Image (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         docker build -t cppforge-runner:latest -f docker/Dockerfile.runner .
 
-    - name: Install Qt5 and Dependencies (macOS)
+    - name: Install Qt6 and Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install qt@5 ccache
-        echo "CMAKE_PREFIX_PATH=$(brew --prefix qt@5)" >> $GITHUB_ENV
+        brew install qt ccache
+        echo "CMAKE_PREFIX_PATH=$(brew --prefix qt)" >> $GITHUB_ENV
 
     - name: Setup MSYS2 (Windows)
       if: matrix.os == 'windows-latest'
@@ -60,7 +60,8 @@ jobs:
         install: >-
           mingw-w64-ucrt-x86_64-gcc
           mingw-w64-ucrt-x86_64-cmake
-          mingw-w64-ucrt-x86_64-qt5-base
+          mingw-w64-ucrt-x86_64-qt6-base
+          mingw-w64-ucrt-x86_64-qt6-declarative
           mingw-w64-ucrt-x86_64-ninja
           mingw-w64-ucrt-x86_64-ccache
 
