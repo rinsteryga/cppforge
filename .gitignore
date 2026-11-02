@@ -1,6 +1,9 @@
 build/
 */build/
 *.build/
+vcpkg_installed/
+CMakeUserPresets.json
+.qtcreator/
 
 .cache/
 
