@@ -9,7 +9,9 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QTextCodec>
+#endif
 
 namespace cppforge::services
 {
@@ -21,7 +23,9 @@ namespace cppforge::services
 
     bool TaskManager::loadTasks(const QString &filePath)
     {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+#endif
 
         qDebug() << "=== TaskManager: Loading tasks from ===";
         qDebug() << "Path:" << filePath;
@@ -60,9 +64,13 @@ namespace cppforge::services
 
         qDebug() << "File size:" << data.size() << "bytes";
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         QTextCodec *codec = QTextCodec::codecForName("UTF-8");
         QString textData = codec->toUnicode(data);
         QByteArray utf8Data = textData.toUtf8();
+#else
+        QByteArray utf8Data = data;
+#endif
 
         QJsonParseError parseError;
         QJsonDocument doc = QJsonDocument::fromJson(utf8Data, &parseError);

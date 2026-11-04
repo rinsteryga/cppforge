@@ -89,9 +89,11 @@ namespace cppforge::services
         m_isIntentionalDisconnect = true;
         if (socket_ != nullptr)
         {
-            socket_->disconnectFromHost();
-            socket_->deleteLater();
+            QTcpSocket *sock = socket_;
             socket_ = nullptr;
+            sock->disconnect(this);
+            sock->disconnectFromHost();
+            sock->deleteLater();
         }
         if (server_)
         {
@@ -174,12 +176,14 @@ namespace cppforge::services
     {
         if (socket_ != nullptr)
         {
+            QTcpSocket *sock = socket_;
+            socket_ = nullptr;
+            sock->disconnect(this);
             if (!m_isIntentionalDisconnect)
             {
                 emit connectionError("Opponent disconnected.");
             }
-            socket_->deleteLater();
-            socket_ = nullptr;
+            sock->deleteLater();
         }
     }
 

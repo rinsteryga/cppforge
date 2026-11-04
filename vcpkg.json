@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "cppforge",
+  "version-string": "1.0.3",
+  "description": "Interactive C/C++ learning platform and desktop application",
+  "homepage": "https://github.com/rinsteryga/cppforge",
+  "dependencies": [
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "gui",
+        "widgets",
+        "sql",
+        "network",
+        "concurrent"
+      ]
+    },
+    "qtdeclarative",
+    "qttools",
+    "libpq",
+    "asio",
+    "crow"
+  ]
+}

@@ -1,4 +1,4 @@
-find_package(Qt5 REQUIRED COMPONENTS Core Sql Concurrent Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Sql Concurrent Network)
 
 file(GLOB_RECURSE CORE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
@@ -21,8 +21,8 @@ target_include_directories(cppforge_core PUBLIC
 
 target_link_libraries(cppforge_core
     PRIVATE 
-    Qt5::Core
-    Qt5::Sql
-    Qt5::Concurrent
-    Qt5::Network
+    Qt6::Core
+    Qt6::Sql
+    Qt6::Concurrent
+    Qt6::Network
 )

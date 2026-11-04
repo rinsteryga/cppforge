@@ -1,4 +1,4 @@
-find_package(Qt5 REQUIRED COMPONENTS Test)
+find_package(Qt6 REQUIRED COMPONENTS Test Sql Network)
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/.env.example
@@ -19,9 +19,9 @@ foreach(TEST_FILE ${TEST_SOURCES})
         PRIVATE
             cppforge_core
             cppforge_data
-            Qt5::Test
-            Qt5::Sql
-            Qt5::Network
+            Qt6::Test
+            Qt6::Sql
+            Qt6::Network
     )
 
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})

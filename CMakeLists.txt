@@ -15,7 +15,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets Sql Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql Network)
 
 enable_testing()
 
@@ -36,9 +36,9 @@ target_link_libraries(cppforge
     cppforge_core
     cppforge_data
     cppforge_gui
-    Qt5::Widgets
-    Qt5::Sql
-    Qt5::Core
+    Qt6::Widgets
+    Qt6::Sql
+    Qt6::Core
 )
 
 set_target_properties(cppforge PROPERTIES
@@ -93,7 +93,7 @@ if(WIN32)
     install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
     
     get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
-    find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt-qt5 windeployqt-qt5.exe windeployqt windeployqt.exe HINTS ${MSYS2_BIN_DIR})
+    find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt-qt6 windeployqt-qt6.exe windeployqt windeployqt.exe HINTS ${MSYS2_BIN_DIR})
 
     if(WINDEPLOYQT_EXECUTABLE)
         install(CODE "
@@ -101,7 +101,6 @@ if(WIN32)
                 COMMAND \"${WINDEPLOYQT_EXECUTABLE}\" 
                         --no-translations 
                         --no-opengl-sw 
-                        --no-angle 
                         --compiler-runtime 
                         \"\${CMAKE_INSTALL_PREFIX}/bin/cppforge.exe\"
                 RESULT_VARIABLE WINDEPLOYQT_RES
@@ -189,9 +188,7 @@ if(WIN32)
 
     install(DIRECTORY "${MSYS2_ROOT_DIR}/x86_64-w64-mingw32/" DESTINATION "x86_64-w64-mingw32")
 elseif(APPLE)
-    get_target_property(QT_QMAKE_EXECUTABLE Qt5::qmake LOCATION)
-    get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXECUTABLE}" DIRECTORY)
-    find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${QT_BIN_DIR}")
+    find_program(MACDEPLOYQT_EXECUTABLE macdeployqt)
 
     if(NOT MACDEPLOYQT_EXECUTABLE)
         message(FATAL_ERROR "macdeployqt not found!")
@@ -227,7 +224,7 @@ elseif(APPLE)
 else()
     set(CPACK_GENERATOR "DEB;TGZ")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "cppforge")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5widgets5, libqt5sql5, libqt5sql5-psql, libqt5network5, libqt5core5a, postgresql")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6, libqt6sql6, libqt6sql6-psql, libqt6network6, libqt6core6t64, postgresql")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
 endif()
 

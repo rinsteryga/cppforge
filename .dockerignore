@@ -1,0 +1,5 @@
+build/
+*/build/
+.git/
+.cache/
+vcpkg_installed/
