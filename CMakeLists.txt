@@ -15,7 +15,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql Network Quick Qml Concurrent QuickControls2)
 
 enable_testing()
 
@@ -36,7 +36,11 @@ target_link_libraries(cppforge
     cppforge_core
     cppforge_data
     cppforge_gui
+    cppforge_guiplugin
     Qt6::Widgets
+    Qt6::Quick
+    Qt6::Qml
+    Qt6::QuickControls2
     Qt6::Sql
     Qt6::Core
 )
@@ -56,11 +60,14 @@ install(TARGETS cppforge
 if(WIN32)
     set(DATA_DESTINATION "data/migrations")
     set(SCRIPT_DESTINATION "scripts")
+    set(DOC_DESTINATION "licenses")
 else()
     set(DATA_DESTINATION "share/cppforge/data/migrations")
     set(SCRIPT_DESTINATION "share/cppforge/scripts")
+    set(DOC_DESTINATION "share/doc/cppforge")
 endif()
 
+install(FILES "LICENSE" "licenses/THIRD_PARTY_LICENSES.md" "licenses/LGPL-3.0.txt" "licenses/GPL-3.0.txt" DESTINATION "${DOC_DESTINATION}")
 install(FILES "src/data/migrations/schema.sql" DESTINATION "${DATA_DESTINATION}")
 install(FILES "src/data/migrations/seed.sql" DESTINATION "${DATA_DESTINATION}")
 install(DIRECTORY "src/data/migrations/modules" DESTINATION "${DATA_DESTINATION}")
@@ -181,7 +188,7 @@ if(WIN32)
         PATTERN "gcc" EXCLUDE     
         PATTERN "cmake" EXCLUDE
         PATTERN "pkgconfig" EXCLUDE
-        PATTERN "libQt5*.a" EXCLUDE 
+        PATTERN "libQt*.a" EXCLUDE 
         PATTERN "libboost_*.a" EXCLUDE
         PATTERN "libopencv_*.a" EXCLUDE
     )
@@ -224,7 +231,7 @@ elseif(APPLE)
 else()
     set(CPACK_GENERATOR "DEB;TGZ")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "cppforge")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6, libqt6sql6, libqt6sql6-psql, libqt6network6, libqt6core6t64, postgresql")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6, libqt6sql6, libqt6sql6-psql, libqt6network6, libqt6core6t64, libqt6qml6, libqt6quick6, libqt6quickcontrols2-6, postgresql")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
 endif()
 

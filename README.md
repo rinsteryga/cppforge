@@ -16,27 +16,46 @@ Devs: @rinsteryga, @Sernock
 
    ```bash
    sudo apt update
-   sudo apt install -y build-essential cmake qtbase5-dev qt5-qmake qtdeclarative5-dev qttools5-dev postgresql postgresql-contrib
+   sudo apt install -y build-essential cmake qt6-base-dev qt6-declarative-dev qt6-tools-dev libqt6sql6-psql
    ```
+   *Note: `libqt6sql6-psql` is required for Qt to communicate with PostgreSQL.*
 
 3. **Database Setup (PostgreSQL):**
 
-   ```bash
-   sudo -u postgres psql -c "CREATE DATABASE cppforge;"
-   ```
-
-   Since the `.env` file is in `.gitignore`, you need to create it manually from the example:
+   ### Option A: Via Docker Compose (Recommended)
+   The project includes a `docker-compose.yml` that automatically launches PostgreSQL 16 and applies all database migrations (`schema.sql` and `seed.sql`):
 
    ```bash
+   # Start the database container in the background
+   docker compose up -d
+
+   # Create the .env configuration file from example
    cp .env.example .env
-   nano .env # Or use any other text editor
    ```
 
-   *Make sure to fill in your actual PostgreSQL credentials (`PG_USER` and `PG_PASSWORD`) inside the `.env` file before proceeding.*
+   *Useful Docker commands:*
+   - Check database status: `docker compose ps`
+   - View database logs: `docker compose logs -f`
+   - Access database console (psql): `docker exec -it cppforge-postgres psql -U cppforge -d cppforge`
+   - Stop database: `docker compose down`
+
+   ### Option B: Local PostgreSQL Installation (Manual)
+   If you prefer running PostgreSQL natively without Docker:
 
    ```bash
-   sudo -u postgres psql -d cppforge -f src/data/migrations/schema.sql
-   sudo -u postgres psql -d cppforge -f src/data/migrations/seed.sql
+   sudo apt install -y postgresql postgresql-contrib
+   sudo service postgresql start
+
+   # Create database and user
+   sudo -u postgres psql -c "CREATE USER cppforge WITH PASSWORD 'secret_password_123' SUPERUSER;"
+   sudo -u postgres psql -c "CREATE DATABASE cppforge OWNER cppforge;"
+
+   # Create .env file
+   cp .env.example .env
+
+   # Apply migrations
+   PGPASSWORD=secret_password_123 psql -h localhost -U cppforge -d cppforge -f src/data/migrations/schema.sql
+   PGPASSWORD=secret_password_123 psql -h localhost -U cppforge -d cppforge -f src/data/migrations/seed.sql
    ```
 
    **Database Reset / Update:**
@@ -69,7 +88,7 @@ If you prefer not to build from source, you can install the pre-compiled package
 
 ### Linux (.deb package for Ubuntu/Debian)
 1. Download the `cppforge-*-Linux.deb` package.
-2. Install it using `apt` so that dependencies (like `libqt5sql5-psql` and PostgreSQL) are automatically resolved and installed:
+2. Install it using `apt` so that dependencies (like `libqt6sql6-psql` and PostgreSQL) are automatically resolved and installed:
    ```bash
    sudo apt install ./cppforge-1.0.3-Linux.deb
    ```
