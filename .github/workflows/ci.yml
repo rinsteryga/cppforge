@@ -37,7 +37,7 @@ jobs:
             preset: windows-x64-vcpkg
             triplet: x64-windows
           - name: macOS arm64
-            os: macos-14
+            os: macos-latest
             preset: macos-arm64-vcpkg
             triplet: arm64-osx
 
@@ -49,7 +49,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            autoconf automake bison flex gperf libtool pkg-config python3 \
+            autoconf automake autoconf-archive bison flex gperf libtool pkg-config python3 ninja-build \
             libgl1-mesa-dev libglu1-mesa-dev \
             libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxrandr-dev \
             libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-image0-dev \
@@ -57,6 +57,10 @@ jobs:
             libxcb-shm0-dev libxcb-sync-dev libxcb-util-dev libxcb-xfixes0-dev \
             libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev \
             libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libssl-dev
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install autoconf automake autoconf-archive libtool pkg-config
 
       - name: Setup MSVC environment (Windows)
         if: runner.os == 'Windows'
