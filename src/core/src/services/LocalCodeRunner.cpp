@@ -2,11 +2,14 @@
 
 #include "../../include/entities/ExecutionResult.hpp"
 #include "../../include/entities/TestCase.hpp"
+#include "../../include/services/CppToolchain.hpp"
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QProcess>
-#include <QTemporaryFile>
+#include <QProcessEnvironment>
+#include <QUuid>
 
 #include <stdexcept>
 
@@ -14,9 +17,7 @@ namespace cppforge::services
 {
     bool LocalCodeRunner::isAvailable() const
     {
-        QProcess process;
-        process.start("g++", {"--version"});
-        return process.waitForFinished(1000) && (process.exitCode() == 0);
+        return CppToolchain::detected().isAvailable();
     }
 
     entities::ExecutionResult LocalCodeRunner::runBlocking(const QString &code,
@@ -24,8 +25,8 @@ namespace cppforge::services
     {
         try
         {
-            QString exePath = compileCodeBlocking(code);
-            return runTestsBlocking(exePath, tests);
+            const QString executablePath = compileCodeBlocking(code);
+            return runTestsBlocking(executablePath, tests);
         }
         catch (const std::runtime_error &e)
         {
@@ -35,31 +36,53 @@ namespace cppforge::services
 
     QString LocalCodeRunner::compileCodeBlocking(const QString &code)
     {
-        QTemporaryFile sourceFile(QDir::tempPath() + "/cppforge_XXXXXX.cpp");
-        sourceFile.setAutoRemove(false);
-        if (!sourceFile.open())
+        const CppToolchain &toolchain = CppToolchain::detected();
+        if (!toolchain.isAvailable())
+        {
+            throw std::runtime_error("No C++ compiler found. Install Visual Studio Build Tools or GCC/Clang, or set "
+                                     "CPPFORGE_CXX.");
+        }
+
+        const QString sourcePath =
+            QDir::tempPath() + "/cppforge_" + QUuid::createUuid().toString(QUuid::WithoutBraces) + ".cpp";
+        QFile sourceFile(sourcePath);
+        if (!sourceFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
         {
             throw std::runtime_error("Cannot create temporary source file for local compilation");
         }
-
         sourceFile.write(code.toUtf8());
-        QString sourcePath = sourceFile.fileName();
         sourceFile.close();
 
-        QString exePath = sourcePath + ".exe";
+        const QString executablePath = sourcePath + CppToolchain::executableSuffix();
 
         QProcess compiler;
-        compiler.start("g++", {sourcePath, "-o", exePath, "-O2"});
+        compiler.setProcessEnvironment(toolchain.environment());
+        compiler.setWorkingDirectory(QFileInfo(sourcePath).absolutePath());
+        compiler.start(toolchain.compilerPath(), toolchain.compileArguments(sourcePath, executablePath));
 
-        if (!compiler.waitForFinished(10000) || compiler.exitCode() != 0)
+        const bool finished = compiler.waitForFinished(30000);
+        const bool compiled = finished && compiler.exitCode() == 0;
+        QString errorLog = QString::fromLocal8Bit(compiler.readAllStandardError());
+        if (errorLog.trimmed().isEmpty())
         {
-            QString errorLog = QString::fromLocal8Bit(compiler.readAllStandardError());
-            QFile::remove(sourcePath);
-            throw std::runtime_error("Compilation Error:\n" + errorLog.toStdString());
+            errorLog = QString::fromLocal8Bit(compiler.readAllStandardOutput());
         }
 
         QFile::remove(sourcePath);
-        return exePath;
+        QFile::remove(QFileInfo(sourcePath).absolutePath() + "/" + QFileInfo(sourcePath).completeBaseName() + ".obj");
+
+        if (!compiled)
+        {
+            QFile::remove(executablePath);
+            if (errorLog.trimmed().isEmpty())
+            {
+                errorLog = finished ? "Compiler exited with code " + QString::number(compiler.exitCode())
+                                    : "Compilation timed out";
+            }
+            throw std::runtime_error("Compilation Error:\n" + errorLog.toStdString());
+        }
+
+        return executablePath;
     }
 
     entities::ExecutionResult LocalCodeRunner::runTestsBlocking(const QString &executablePath,
@@ -68,10 +91,12 @@ namespace cppforge::services
         uint32_t passedCount = 0;
         QString lastOutput;
         QString errorLog;
+        const QProcessEnvironment environment = CppToolchain::detected().environment();
 
         if (tests.empty())
         {
             QProcess process;
+            process.setProcessEnvironment(environment);
             process.setProcessChannelMode(QProcess::MergedChannels);
             process.start(executablePath, QStringList());
 
@@ -90,6 +115,7 @@ namespace cppforge::services
             for (const auto &test : tests)
             {
                 QProcess process;
+                process.setProcessEnvironment(environment);
                 process.setProcessChannelMode(QProcess::MergedChannels);
                 process.start(executablePath, QStringList());
 
