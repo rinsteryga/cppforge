@@ -4,8 +4,7 @@
 
 namespace cppforge::gui
 {
-    ThemeController::ThemeController(QObject *parent)
-        : QObject(parent)
+    ThemeController::ThemeController(QObject *parent) : QObject(parent)
     {
         QSettings settings("CppForge", "StudyApp");
         int savedTheme = settings.value("app/theme", 0).toInt();

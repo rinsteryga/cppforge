@@ -7,6 +7,7 @@
 #include <QQmlEngine>
 #include <QSettings>
 #include <QString>
+
 #include <memory>
 
 namespace cppforge::gui
@@ -30,18 +31,9 @@ namespace cppforge::gui
 
         void setAuthManager(std::shared_ptr<cppforge::services::AuthManager> authManager);
 
-        bool isLoading() const
-        {
-            return m_isLoading;
-        }
-        QString errorMessage() const
-        {
-            return m_errorMessage;
-        }
-        QString successMessage() const
-        {
-            return m_successMessage;
-        }
+        bool isLoading() const { return m_isLoading; }
+        QString errorMessage() const { return m_errorMessage; }
+        QString successMessage() const { return m_successMessage; }
 
         Q_INVOKABLE bool login(const QString &username, const QString &password, bool rememberMe = true);
         Q_INVOKABLE bool registerUser(const QString &username, const QString &email, const QString &password);

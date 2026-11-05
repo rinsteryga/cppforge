@@ -4,10 +4,7 @@
 
 namespace cppforge::gui
 {
-    DashboardController::DashboardController(QObject *parent)
-        : QObject(parent)
-    {
-    }
+    DashboardController::DashboardController(QObject *parent) : QObject(parent) {}
 
     void DashboardController::setUserService(cppforge::services::UserService *userService)
     {
@@ -93,12 +90,11 @@ namespace cppforge::gui
                 QString desc;
                 QString icon;
                 bool unlocked;
-            } sampleAchs[] = {
-                {"First Steps", "Complete your first lesson in CppForge", "🏆", true},
-                {"Duel Master", "Win your first multiplayer coding duel", "⚔️", false},
-                {"Code Streaker", "Maintain a 3-day study streak", "🔥", m_streak >= 3},
-                {"Template Wizard", "Solve all tasks in Templates module", "🧙", false},
-                {"Speed Demon", "Solve a task in under 60 seconds", "⚡", false}};
+            } sampleAchs[] = {{"First Steps", "Complete your first lesson in CppForge", "🏆", true},
+                              {"Duel Master", "Win your first multiplayer coding duel", "⚔️", false},
+                              {"Code Streaker", "Maintain a 3-day study streak", "🔥", m_streak >= 3},
+                              {"Template Wizard", "Solve all tasks in Templates module", "🧙", false},
+                              {"Speed Demon", "Solve a task in under 60 seconds", "⚡", false}};
 
             for (int i = 0; i < 5; ++i)
             {
@@ -248,17 +244,11 @@ namespace cppforge::gui
 
     QStringList DashboardController::availableAvatars() const
     {
-        return {
-            "qrc:/images/default_avatar1.png",
-            "qrc:/images/default_avatar2.png",
-            "qrc:/images/default_avatar3.png",
-            "qrc:/images/default_avatar4.png",
-            "qrc:/images/walter.png",
-            "qrc:/images/tony.png",
-            "qrc:/images/kanye.png",
-            "qrc:/images/terry.png",
-            "qrc:/images/patrick.png",
-            "qrc:/images/lb.png"};
+        return {"qrc:/images/default_avatar1.png", "qrc:/images/default_avatar2.png",
+                "qrc:/images/default_avatar3.png", "qrc:/images/default_avatar4.png",
+                "qrc:/images/walter.png",          "qrc:/images/tony.png",
+                "qrc:/images/kanye.png",           "qrc:/images/terry.png",
+                "qrc:/images/patrick.png",         "qrc:/images/lb.png"};
     }
 
     void DashboardController::updateAvatar(const QString &avatarPath)

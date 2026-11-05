@@ -38,42 +38,15 @@ namespace cppforge::gui
         void setUserService(cppforge::services::UserService *userService);
         Q_INVOKABLE void setUserId(int userId);
 
-        int taskId() const
-        {
-            return m_taskId;
-        }
-        int lessonId() const
-        {
-            return m_lessonId;
-        }
-        QString title() const
-        {
-            return m_title;
-        }
-        QString description() const
-        {
-            return m_description;
-        }
-        QString theory() const
-        {
-            return m_theory;
-        }
-        QString initialCode() const
-        {
-            return m_initialCode;
-        }
-        QString outputLog() const
-        {
-            return m_outputLog;
-        }
-        bool isRunning() const
-        {
-            return m_isRunning;
-        }
-        bool isCompleted() const
-        {
-            return m_isCompleted;
-        }
+        int taskId() const { return m_taskId; }
+        int lessonId() const { return m_lessonId; }
+        QString title() const { return m_title; }
+        QString description() const { return m_description; }
+        QString theory() const { return m_theory; }
+        QString initialCode() const { return m_initialCode; }
+        QString outputLog() const { return m_outputLog; }
+        bool isRunning() const { return m_isRunning; }
+        bool isCompleted() const { return m_isCompleted; }
 
         Q_INVOKABLE void loadTask(int lessonId);
         Q_INVOKABLE void runCode(const QString &code);

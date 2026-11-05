@@ -5,8 +5,7 @@
 namespace cppforge::gui
 {
     TaskController::TaskController(QObject *parent)
-        : QObject(parent),
-          m_runner(std::make_unique<cppforge::services::CodeRunner>(this)),
+        : QObject(parent), m_runner(std::make_unique<cppforge::services::CodeRunner>(this)),
           m_analyzer(std::make_unique<cppforge::services::StaticAnalyzer>())
     {
     }
@@ -34,8 +33,8 @@ namespace cppforge::gui
         m_theory =
             "### Theoretical Background\nFocus on memory safety, correct data types, and const correctness in modern "
             "C++.";
-        m_initialCode =
-            "#include <iostream>\n\nint main() {\n    std::cout << \"Solution ready\" << std::endl;\n    return 0;\n}\n";
+        m_initialCode = "#include <iostream>\n\nint main() {\n    std::cout << \"Solution ready\" << std::endl;\n    "
+                        "return 0;\n}\n";
 
         emit taskChanged();
         emit outputLogChanged();
@@ -76,22 +75,27 @@ namespace cppforge::gui
             testCases.push_back(*m_currentTask.getTestCases().begin());
         }
 
-        QThreadPool::globalInstance()->start([this, code, testCases]() {
-            auto result = m_runner->runBlocking(code, testCases);
-            QMetaObject::invokeMethod(this, [this, result]() {
-                if (result.isSuccess() && result.getErrors().isEmpty())
-                {
-                    appendLog("[SUCCESS] Output:\n" + result.getOutput());
-                }
-                else
-                {
-                    appendLog("[ERROR]:\n" +
-                              (result.getErrors().isEmpty() ? result.getOutput() : result.getErrors()));
-                }
-                m_isRunning = false;
-                emit isRunningChanged();
+        QThreadPool::globalInstance()->start(
+            [this, code, testCases]()
+            {
+                auto result = m_runner->runBlocking(code, testCases);
+                QMetaObject::invokeMethod(this,
+                                          [this, result]()
+                                          {
+                                              if (result.isSuccess() && result.getErrors().isEmpty())
+                                              {
+                                                  appendLog("[SUCCESS] Output:\n" + result.getOutput());
+                                              }
+                                              else
+                                              {
+                                                  appendLog("[ERROR]:\n" + (result.getErrors().isEmpty()
+                                                                                ? result.getOutput()
+                                                                                : result.getErrors()));
+                                              }
+                                              m_isRunning = false;
+                                              emit isRunningChanged();
+                                          });
             });
-        });
     }
 
     void TaskController::submitSolution(const QString &code)
@@ -118,29 +122,34 @@ namespace cppforge::gui
         std::vector<cppforge::entities::TestCase> allTests(m_currentTask.getTestCases().begin(),
                                                            m_currentTask.getTestCases().end());
 
-        QThreadPool::globalInstance()->start([this, code, allTests]() {
-            auto result = m_runner->runBlocking(code, allTests);
-            QMetaObject::invokeMethod(this, [this, result]() {
-                if (result.isSuccess() && result.getErrors().isEmpty())
-                {
-                    appendLog("✅ [ALL TESTS PASSED] Great job!");
-                    m_isCompleted = true;
-                    if (m_userService && m_userId > 0)
+        QThreadPool::globalInstance()->start(
+            [this, code, allTests]()
+            {
+                auto result = m_runner->runBlocking(code, allTests);
+                QMetaObject::invokeMethod(
+                    this,
+                    [this, result]()
                     {
-                        m_userService->saveLessonProgress(static_cast<uint64_t>(m_userId), 1,
-                                                          static_cast<uint64_t>(m_lessonId), true);
-                    }
-                    emit taskSolved();
-                }
-                else
-                {
-                    appendLog("❌ [FAILED]:\n" +
-                              (result.getErrors().isEmpty() ? result.getOutput() : result.getErrors()));
-                }
-                m_isRunning = false;
-                emit isRunningChanged();
-                emit taskChanged();
+                        if (result.isSuccess() && result.getErrors().isEmpty())
+                        {
+                            appendLog("✅ [ALL TESTS PASSED] Great job!");
+                            m_isCompleted = true;
+                            if (m_userService && m_userId > 0)
+                            {
+                                m_userService->saveLessonProgress(static_cast<uint64_t>(m_userId), 1,
+                                                                  static_cast<uint64_t>(m_lessonId), true);
+                            }
+                            emit taskSolved();
+                        }
+                        else
+                        {
+                            appendLog("❌ [FAILED]:\n" +
+                                      (result.getErrors().isEmpty() ? result.getOutput() : result.getErrors()));
+                        }
+                        m_isRunning = false;
+                        emit isRunningChanged();
+                        emit taskChanged();
+                    });
             });
-        });
     }
 } // namespace cppforge::gui

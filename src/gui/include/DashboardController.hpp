@@ -54,81 +54,27 @@ namespace cppforge::gui
 
         void setUser(const QString &username, int userId);
 
-        QString username() const
-        {
-            return m_username;
-        }
-        int userId() const
-        {
-            return m_userId;
-        }
-        QString avatarPath() const
-        {
-            return m_avatarPath;
-        }
-        QString tipOfTheDay() const
-        {
-            return m_tipOfTheDay;
-        }
-        int dailyGoalSolved() const
-        {
-            return m_dailyGoalSolved;
-        }
-        int dailyGoalTarget() const
-        {
-            return 3;
-        }
-        QVariantList modules() const
-        {
-            return m_modules;
-        }
+        QString username() const { return m_username; }
+        int userId() const { return m_userId; }
+        QString avatarPath() const { return m_avatarPath; }
+        QString tipOfTheDay() const { return m_tipOfTheDay; }
+        int dailyGoalSolved() const { return m_dailyGoalSolved; }
+        int dailyGoalTarget() const { return 3; }
+        QVariantList modules() const { return m_modules; }
 
-        QVariantList roadmapNodes() const
-        {
-            return m_roadmapNodes;
-        }
-        int currentModuleId() const
-        {
-            return m_currentModuleId;
-        }
-        QString currentModuleTitle() const
-        {
-            return m_currentModuleTitle;
-        }
+        QVariantList roadmapNodes() const { return m_roadmapNodes; }
+        int currentModuleId() const { return m_currentModuleId; }
+        QString currentModuleTitle() const { return m_currentModuleTitle; }
 
-        int solvedTasksCount() const
-        {
-            return m_solvedTasksCount;
-        }
-        int completedLessonsCount() const
-        {
-            return m_completedLessonsCount;
-        }
-        int duelWins() const
-        {
-            return m_duelWins;
-        }
-        int duelLosses() const
-        {
-            return m_duelLosses;
-        }
-        int duelPoints() const
-        {
-            return m_duelPoints;
-        }
-        double winrate() const
-        {
-            return m_winrate;
-        }
-        int streak() const
-        {
-            return m_streak;
-        }
+        int solvedTasksCount() const { return m_solvedTasksCount; }
+        int completedLessonsCount() const { return m_completedLessonsCount; }
+        int duelWins() const { return m_duelWins; }
+        int duelLosses() const { return m_duelLosses; }
+        int duelPoints() const { return m_duelPoints; }
+        double winrate() const { return m_winrate; }
+        int streak() const { return m_streak; }
         QStringList availableAvatars() const;
-        QVariantList achievements() const
-        {
-            return m_achievements;
-        }
+        QVariantList achievements() const { return m_achievements; }
 
         Q_INVOKABLE void refresh();
         Q_INVOKABLE void openModule(int moduleId);

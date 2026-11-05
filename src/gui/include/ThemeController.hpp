@@ -24,10 +24,7 @@ namespace cppforge::gui
 
         static ThemeController *create(QQmlEngine *qmlEngine, QJSEngine *jsEngine);
 
-        bool isDark() const
-        {
-            return m_isDark;
-        }
+        bool isDark() const { return m_isDark; }
         void setIsDark(bool dark);
 
         Q_INVOKABLE void toggleTheme();

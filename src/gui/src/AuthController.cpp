@@ -4,10 +4,7 @@
 
 namespace cppforge::gui
 {
-    AuthController::AuthController(QObject *parent)
-        : QObject(parent)
-    {
-    }
+    AuthController::AuthController(QObject *parent) : QObject(parent) {}
 
     void AuthController::setAuthManager(std::shared_ptr<cppforge::services::AuthManager> authManager)
     {
