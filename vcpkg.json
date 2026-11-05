@@ -17,8 +17,6 @@
         "concurrent"
       ]
     },
-    "qtdeclarative",
-    "qttools",
     "libpq",
     "asio",
     "crow"
