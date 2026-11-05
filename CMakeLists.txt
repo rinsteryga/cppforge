@@ -24,7 +24,21 @@ add_subdirectory(tests)
 add_subdirectory(server)
 
 if(WIN32)
-    set(APP_ICON_RESOURCE "src/gui/resources/windows_icon.rc")
+    enable_language(RC)
+    set(APP_ICON_RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/cppforge_windows_icon.res")
+    add_custom_command(
+        OUTPUT "${APP_ICON_RESOURCE}"
+        COMMAND "${CMAKE_RC_COMPILER}" /fo "${APP_ICON_RESOURCE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/windows_icon.rc"
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/windows_icon.rc"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/icons/main_logo.ico"
+        VERBATIM
+    )
+    set_source_files_properties("${APP_ICON_RESOURCE}" PROPERTIES
+        GENERATED TRUE
+        EXTERNAL_OBJECT TRUE
+    )
 else()
     set(APP_ICON_RESOURCE "")
 endif()
@@ -40,6 +54,34 @@ target_link_libraries(cppforge
     Qt6::Sql
     Qt6::Core
 )
+
+if(WIN32 AND DEFINED QT6_INSTALL_PREFIX AND EXISTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}")
+    foreach(_plugin_dir platforms sqldrivers imageformats iconengines styles tls networkinformation generic)
+        if(EXISTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${_plugin_dir}")
+            add_custom_command(TARGET cppforge POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_directory
+                        "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${_plugin_dir}"
+                        "$<TARGET_FILE_DIR:cppforge>/${_plugin_dir}"
+                COMMENT "Deploying Qt plugins (${_plugin_dir})"
+                VERBATIM
+            )
+        endif()
+    endforeach()
+endif()
+
+if(WIN32 AND DEFINED QT6_INSTALL_PREFIX)
+    foreach(_runtime_dll libpq.dll libssl-3-x64.dll libcrypto-3-x64.dll)
+        if(EXISTS "${QT6_INSTALL_PREFIX}/bin/${_runtime_dll}")
+            add_custom_command(TARGET cppforge POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                        "${QT6_INSTALL_PREFIX}/bin/${_runtime_dll}"
+                        "$<TARGET_FILE_DIR:cppforge>/${_runtime_dll}"
+                COMMENT "Deploying ${_runtime_dll}"
+                VERBATIM
+            )
+        endif()
+    endforeach()
+endif()
 
 set_target_properties(cppforge PROPERTIES
     WIN32_EXECUTABLE ON

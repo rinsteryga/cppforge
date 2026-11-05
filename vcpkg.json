@@ -12,6 +12,7 @@
         "gui",
         "widgets",
         "sql",
+        "sql-psql",
         "network",
         "concurrent"
       ]
