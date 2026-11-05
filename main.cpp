@@ -86,27 +86,6 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.addImportPath(":/qt/qml");
 
-    for (int i = 1; i < argc; ++i)
-    {
-        if (strcmp(argv[i], "--test-qml") == 0)
-        {
-            QQmlComponent authComp(&engine, QUrl(QStringLiteral("qrc:/qt/qml/CppForge/qml/AuthWindow.qml")));
-            if (authComp.isError())
-            {
-                qCritical() << "AuthWindow error:" << authComp.errors();
-                return 1;
-            }
-            QQmlComponent mainComp(&engine, QUrl(QStringLiteral("qrc:/qt/qml/CppForge/qml/MainWindow.qml")));
-            if (mainComp.isError())
-            {
-                qCritical() << "MainWindow error:" << mainComp.errors();
-                return 1;
-            }
-            qDebug() << "QML self-test PASSED: All main windows and components loaded without errors!";
-            return 0;
-        }
-    }
-
     auto authController = std::make_unique<cppforge::gui::AuthController>();
     authController->setAuthManager(authManager);
 
@@ -137,9 +116,8 @@ int main(int argc, char *argv[])
             return;
         }
 
-        QObject *mainObj = mainComp.createWithInitialProperties({
-            {"dashboardController", QVariant::fromValue(dashboardController.get())}
-        });
+        QObject *mainObj = mainComp.createWithInitialProperties(
+            {{"dashboardController", QVariant::fromValue(dashboardController.get())}});
 
         if (auto *mainWin = qobject_cast<QQuickWindow *>(mainObj))
         {
@@ -172,9 +150,8 @@ int main(int argc, char *argv[])
             return;
         }
 
-        QObject *authObj = authComp.createWithInitialProperties({
-            {"authController", QVariant::fromValue(authController.get())}
-        });
+        QObject *authObj =
+            authComp.createWithInitialProperties({{"authController", QVariant::fromValue(authController.get())}});
 
         if (auto *authWin = qobject_cast<QQuickWindow *>(authObj))
         {
@@ -194,17 +171,6 @@ int main(int argc, char *argv[])
     QObject::connect(authController.get(), &cppforge::gui::AuthController::loginSucceeded, showMain);
     QObject::connect(dashboardController.get(), &cppforge::gui::DashboardController::logoutRequested, showAuth);
     QObject::connect(&app, &QApplication::lastWindowClosed, &app, &QApplication::quit);
-
-    for (int i = 1; i < argc; ++i)
-    {
-        if (strcmp(argv[i], "--test-main-window") == 0)
-        {
-            dashboardController->setUser("Sernock", 1);
-            showMain("Sernock", 1);
-            QTimer::singleShot(2000, &app, &QApplication::quit);
-            return app.exec();
-        }
-    }
 
     bool autoLoginValid = false;
     if (remember && savedUserId != -1 && !savedUsername.isEmpty())
