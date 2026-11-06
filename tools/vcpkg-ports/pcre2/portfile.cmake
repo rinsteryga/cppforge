@@ -11,9 +11,8 @@ vcpkg_from_github(
 )
 
 if("jit" IN_LIST FEATURES)
-    # GitHub source snapshots omit gitlinks, so the sljit commit is pinned to
-    # the one recorded for this PCRE2 tag. The upstream api.github.com lookup
-    # was dropped because shared CI IPs are rate limited for that endpoint.
+    # The api.github.com lookup of the sljit gitlink is rate limited for
+    # shared CI runner IPs, so the commit is pinned instead.
     vcpkg_from_github(
         OUT_SOURCE_PATH SLJIT_SOURCE_PATH
         REPO zherczeg/sljit

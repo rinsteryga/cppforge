@@ -43,7 +43,7 @@ else()
     set(APP_ICON_RESOURCE "")
 endif()
 
-add_executable(cppforge main.cpp ${APP_ICON_RESOURCE})
+add_executable(cppforge main.cpp ${APP_ICON_RESOURCE} src/gui/resources/resources.qrc)
 
 target_link_libraries(cppforge
     PRIVATE 
@@ -134,9 +134,6 @@ if(WIN32)
 
     install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
 
-    # The compiler directory check serves MinGW/MSYS2 toolchains only. Under
-    # MSVC the compiler lives inside the Visual Studio installation, and
-    # copying its runtime/include trees into the package would be wrong.
     if(MINGW)
     get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
     find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt-qt6 windeployqt-qt6.exe windeployqt windeployqt.exe HINTS ${MSYS2_BIN_DIR})
@@ -234,10 +231,8 @@ if(WIN32)
 
     install(DIRECTORY "${MSYS2_ROOT_DIR}/x86_64-w64-mingw32/" DESTINATION "x86_64-w64-mingw32")
     else()
-        # MSVC + vcpkg: the application is linked against the shared vcpkg
-        # runtime, so the installer carries every runtime DLL it needs plus
-        # the Qt plugin directories next to the executable (vcpkg ships no
-        # windeployqt for this configuration).
+        # MSVC + vcpkg: stage the vcpkg runtime DLLs and the Qt plugins next
+        # to the executable (vcpkg ships no windeployqt for this setup).
         set(VCPKG_BIN_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin")
         if(EXISTS "${VCPKG_BIN_DIR}")
             file(GLOB VCPKG_RUNTIME_DLLS "${VCPKG_BIN_DIR}/*.dll")
@@ -252,8 +247,8 @@ elseif(APPLE)
     find_program(MACDEPLOYQT_EXECUTABLE macdeployqt
         HINTS "${QT6_INSTALL_PREFIX}/bin" "${QT6_INSTALL_PREFIX}/bin/macdeployqt.app" "${QT6_INSTALL_PREFIX}/tools/Qt6/bin")
 
-    # Not fatal: vcpkg builds Qt statically on macOS, so the bundle may run
-    # without macdeployqt; the tool only fills frameworks for dynamic builds.
+    # Static vcpkg Qt works without macdeployqt; it is only needed to
+    # bundle frameworks of dynamic Qt builds.
     if(NOT MACDEPLOYQT_EXECUTABLE)
         message(WARNING "macdeployqt not found! Dynamic Qt resources might not be bundled.")
     endif()
@@ -288,8 +283,7 @@ elseif(APPLE)
 else()
     set(CPACK_GENERATOR "DEB;TGZ")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "cppforge")
-    # Qt and libpq come from the static vcpkg runtime, so the package only
-    # needs the PostgreSQL client/server on the target system.
+    # Qt and libpq are linked statically from the vcpkg runtime.
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "postgresql")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
 endif()
