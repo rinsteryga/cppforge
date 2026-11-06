@@ -2,8 +2,11 @@
 #include "../../src/core/include/entities/TestCase.hpp"
 #include "../../src/core/include/services/CodeRunner.hpp"
 #include "../../src/core/include/services/DockerCodeRunner.hpp"
+#include "../../src/core/include/services/LocalCodeRunner.hpp"
 
 #include <QtTest>
+
+#include <memory>
 
 using namespace cppforge::entities;
 using namespace cppforge::services;
@@ -22,7 +25,9 @@ private slots:
 
     void test_ValidCodeExecution()
     {
-        CodeRunner runner;
+        // The test targets the local engine so it does not depend on a Docker
+        // daemon or a cppforge-runner image being present on the CI machine.
+        CodeRunner runner(std::make_unique<LocalCodeRunner>());
 
         QString code = R"(
 #include <iostream>

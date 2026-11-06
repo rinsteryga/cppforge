@@ -22,5 +22,10 @@
     "libpq",
     "asio",
     "crow"
-  ]
+  ],
+  "vcpkg-configuration": {
+    "overlay-ports": [
+      "tools/vcpkg-ports"
+    ]
+  }
 }
