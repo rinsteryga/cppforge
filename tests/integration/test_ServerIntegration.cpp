@@ -12,6 +12,7 @@
 #include <QtSql/QSqlQuery>
 #include <QtTest>
 
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -164,6 +165,57 @@ namespace
 
         return query.exec("SELECT COUNT(*) FROM modules") && query.next() && query.value(0).toInt() > 0;
     }
+
+    bool requireDatabase()
+    {
+        return qEnvironmentVariableIntValue("CPPFORGE_REQUIRE_DB_TESTS") == 1;
+    }
+
+    enum class TestDatabaseState : std::uint8_t
+    {
+        Ready,
+        MissingConfiguration,
+        Unreachable,
+        InvalidSchema
+    };
+
+    TestDatabaseState inspectTestDatabase(cppforge::data::DatabaseConfig &config)
+    {
+        try
+        {
+            config = testDatabaseConfig();
+        }
+        catch (const std::exception &)
+        {
+            return TestDatabaseState::MissingConfiguration;
+        }
+
+        if (!canConnectToTestDatabase(config))
+        {
+            return TestDatabaseState::Unreachable;
+        }
+        if (!hasRealSchemaAndSeed(config))
+        {
+            return TestDatabaseState::InvalidSchema;
+        }
+        return TestDatabaseState::Ready;
+    }
+
+    const char *databaseStateMessage(TestDatabaseState state)
+    {
+        switch (state)
+        {
+        case TestDatabaseState::MissingConfiguration:
+            return "Set TEST_PG_* variables and make cppforge_test available to run HTTP integration tests";
+        case TestDatabaseState::Unreachable:
+            return "cppforge_test is not available";
+        case TestDatabaseState::InvalidSchema:
+            return "cppforge_test must use the repository schema and seed data";
+        case TestDatabaseState::Ready:
+            return "";
+        }
+        return "cppforge_test is unavailable";
+    }
 } // namespace
 
 class TestServerIntegration : public QObject
@@ -178,20 +230,16 @@ private:
 private slots: // NOLINT(readability-redundant-access-specifiers)
     void initTestCase()
     {
-        try
+        const auto state = inspectTestDatabase(m_databaseConfig);
+        if (state != TestDatabaseState::Ready)
         {
-            m_databaseConfig = testDatabaseConfig();
+            const char *message = databaseStateMessage(state);
+            if (requireDatabase())
+            {
+                QFAIL(message);
+            }
+            QSKIP(message);
         }
-        catch (const std::exception &)
-        {
-            QSKIP("Set TEST_PG_* variables and make cppforge_test available to run HTTP integration tests");
-        }
-
-        if (!canConnectToTestDatabase(m_databaseConfig))
-        {
-            QSKIP("cppforge_test is not available");
-        }
-        QVERIFY(hasRealSchemaAndSeed(m_databaseConfig));
 
         cppforge::server::ServerConfig config;
         config.database = m_databaseConfig;

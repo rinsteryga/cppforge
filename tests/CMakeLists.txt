@@ -10,6 +10,8 @@ file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/**/test_*.cpp"
 )
 
+add_custom_target(cppforge_tests)
+
 foreach(TEST_FILE IN LISTS TEST_SOURCES)
     get_filename_component(TEST_NAME "${TEST_FILE}" NAME_WE)
 
@@ -56,4 +58,5 @@ foreach(TEST_FILE IN LISTS TEST_SOURCES)
 
     target_compile_definitions(${TEST_NAME} PRIVATE CPPFORGE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    add_dependencies(cppforge_tests ${TEST_NAME})
 endforeach()

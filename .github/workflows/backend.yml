@@ -80,13 +80,28 @@ jobs:
           psql -h 127.0.0.1 -U cppforge -d cppforge_test -v ON_ERROR_STOP=1 -f src/data/migrations/schema.sql
           psql -h 127.0.0.1 -U cppforge -d cppforge_test -v ON_ERROR_STOP=1 -f src/data/migrations/seed.sql
 
+      - name: Initialize ephemeral CI service database
+        env:
+          PGPASSWORD: cppforge_ci
+        run: |
+          # The PostgreSQL service is disposable per job; this is not a developer database.
+          psql -h 127.0.0.1 -U cppforge -d cppforge -v ON_ERROR_STOP=1 -f src/data/migrations/schema.sql
+          psql -h 127.0.0.1 -U cppforge -d cppforge -v ON_ERROR_STOP=1 -f src/data/migrations/seed.sql
+
       - name: Configure
         run: cmake --preset linux-x64-vcpkg
 
       - name: Build server and tests
         run: >-
-          cmake --build --preset linux-x64-vcpkg --target cppforge_server
-          test_UseCases test_ModuleDto test_ServerIntegration test_DataBaseConnection
+          cmake --build --preset linux-x64-vcpkg --target cppforge_server cppforge_tests
+
+      - name: Locate Qt PostgreSQL driver
+        shell: bash
+        run: |
+          driver="$(find build/linux-x64-vcpkg/vcpkg_installed -name 'libqsqlpsql.so' | head -n 1)"
+          test -n "$driver"
+          echo "QT_PLUGIN_PATH=$(dirname "$(dirname "$driver")")" >> "$GITHUB_ENV"
+          echo "Using Qt SQL plugin: $driver"
 
       - name: Test
         run: ctest --test-dir build/linux-x64-vcpkg --output-on-failure
@@ -96,6 +111,13 @@ jobs:
           TEST_PG_DB: cppforge_test
           TEST_PG_USER: cppforge
           TEST_PG_PASSWORD: cppforge_ci
+          CPPFORGE_REQUIRE_DB_TESTS: 1
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DB: cppforge
+          PG_USER: cppforge
+          PG_PASSWORD: cppforge_ci
+          QT_QPA_PLATFORM: offscreen
 
   backend-unit:
     name: Backend unit tests (${{ matrix.os }})
@@ -143,8 +165,7 @@ jobs:
 
       - name: Build server and tests
         run: >-
-          cmake --build --preset ${{ matrix.preset }} --target cppforge_server
-          test_UseCases test_ModuleDto test_ServerIntegration test_DataBaseConnection
+          cmake --build --preset ${{ matrix.preset }} --target cppforge_server cppforge_tests
 
       - name: Unit tests (HTTP integration skips without TEST_PG_* settings)
         run: ctest --test-dir build/${{ matrix.preset }} --output-on-failure

@@ -143,9 +143,12 @@ test does not load `.env`; opt in by setting `TEST_PG_HOST`, `TEST_PG_PORT`, `TE
 point these at `127.0.0.1:55432/cppforge_test` and use the Compose `PG_USER`/`PG_PASSWORD` values.
 If `cppforge_test` is unavailable or those settings are absent, the HTTP integration test skips;
 when connected, it asserts the real schema tables and seeded module data before starting the
-server. The integration suite also exercises ephemeral port binding (`SERVER_PORT=0`) and
-concurrent module requests through Crow's worker pool. Unit tests do not require PostgreSQL,
-Docker, or network access.
+server. Set `CPPFORGE_REQUIRE_DB_TESTS=1` to turn an unavailable or incomplete test database into a
+failure instead of a skip; the Linux CI job uses this mode. The integration suite also exercises
+ephemeral port binding (`SERVER_PORT=0`) and concurrent module requests through Crow's worker pool.
+Unit tests do not require PostgreSQL, Docker, or network access. Stop the Compose service with
+`docker compose down` when finished; add `-v` only when you intentionally want to discard its data
+volume.
 
 The API contract and examples are in `contracts/openapi.yaml` and `contracts/fixtures/`.
 Planned backend stages are tracked in `docs/backend-roadmap.md`. React and QML clients are not
