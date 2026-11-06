@@ -110,3 +110,33 @@ If you prefer not to build from source, you can install the pre-compiled package
 1. Download the `cppforge-*-Darwin.dmg` image.
 2. Open the `.dmg` file and drag `cppforge` to your Applications folder.
 3. *(Note: You may need to manually configure the PostgreSQL database or .env file for macOS at this time)*
+
+## Backend API development
+
+The Crow server exposes the first versioned API slice under `/api/v1`. To start the local
+PostgreSQL instance, copy `.env.example` to `.env` if needed, set the `PG_*` values, then run:
+
+```bash
+docker compose up -d db
+docker compose ps
+```
+
+The Compose service publishes PostgreSQL only on `127.0.0.1`, includes a `pg_isready`
+healthcheck, and initializes the separate `cppforge_test` database on a fresh volume. The
+destructive `schema.sql` is **not** applied automatically. To initialize the desktop/server
+development database manually, use the mounted migration directory:
+
+```bash
+docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /migrations/schema.sql'
+docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /migrations/seed.sql'
+```
+
+Run the server with `SERVER_HOST`, `SERVER_PORT`, and `LOG_LEVEL` from `.env`. The integration
+test does not load `.env`; opt in by setting `TEST_PG_HOST`, `TEST_PG_PORT`, `TEST_PG_DB`,
+`TEST_PG_USER`, and `TEST_PG_PASSWORD` in the process environment. If `cppforge_test` is
+unavailable or those settings are absent, the HTTP integration test skips. Unit tests do not
+require PostgreSQL, Docker, or network access.
+
+The API contract and examples are in `contracts/openapi.yaml` and `contracts/fixtures/`.
+Planned backend stages are tracked in `docs/backend-roadmap.md`. React and QML clients are not
+part of this slice.
