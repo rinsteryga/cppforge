@@ -11,6 +11,8 @@
       "features": [
         "gui",
         "widgets",
+        "png",
+        "jpeg",
         "sql",
         "sql-psql",
         "network",
