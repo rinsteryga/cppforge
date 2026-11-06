@@ -15,7 +15,8 @@
         "sql-psql",
         "network",
         "concurrent",
-        "testlib"
+        "testlib",
+        "thread"
       ]
     },
     "libpq",
