@@ -1,9 +1,10 @@
 # Backend roadmap
 
 Stage 1 establishes the `/api/v1` transport contract, module read use-cases, thread-local database
-connection ownership, health/readiness probes, and a testable HTTP server. Auth, submissions, and
-client applications are explicitly outside Stage 1. Follow-up implementation remains subject to
-the real-PostgreSQL validation described in the backend development section of the README.
+connection ownership, health/readiness probes, and a testable HTTP server. Its integration suite
+uses the repository schema and seed data and has been exercised against an isolated PostgreSQL
+instance. Compose startup remains environment-dependent. Auth, submissions, and client applications
+are explicitly outside Stage 1.
 
 1. **Authentication and authorization** — account lifecycle, password/session policy, and protected
    API scopes.
