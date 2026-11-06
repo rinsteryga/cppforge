@@ -4,63 +4,74 @@
 
 #include <QDebug>
 #include <QVariant>
-#include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
 
-namespace cppforge
+#include <stdexcept>
+
+namespace cppforge::repositories
 {
-    namespace repositories
+    PgModuleRepository::PgModuleRepository(QSqlDatabase &database) : database_(database) {}
+
+    std::vector<entities::Module> PgModuleRepository::getAllModules() const
     {
-        PgModuleRepository::PgModuleRepository(QSqlDatabase &database) : database_(database) {}
+        std::vector<entities::Module> modules;
 
-        std::vector<entities::Module> PgModuleRepository::getAllModules() const
+        if (!database_.isOpen())
         {
-            std::vector<entities::Module> modules;
-
-            if (!database_.isOpen())
-                return modules;
-
-            QSqlQuery query(database_);
-            query.prepare("SELECT id, name, description FROM modules ORDER BY id ASC");
-
-            if (query.exec())
-            {
-                while (query.next())
-                {
-                    uint64_t id = query.value("id").toULongLong();
-                    QString name = query.value("name").toString();
-                    QString description = query.value("description").toString();
-
-                    modules.emplace_back(id, name, description);
-                }
-            }
-            else
-            {
-                qDebug() << "Failed to fetch all modules:" << query.lastError().text();
-            }
-
-            return modules;
+            throw std::runtime_error("Module repository database is unavailable");
         }
 
-        std::optional<entities::Module> PgModuleRepository::getModuleById(uint64_t id) const
+        QSqlQuery query(database_);
+        if (query.prepare("SELECT id, name, description FROM modules ORDER BY id ASC") && query.exec())
         {
-            if (!database_.isOpen())
-                return std::nullopt;
-
-            QSqlQuery query(database_);
-            query.prepare("SELECT id, name, description FROM modules WHERE id = :id");
-            query.bindValue(":id", QVariant::fromValue(id));
-
-            if (query.exec() && query.next())
+            while (query.next())
             {
-                uint64_t moduleId = query.value("id").toULongLong();
-                QString name = query.value("name").toString();
-                QString description = query.value("description").toString();
+                const std::uint64_t moduleId = query.value("id").toULongLong();
+                const QString name = query.value("name").toString();
+                const QString description = query.value("description").toString();
 
-                return entities::Module(moduleId, name, description);
+                modules.emplace_back(moduleId, name, description);
             }
-
-            return std::nullopt;
         }
-    } // namespace repositories
-} // namespace cppforge
+        else
+        {
+            qWarning() << "Module list query failed";
+            throw std::runtime_error("Module list query failed");
+        }
+
+        return modules;
+    }
+
+    std::optional<entities::Module> PgModuleRepository::getModuleById(std::uint64_t moduleId) const
+    {
+        if (!database_.isOpen())
+        {
+            throw std::runtime_error("Module repository database is unavailable");
+        }
+
+        QSqlQuery query(database_);
+        if (!query.prepare("SELECT id, name, description FROM modules WHERE id = :id"))
+        {
+            qWarning() << "Module lookup query failed";
+            throw std::runtime_error("Module lookup query failed");
+        }
+        query.bindValue(":id", QVariant::fromValue(moduleId));
+
+        if (!query.exec())
+        {
+            qWarning() << "Module lookup query failed";
+            throw std::runtime_error("Module lookup query failed");
+        }
+
+        if (query.next())
+        {
+            const std::uint64_t foundId = query.value("id").toULongLong();
+            const QString name = query.value("name").toString();
+            const QString description = query.value("description").toString();
+
+            return entities::Module(foundId, name, description);
+        }
+
+        return std::nullopt;
+    }
+} // namespace cppforge::repositories

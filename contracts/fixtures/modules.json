@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Intro",
+      "description": "Start here"
+    }
+  ],
+  "meta": {
+    "total": 1
+  }
+}

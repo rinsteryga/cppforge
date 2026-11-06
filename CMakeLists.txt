@@ -20,8 +20,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql Network)
 enable_testing()
 
 add_subdirectory(src)
-add_subdirectory(tests)
 add_subdirectory(server)
+add_subdirectory(tests)
 
 if(WIN32)
     enable_language(RC)
