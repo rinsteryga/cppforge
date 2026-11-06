@@ -77,7 +77,7 @@ namespace cppforge::services
             if (errorLog.trimmed().isEmpty())
             {
                 errorLog = finished ? "Compiler exited with code " + QString::number(compiler.exitCode())
-                                    : "Compilation timed out";
+                                    : "Compilation failed or timed out: " + compiler.errorString();
             }
             throw std::runtime_error("Compilation Error:\n" + errorLog.toStdString());
         }
@@ -100,14 +100,14 @@ namespace cppforge::services
             process.setProcessChannelMode(QProcess::MergedChannels);
             process.start(executablePath, QStringList());
 
-            if (process.waitForFinished(3000))
+            if (process.waitForFinished(10000) && process.error() != QProcess::FailedToStart)
             {
                 lastOutput = QString::fromLocal8Bit(process.readAll().trimmed());
             }
             else
             {
                 process.kill();
-                errorLog = "Time Limit Exceeded (No tests provided)";
+                errorLog = "Program failed to start or timed out (No tests provided): " + process.errorString();
             }
         }
         else
@@ -125,7 +125,7 @@ namespace cppforge::services
                     process.closeWriteChannel();
                 }
 
-                if (process.waitForFinished(2000))
+                if (process.waitForFinished(10000) && process.error() != QProcess::FailedToStart)
                 {
                     QString output = QString::fromLocal8Bit(process.readAll().trimmed()).replace("\r\n", "\n");
                     QString expected = test.getExpectedOutput().trimmed().replace("\r\n", "\n");
@@ -139,7 +139,7 @@ namespace cppforge::services
                 else
                 {
                     process.kill();
-                    lastOutput = "TLE (Time Limit Exceeded)";
+                    lastOutput = "TLE (" + process.errorString() + ")";
                     break;
                 }
             }
