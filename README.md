@@ -12,12 +12,27 @@ Devs: @rinsteryga, @Sernock
    cd cppforge
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies (or use vcpkg):**
+
+   The system dependencies of this build are PostgreSQL and a C++ toolchain.
+   Qt and all other third-party libraries are provided by vcpkg:
 
    ```bash
    sudo apt update
-   sudo apt install -y build-essential cmake qtbase5-dev qt5-qmake qtdeclarative5-dev qttools5-dev postgresql postgresql-contrib
+   sudo apt install -y build-essential cmake ninja-build git pkg-config curl zip unzip tar \
+     postgresql postgresql-contrib \
+     autoconf automake autoconf-archive bison flex gperf libtool python3 \
+     libgl1-mesa-dev libglu1-mesa-dev \
+     libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxrandr-dev \
+     libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-image0-dev \
+     libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-shape0-dev \
+     libxcb-shm0-dev libxcb-sync-dev libxcb-util-dev libxcb-xfixes0-dev \
+     libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev \
+     libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libssl-dev
    ```
+
+   Set up vcpkg (see <https://learn.microsoft.com/vcpkg/get_started/overview>) and make
+   sure the `VCPKG_ROOT` environment variable points to its checkout.
 
 3. **Database Setup (PostgreSQL):**
 
@@ -47,9 +62,9 @@ Devs: @rinsteryga, @Sernock
 4. **Build the project:**
 
    ```bash
-   mkdir build && cd build
-   cmake ..
-   make
+   cmake --preset linux-x64-vcpkg
+   cmake --build --preset linux-x64-vcpkg
+   ctest --test-dir build/linux-x64-vcpkg --output-on-failure
    ```
 
 5. **Run the application:**
@@ -69,7 +84,7 @@ If you prefer not to build from source, you can install the pre-compiled package
 
 ### Linux (.deb package for Ubuntu/Debian)
 1. Download the `cppforge-*-Linux.deb` package.
-2. Install it using `apt` so that dependencies (like `libqt5sql5-psql` and PostgreSQL) are automatically resolved and installed:
+2. Install it using `apt` so that PostgreSQL is automatically resolved and installed:
    ```bash
    sudo apt install ./cppforge-1.0.3-Linux.deb
    ```
