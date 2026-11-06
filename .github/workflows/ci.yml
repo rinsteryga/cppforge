@@ -102,3 +102,6 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build/${{ matrix.preset }} --output-on-failure
+        env:
+          QT_ASSUME_STDERR_HAS_CONSOLE: 1
+          QT_FORCE_STDERR_LOGGING: 1
