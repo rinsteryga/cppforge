@@ -66,7 +66,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vcpkg-cache
-          key: backend-vcpkg-linux-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-x64-linux-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-x64-linux-
 
       - name: Create dedicated test database
         env:
@@ -95,13 +96,28 @@ jobs:
         run: >-
           cmake --build --preset linux-x64-vcpkg --target cppforge_server cppforge_tests
 
-      - name: Locate Qt PostgreSQL driver
+      - name: Locate Qt SQL driver directory
         shell: bash
         run: |
-          driver="$(find build/linux-x64-vcpkg/vcpkg_installed -name 'libqsqlpsql.so' | head -n 1)"
-          test -n "$driver"
-          echo "QT_PLUGIN_PATH=$(dirname "$(dirname "$driver")")" >> "$GITHUB_ENV"
-          echo "Using Qt SQL plugin: $driver"
+          plugin_dir="$(find build/linux-x64-vcpkg/vcpkg_installed -type d -path '*/plugins/sqldrivers' | head -n 1)"
+          if [ -z "$plugin_dir" ]; then
+            echo 'Qt SQL driver directory was not found' >&2
+            find build/linux-x64-vcpkg/vcpkg_installed -maxdepth 5 -type d | sort | tail -n 80
+            exit 1
+          fi
+
+          echo "QT_PLUGIN_PATH=$(dirname "$plugin_dir")" >> "$GITHUB_ENV"
+          ls -la "$plugin_dir"
+
+          if [ ! -e "$plugin_dir/libqsqlpsql.so" ]; then
+            driver="$(find "$plugin_dir" -maxdepth 1 -iname '*qsqlpsql*' | head -n 1)"
+            if [ -z "$driver" ]; then
+              echo 'The Qt PostgreSQL driver is not installed' >&2
+              exit 1
+            fi
+            ln -sf "$(basename "$driver")" "$plugin_dir/libqsqlpsql.so"
+            echo "Linked $driver as libqsqlpsql.so"
+          fi
 
       - name: Test
         run: ctest --test-dir build/linux-x64-vcpkg --output-on-failure
@@ -159,6 +175,13 @@ jobs:
           git clone --depth 1 https://github.com/microsoft/vcpkg.git "$env:RUNNER_TEMP\vcpkg"
           & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
           "VCPKG_ROOT=$env:RUNNER_TEMP\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: vcpkg-cache
+          key: vcpkg-${{ matrix.triplet }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: vcpkg-${{ matrix.triplet }}-
 
       - name: Configure
         run: cmake --preset ${{ matrix.preset }}
