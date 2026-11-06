@@ -53,7 +53,9 @@ namespace cppforge::services
         sourceFile.write(code.toUtf8());
         sourceFile.close();
 
-        const QString executablePath = sourcePath + CppToolchain::executableSuffix();
+        constexpr int sourceSuffixLength = int(sizeof(".cpp")) - 1;
+        const QString executablePath =
+            sourcePath.left(sourcePath.size() - sourceSuffixLength) + CppToolchain::executableSuffix();
 
         QProcess compiler;
         compiler.setProcessEnvironment(toolchain.environment());
@@ -61,7 +63,7 @@ namespace cppforge::services
         compiler.start(toolchain.compilerPath(), toolchain.compileArguments(sourcePath, executablePath));
 
         const bool finished = compiler.waitForFinished(30000);
-        const bool compiled = finished && compiler.exitCode() == 0;
+        const bool compiled = finished && compiler.exitCode() == 0 && QFileInfo::exists(executablePath);
         QString errorLog = QString::fromLocal8Bit(compiler.readAllStandardError());
         if (errorLog.trimmed().isEmpty())
         {
@@ -76,8 +78,9 @@ namespace cppforge::services
             QFile::remove(executablePath);
             if (errorLog.trimmed().isEmpty())
             {
-                errorLog = finished ? "Compiler exited with code " + QString::number(compiler.exitCode())
-                                    : "Compilation failed or timed out: " + compiler.errorString();
+                errorLog = finished && compiler.exitCode() == 0 ? "Compiler reported success but produced no executable"
+                           : finished ? "Compiler exited with code " + QString::number(compiler.exitCode())
+                                      : "Compilation failed or timed out: " + compiler.errorString();
             }
             throw std::runtime_error("Compilation Error:\n" + errorLog.toStdString());
         }

@@ -18,7 +18,13 @@ namespace cppforge::services
     {
         QProcess process;
         process.start("docker", {"info"});
-        return process.waitForFinished(2000) && (process.exitCode() == 0);
+        const bool available = process.waitForFinished(5000) && process.exitCode() == 0;
+        if (!available && process.state() == QProcess::Running)
+        {
+            process.kill();
+            process.waitForFinished(1000);
+        }
+        return available;
     }
 
     entities::ExecutionResult DockerCodeRunner::runBlocking(const QString &code,
