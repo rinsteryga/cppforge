@@ -1,0 +1,143 @@
+name: Backend CI
+
+on: [push, pull_request]
+
+env:
+  VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-cache,readwrite
+
+jobs:
+  format:
+    name: Backend C++ formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+
+      - name: Check backend C++ formatting
+        run: |
+          find src/api src/app src/data server tests -type f \( -name "*.cpp" -o -name "*.hpp" \) \
+            -exec clang-format --dry-run --Werror {} +
+
+  backend-linux:
+    name: Backend (Linux + PostgreSQL)
+    needs: format
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cppforge
+          POSTGRES_USER: cppforge
+          POSTGRES_PASSWORD: cppforge_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cppforge -d cppforge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake autoconf-archive bison flex gperf libtool pkg-config python3 ninja-build \
+            postgresql-client \
+            libgl1-mesa-dev libglu1-mesa-dev \
+            libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxrandr-dev \
+            libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev libxcb-icccm4-dev libxcb-image0-dev \
+            libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-shape0-dev \
+            libxcb-shm0-dev libxcb-sync-dev libxcb-util-dev libxcb-xfixes0-dev \
+            libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libssl-dev
+
+      - name: Setup vcpkg
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$RUNNER_TEMP/vcpkg"
+          "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Cache vcpkg binaries
+        uses: actions/cache@v4
+        with:
+          path: vcpkg-cache
+          key: backend-vcpkg-linux-${{ hashFiles('vcpkg.json') }}
+
+      - name: Initialize test database
+        env:
+          PGPASSWORD: cppforge_ci
+        run: psql -h 127.0.0.1 -U cppforge -d cppforge -v ON_ERROR_STOP=1 -f deploy/postgres/init/10_test_db.sql
+
+      - name: Configure
+        run: cmake --preset linux-x64-vcpkg
+
+      - name: Build server and tests
+        run: >-
+          cmake --build --preset linux-x64-vcpkg --target cppforge_server
+          test_UseCases test_ModuleDto test_ServerIntegration test_DataBaseConnection
+
+      - name: Test
+        run: ctest --test-dir build/linux-x64-vcpkg --output-on-failure
+        env:
+          TEST_PG_HOST: 127.0.0.1
+          TEST_PG_PORT: 5432
+          TEST_PG_DB: cppforge_test
+          TEST_PG_USER: cppforge
+          TEST_PG_PASSWORD: cppforge_ci
+
+  backend-unit:
+    name: Backend unit tests (${{ matrix.os }})
+    needs: format
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            preset: windows-x64-vcpkg
+            triplet: x64-windows
+          - os: macos-latest
+            preset: macos-arm64-vcpkg
+            triplet: arm64-osx
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install autoconf automake autoconf-archive libtool pkg-config
+
+      - name: Setup MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup vcpkg (Linux / macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$RUNNER_TEMP/vcpkg"
+          "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Setup vcpkg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$env:RUNNER_TEMP\vcpkg"
+          & "$env:RUNNER_TEMP\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
+          "VCPKG_ROOT=$env:RUNNER_TEMP\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build server and tests
+        run: >-
+          cmake --build --preset ${{ matrix.preset }} --target cppforge_server
+          test_UseCases test_ModuleDto test_ServerIntegration test_DataBaseConnection
+
+      - name: Unit tests (HTTP integration skips without TEST_PG_* settings)
+        run: ctest --test-dir build/${{ matrix.preset }} --output-on-failure
