@@ -96,27 +96,16 @@ jobs:
         run: >-
           cmake --build --preset linux-x64-vcpkg --target cppforge_server cppforge_tests
 
-      - name: Locate Qt SQL driver directory
+      - name: Locate shared Qt SQL driver
         shell: bash
         run: |
-          plugin_dir="$(find build/linux-x64-vcpkg/vcpkg_installed -type d -path '*/plugins/sqldrivers' | head -n 1)"
-          if [ -z "$plugin_dir" ]; then
-            echo 'Qt SQL driver directory was not found' >&2
-            find build/linux-x64-vcpkg/vcpkg_installed -maxdepth 5 -type d | sort | tail -n 80
-            exit 1
-          fi
-
-          echo "QT_PLUGIN_PATH=$(dirname "$plugin_dir")" >> "$GITHUB_ENV"
-          ls -la "$plugin_dir"
-
-          if [ ! -e "$plugin_dir/libqsqlpsql.so" ]; then
-            driver="$(find "$plugin_dir" -maxdepth 1 -iname '*qsqlpsql*' | head -n 1)"
-            if [ -z "$driver" ]; then
-              echo 'The Qt PostgreSQL driver is not installed' >&2
-              exit 1
-            fi
-            ln -sf "$(basename "$driver")" "$plugin_dir/libqsqlpsql.so"
-            echo "Linked $driver as libqsqlpsql.so"
+          driver="$(find build/linux-x64-vcpkg/vcpkg_installed -type f -name 'libqsqlpsql.so*' | head -n 1)"
+          if [ -n "$driver" ]; then
+            echo "QT_PLUGIN_PATH=$(dirname "$(dirname "$driver")")" >> "$GITHUB_ENV"
+            echo "Using Qt SQL plugin: $driver"
+          else
+            echo 'No shared QPSQL plugin found; relying on the Qt SQL plugin linked into the build'
+            find build/linux-x64-vcpkg/vcpkg_installed -type d -path '*/plugins/sqldrivers' -print -exec ls -la {} \;
           fi
 
       - name: Test
