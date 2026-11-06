@@ -70,6 +70,54 @@ namespace
         return result;
     }
 
+    std::vector<HttpResult> getConcurrent(const QUrl &url, std::size_t count)
+    {
+        QNetworkAccessManager manager;
+        std::vector<QNetworkReply *> replies;
+        replies.reserve(count);
+        QEventLoop loop;
+        QTimer timeout;
+        timeout.setSingleShot(true);
+        std::size_t remaining = count;
+
+        for (std::size_t index = 0; index < count; ++index)
+        {
+            auto *reply = manager.get(QNetworkRequest(url));
+            replies.push_back(reply);
+            QObject::connect(reply, &QNetworkReply::finished, &loop,
+                             [&loop, &remaining]
+                             {
+                                 if (--remaining == 0)
+                                 {
+                                     loop.quit();
+                                 }
+                             });
+        }
+
+        QObject::connect(&timeout, &QTimer::timeout, &loop,
+                         [&replies, &loop]
+                         {
+                             for (auto *reply : replies)
+                             {
+                                 reply->abort();
+                             }
+                             loop.quit();
+                         });
+        timeout.start(10000);
+        loop.exec();
+
+        std::vector<HttpResult> results;
+        results.reserve(replies.size());
+        for (auto *reply : replies)
+        {
+            results.push_back({.status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(),
+                               .body = reply->readAll(),
+                               .requestId = reply->rawHeader("X-Request-Id")});
+            reply->deleteLater();
+        }
+        return results;
+    }
+
     nlohmann::json parseBody(const HttpResult &result)
     {
         return nlohmann::json::parse(result.body.constData());
@@ -84,6 +132,37 @@ namespace
             throw std::runtime_error("Unable to read API fixture");
         }
         return nlohmann::json::parse(file.readAll().constData());
+    }
+
+    bool canConnectToTestDatabase(const cppforge::data::DatabaseConfig &config)
+    {
+        try
+        {
+            cppforge::data::DatabaseConnectionProvider provider(config);
+            auto database = provider.connectionForCurrentThread();
+            QSqlQuery query(database);
+            return query.exec("SELECT 1") && query.next();
+        }
+        catch (const std::exception &)
+        {
+            return false;
+        }
+    }
+
+    bool hasRealSchemaAndSeed(const cppforge::data::DatabaseConfig &config)
+    {
+        cppforge::data::DatabaseConnectionProvider provider(config);
+        auto database = provider.connectionForCurrentThread();
+        QSqlQuery query(database);
+        if (!query.exec("SELECT COUNT(*) FROM information_schema.tables "
+                        "WHERE table_schema = 'public' AND table_name IN "
+                        "('users', 'modules', 'lessons', 'coding_tasks')") ||
+            !query.next() || query.value(0).toInt() != 4)
+        {
+            return false;
+        }
+
+        return query.exec("SELECT COUNT(*) FROM modules") && query.next() && query.value(0).toInt() > 0;
     }
 } // namespace
 
@@ -102,18 +181,17 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         try
         {
             m_databaseConfig = testDatabaseConfig();
-            cppforge::data::DatabaseConnectionProvider probe(m_databaseConfig);
-            auto database = probe.connectionForCurrentThread();
-            QSqlQuery query(database);
-            if (!query.exec("SELECT 1") || !query.next())
-            {
-                QSKIP("cppforge_test is not available");
-            }
         }
         catch (const std::exception &)
         {
             QSKIP("Set TEST_PG_* variables and make cppforge_test available to run HTTP integration tests");
         }
+
+        if (!canConnectToTestDatabase(m_databaseConfig))
+        {
+            QSKIP("cppforge_test is not available");
+        }
+        QVERIFY(hasRealSchemaAndSeed(m_databaseConfig));
 
         cppforge::server::ServerConfig config;
         config.database = m_databaseConfig;
@@ -151,13 +229,15 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         const auto payload = parseBody(list);
         QVERIFY(payload.at("meta").at("total").get<std::size_t>() > 0);
         QVERIFY(!payload.at("items").empty());
-        QVERIFY(payload.at("items").contains(readFixture(QStringLiteral("module.json"))));
         QCOMPARE(payload.at("meta").at("total").get<std::size_t>(), payload.at("items").size());
 
         const auto moduleId = payload.at("items").at(0).at("id").get<std::uint64_t>();
         const auto module = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules/%1").arg(moduleId))));
         QCOMPARE(module.status, 200);
-        QCOMPARE(parseBody(module).at("id").get<std::uint64_t>(), moduleId);
+        const auto modulePayload = parseBody(module);
+        QCOMPARE(modulePayload.at("id").get<std::uint64_t>(), moduleId);
+        QVERIFY(!modulePayload.at("name").get<std::string>().empty());
+        QVERIFY(modulePayload.at("description").is_string());
     }
 
     void notFoundUsesErrorEnvelope()
@@ -172,6 +252,18 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         const auto missingModule = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules/404"))));
         QCOMPARE(missingModule.status, 404);
         QVERIFY(parseBody(missingModule) == readFixture(QStringLiteral("error_not_found.json")));
+    }
+
+    void concurrentRequestsUseThreadLocalDatabaseConnections()
+    {
+        const auto results = getConcurrent(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), 16);
+        QCOMPARE(results.size(), std::size_t(16));
+        for (const auto &result : results)
+        {
+            QCOMPARE(result.status, 200);
+            QVERIFY(!result.requestId.isEmpty());
+            QVERIFY(parseBody(result).at("meta").at("total").get<std::size_t>() > 0);
+        }
     }
 
     void healthDoesNotRequireDatabase()

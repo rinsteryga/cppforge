@@ -1,8 +1,9 @@
 # Backend roadmap
 
-The initial `/api/v1` vertical slice establishes the transport contract, application use-cases,
-database connection ownership, and a testable HTTP server. The following capabilities are
-intentionally not implemented in this stage.
+Stage 1 establishes the `/api/v1` transport contract, module read use-cases, thread-local database
+connection ownership, health/readiness probes, and a testable HTTP server. Auth, submissions, and
+client applications are explicitly outside Stage 1. Follow-up implementation remains subject to
+the real-PostgreSQL validation described in the backend development section of the README.
 
 1. **Authentication and authorization** — account lifecycle, password/session policy, and protected
    API scopes.

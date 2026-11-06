@@ -68,10 +68,17 @@ jobs:
           path: vcpkg-cache
           key: backend-vcpkg-linux-${{ hashFiles('vcpkg.json') }}
 
-      - name: Initialize test database
+      - name: Create dedicated test database
         env:
           PGPASSWORD: cppforge_ci
         run: psql -h 127.0.0.1 -U cppforge -d cppforge -v ON_ERROR_STOP=1 -f deploy/postgres/init/10_test_db.sql
+
+      - name: Apply repository schema and seed to test database
+        env:
+          PGPASSWORD: cppforge_ci
+        run: |
+          psql -h 127.0.0.1 -U cppforge -d cppforge_test -v ON_ERROR_STOP=1 -f src/data/migrations/schema.sql
+          psql -h 127.0.0.1 -U cppforge -d cppforge_test -v ON_ERROR_STOP=1 -f src/data/migrations/seed.sql
 
       - name: Configure
         run: cmake --preset linux-x64-vcpkg
