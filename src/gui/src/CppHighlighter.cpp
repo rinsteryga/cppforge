@@ -1,5 +1,10 @@
 #include "../include/CppHighlighter.hpp"
 
+CppHighlighter::CppHighlighter(QObject *parent) : QSyntaxHighlighter(parent)
+{
+    setTheme(false);
+}
+
 CppHighlighter::CppHighlighter(QTextDocument *parent) : QSyntaxHighlighter(parent)
 {
     setTheme(false);

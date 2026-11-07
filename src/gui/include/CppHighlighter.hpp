@@ -18,10 +18,16 @@ class CppHighlighter : public QSyntaxHighlighter
 
 public:
     /**
-     * @brief Constructs a new CppHighlighter instance.
+     * @brief Constructs a new CppHighlighter instance with a QObject parent.
+     * @param parent The parent QObject.
+     */
+    explicit CppHighlighter(QObject *parent = nullptr);
+
+    /**
+     * @brief Constructs a new CppHighlighter instance with a QTextDocument parent.
      * @param parent The parent QTextDocument.
      */
-    explicit CppHighlighter(QTextDocument *parent = nullptr);
+    explicit CppHighlighter(QTextDocument *parent);
 
     /**
      * @brief Updates the highlighting colors based on the current theme.
