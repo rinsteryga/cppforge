@@ -5,6 +5,7 @@ find_package(Crow CONFIG REQUIRED)
 add_library(cppforge_server_lib STATIC
     src/ServerApp.cpp
     src/ServerConfig.cpp
+    src/CorsMiddleware.cpp
     src/RequestLoggingMiddleware.cpp
     src/controllers/HealthController.cpp
     src/controllers/ModulesController.cpp

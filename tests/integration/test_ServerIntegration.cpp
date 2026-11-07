@@ -25,6 +25,10 @@ namespace
         int status{};
         QByteArray body;
         QByteArray requestId;
+        QByteArray allowOrigin;
+        QByteArray allowMethods;
+        QByteArray allowHeaders;
+        QByteArray vary;
     };
 
     cppforge::data::DatabaseConfig testDatabaseConfig()
@@ -71,14 +75,18 @@ namespace
 
         const HttpResult result{.status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(),
                                 .body = reply->readAll(),
-                                .requestId = reply->rawHeader("X-Request-Id")};
+                                .requestId = reply->rawHeader("X-Request-Id"),
+                                .allowOrigin = reply->rawHeader("Access-Control-Allow-Origin"),
+                                .allowMethods = reply->rawHeader("Access-Control-Allow-Methods"),
+                                .allowHeaders = reply->rawHeader("Access-Control-Allow-Headers"),
+                                .vary = reply->rawHeader("Vary")};
         reply->deleteLater();
         return result;
     }
 
-    HttpResult get(const QUrl &url)
+    HttpResult get(const QUrl &url, const QByteArray &origin = {})
     {
-        return send(url, QByteArrayLiteral("GET"));
+        return send(url, QByteArrayLiteral("GET"), origin);
     }
 
     std::vector<HttpResult> getConcurrent(const QUrl &url, std::size_t count)
@@ -371,6 +379,46 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
             send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), QByteArrayLiteral("OPTIONS"));
         QCOMPARE(options.status, 204);
         QVERIFY(!options.requestId.isEmpty());
+    }
+
+    void corsHeadersFollowConfiguredOrigin()
+    {
+        const QByteArray allowedOrigin("https://cppforge.example");
+        auto config = cppforge::server::ServerConfig{};
+        config.database = m_databaseConfig;
+        config.port = 0;
+        config.host = "127.0.0.1";
+        config.allowedOrigin = allowedOrigin.toStdString();
+
+        cppforge::server::ServerApp corsServer(std::move(config));
+        corsServer.start();
+        const QUrl corsUrl(QStringLiteral("http://127.0.0.1:%1").arg(corsServer.port()));
+        const QUrl modulesUrl = corsUrl.resolved(QUrl(QStringLiteral("/api/v1/modules")));
+
+        const auto matching = get(modulesUrl, allowedOrigin);
+        QCOMPARE(matching.status, 200);
+        QCOMPARE(matching.allowOrigin, allowedOrigin);
+        QVERIFY(matching.vary.contains("Origin"));
+
+        const auto foreign = get(modulesUrl, QByteArrayLiteral("https://example.invalid"));
+        QCOMPARE(foreign.status, 200);
+        QVERIFY(foreign.allowOrigin.isEmpty());
+        QVERIFY(foreign.vary.contains("Origin"));
+
+        const auto preflight = send(modulesUrl, QByteArrayLiteral("OPTIONS"), allowedOrigin);
+        QCOMPARE(preflight.status, 204);
+        QCOMPARE(preflight.allowOrigin, allowedOrigin);
+        QVERIFY(preflight.allowMethods.contains("GET"));
+        QVERIFY(preflight.allowMethods.contains("OPTIONS"));
+        QVERIFY(preflight.allowHeaders.contains("Content-Type"));
+        QVERIFY(!preflight.requestId.isEmpty());
+
+        const auto disabled = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), allowedOrigin);
+        QCOMPARE(disabled.status, 200);
+        QVERIFY(disabled.allowOrigin.isEmpty());
+        QVERIFY(disabled.vary.isEmpty());
+
+        corsServer.stop();
     }
 
     void routeRegisteredAfterCatchAllRemainsReachable()

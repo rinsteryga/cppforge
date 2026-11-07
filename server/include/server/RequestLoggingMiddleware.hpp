@@ -1,5 +1,7 @@
 #pragma once
 
+#include "server/CorsMiddleware.hpp"
+
 #include <chrono>
 #include <string>
 
@@ -37,5 +39,5 @@ namespace cppforge::server
             context &ctx); // NOLINT(readability-identifier-naming, readability-convert-member-functions-to-static)
     };
 
-    using HttpApp = crow::App<RequestLoggingMiddleware>;
+    using HttpApp = crow::App<CorsMiddleware, RequestLoggingMiddleware>;
 } // namespace cppforge::server

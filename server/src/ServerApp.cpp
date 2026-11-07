@@ -38,6 +38,7 @@ namespace cppforge::server
 
     ServerApp::ServerApp(ServerConfig config, RouteConfigurator additionalRoutes)
         : m_config(std::move(config)), m_databaseProvider(m_config.database),
+          m_app(CorsMiddleware(m_config.allowedOrigin), RequestLoggingMiddleware()),
           m_additionalRoutes(std::move(additionalRoutes))
     {
         configure();
