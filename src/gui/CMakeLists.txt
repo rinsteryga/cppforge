@@ -17,12 +17,17 @@ add_library(cppforge_gui STATIC
     ${GUI_HEADERS}
 )
 
+if(COMMAND qt_policy)
+    qt_policy(SET QTP0004 NEW)
+endif()
+
 set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(cppforge_gui
     URI CppForge
     VERSION 1.0
     RESOURCE_PREFIX "/qt/qml"
+    OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/CppForge"
     QML_FILES
         qml/Theme.qml
         qml/AuthWindow.qml
@@ -43,6 +48,8 @@ qt_add_qml_module(cppforge_gui
         qml/components/ForgeThemeCard.qml
         qml/components/ForgeSlider.qml
         qml/components/ForgeStatCard.qml
+        qml/components/ForgeAchievementNotification.qml
+        qml/components/ForgeLockIcon.qml
         qml/components/AuthBackgroundDecorations.qml
         qml/views/AuthView.qml
         qml/views/SignUpView.qml

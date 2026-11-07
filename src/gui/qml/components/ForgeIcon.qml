@@ -239,6 +239,39 @@ Item {
                     ctx.stroke();
                     break;
 
+                case "lock":
+                    // Padlock
+                    var sW = w * 0.48;
+                    var sL = (w - sW) / 2;
+                    var sR = sW / 2;
+                    var sT = h * 0.12;
+                    var bT = h * 0.44;
+                    ctx.beginPath();
+                    ctx.moveTo(sL, bT + 2);
+                    ctx.lineTo(sL, sT + sR);
+                    ctx.arc(w / 2, sT + sR, sR, Math.PI, 0, false);
+                    ctx.lineTo(sL + sW, bT + 2);
+                    ctx.stroke();
+                    // Body
+                    var bW = w * 0.74;
+                    var bH = h * 0.50;
+                    var bX = (w - bW) / 2;
+                    var bY = bT;
+                    var cr = Math.max(2, w * 0.12);
+                    ctx.beginPath();
+                    ctx.moveTo(bX + cr, bY);
+                    ctx.lineTo(bX + bW - cr, bY);
+                    ctx.quadraticCurveTo(bX + bW, bY, bX + bW, bY + cr);
+                    ctx.lineTo(bX + bW, bY + bH - cr);
+                    ctx.quadraticCurveTo(bX + bW, bY + bH, bX + bW - cr, bY + bH);
+                    ctx.lineTo(bX + cr, bY + bH);
+                    ctx.quadraticCurveTo(bX, bY + bH, bX, bY + bH - cr);
+                    ctx.lineTo(bX, bY + cr);
+                    ctx.quadraticCurveTo(bX, bY, bX + cr, bY);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+
                 case "gear":
                 case "settings":
                     // Gear cog
