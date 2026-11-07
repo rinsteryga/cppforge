@@ -13,6 +13,7 @@ services:
       - cppforge_pgdata:/var/lib/postgresql/data
       - ./src/data/migrations/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./src/data/migrations/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./src/data/migrations/modules:/docker-entrypoint-initdb.d/modules:ro
 
 volumes:
   cppforge_pgdata:
