@@ -20,8 +20,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql Network Quick Qml Concurre
 enable_testing()
 
 add_subdirectory(src)
-add_subdirectory(tests)
 add_subdirectory(server)
+add_subdirectory(tests)
 
 if(WIN32)
     enable_language(RC)
@@ -110,6 +110,7 @@ else()
 endif()
 
 install(FILES "LICENSE" "licenses/THIRD_PARTY_LICENSES.md" "licenses/LGPL-3.0.txt" "licenses/GPL-3.0.txt" DESTINATION "${DOC_DESTINATION}")
+
 install(FILES "src/data/migrations/schema.sql" DESTINATION "${DATA_DESTINATION}")
 install(FILES "src/data/migrations/seed.sql" DESTINATION "${DATA_DESTINATION}")
 install(DIRECTORY "src/data/migrations/modules" DESTINATION "${DATA_DESTINATION}")
@@ -231,7 +232,7 @@ if(WIN32)
         PATTERN "gcc" EXCLUDE     
         PATTERN "cmake" EXCLUDE
         PATTERN "pkgconfig" EXCLUDE
-        PATTERN "libQt*.a" EXCLUDE 
+        PATTERN "libQt5*.a" EXCLUDE 
         PATTERN "libboost_*.a" EXCLUDE
         PATTERN "libopencv_*.a" EXCLUDE
     )

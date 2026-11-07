@@ -1,3 +1,5 @@
 add_subdirectory(core)
 add_subdirectory(gui)
 add_subdirectory(data)
+add_subdirectory(api)
+add_subdirectory(app)
