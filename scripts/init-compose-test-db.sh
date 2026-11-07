@@ -40,13 +40,14 @@ EOF
 fi
 
 # Create the test database when it does not exist. The identifier is validated above.
-docker compose exec -T db psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -v dbname="$test_db" <<'SQL'
+docker compose exec -T db sh -ec \
+    'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -v dbname="$1"' sh "$test_db" <<'SQL'
 SELECT format('CREATE DATABASE %I', :'dbname')
 WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'dbname') \gexec
 SQL
 
 # schema.sql drops tables; apply it only to the dedicated test database.
-docker compose exec -T db psql -U "$POSTGRES_USER" -d "$test_db" -v ON_ERROR_STOP=1 -f /migrations/schema.sql
-docker compose exec -T db psql -U "$POSTGRES_USER" -d "$test_db" -v ON_ERROR_STOP=1 -f /migrations/seed.sql
+docker compose exec -T db sh -ec 'psql -U "$POSTGRES_USER" -d "$1" -v ON_ERROR_STOP=1 -f /migrations/schema.sql' sh "$test_db"
+docker compose exec -T db sh -ec 'psql -U "$POSTGRES_USER" -d "$1" -v ON_ERROR_STOP=1 -f /migrations/seed.sql' sh "$test_db"
 
 echo "$test_db is ready with the repository schema and seed data."

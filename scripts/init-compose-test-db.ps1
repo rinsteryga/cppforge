@@ -1,4 +1,6 @@
-$ErrorActionPreference = 'Stop'
+# Docker Compose writes progress to stderr; PowerShell 5 would treat that as a
+# terminating error under 'Stop'. Every native call below checks $LASTEXITCODE.
+$ErrorActionPreference = 'Continue'
 
 $testDb = $env:TEST_PG_DB
 if ([string]::IsNullOrWhiteSpace($testDb)) {
@@ -44,17 +46,17 @@ $createDatabaseSql = @'
 SELECT format('CREATE DATABASE %I', :'dbname')
 WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'dbname') \gexec
 '@
-$createDatabaseSql | docker compose exec -T db psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -v dbname="$testDb"
+$createDatabaseSql | docker compose exec -T db sh -ec 'psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -v dbname="$1"' sh $testDb
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to create $testDb."
 }
 
 # schema.sql drops tables; apply it only to the dedicated test database.
-docker compose exec -T db psql -U "$POSTGRES_USER" -d $testDb -v ON_ERROR_STOP=1 -f /migrations/schema.sql
+docker compose exec -T db sh -ec 'psql -U "$POSTGRES_USER" -d "$1" -v ON_ERROR_STOP=1 -f /migrations/schema.sql' sh $testDb
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to apply the schema to $testDb."
 }
-docker compose exec -T db psql -U "$POSTGRES_USER" -d $testDb -v ON_ERROR_STOP=1 -f /migrations/seed.sql
+docker compose exec -T db sh -ec 'psql -U "$POSTGRES_USER" -d "$1" -v ON_ERROR_STOP=1 -f /migrations/seed.sql' sh $testDb
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to seed $testDb."
 }
