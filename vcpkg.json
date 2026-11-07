@@ -11,9 +11,14 @@
       "features": [
         "gui",
         "widgets",
+        "png",
+        "jpeg",
         "sql",
+        "sql-psql",
         "network",
-        "concurrent"
+        "concurrent",
+        "testlib",
+        "thread"
       ]
     },
     "qtdeclarative",
@@ -21,5 +26,10 @@
     "libpq",
     "asio",
     "crow"
-  ]
+  ],
+  "vcpkg-configuration": {
+    "overlay-ports": [
+      "tools/vcpkg-ports"
+    ]
+  }
 }

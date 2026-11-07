@@ -15,7 +15,6 @@ file(GLOB_RECURSE GUI_HEADERS CONFIGURE_DEPENDS
 add_library(cppforge_gui STATIC
     ${GUI_SOURCES}
     ${GUI_HEADERS}
-    resources/resources.qrc
 )
 
 set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)

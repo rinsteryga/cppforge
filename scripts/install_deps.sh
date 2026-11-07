@@ -23,18 +23,13 @@ fi
 
 if [ -z "$PSQL_CMD" ] && ! id -u postgres > /dev/null 2>&1; then
     if command -v apt-get > /dev/null 2>&1; then
-        echo "Installing PostgreSQL and required Qt drivers..."
+        echo "Installing PostgreSQL..."
         apt-get update
-        apt-get install -y postgresql postgresql-contrib libqt6sql6-psql
+        apt-get install -y postgresql postgresql-contrib
         PSQL_CMD=$(command -v psql)
     else
         echo "ERROR: PostgreSQL not found and cannot be automatically installed."
         exit 1
-    fi
-else
-    if command -v apt-get > /dev/null 2>&1; then
-        echo "Ensuring Qt PostgreSQL driver is installed..."
-        apt-get install -y libqt6sql6-psql
     fi
 fi
 

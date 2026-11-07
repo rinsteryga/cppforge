@@ -24,12 +24,26 @@ add_subdirectory(tests)
 add_subdirectory(server)
 
 if(WIN32)
-    set(APP_ICON_RESOURCE "src/gui/resources/windows_icon.rc")
+    enable_language(RC)
+    set(APP_ICON_RESOURCE "${CMAKE_CURRENT_BINARY_DIR}/cppforge_windows_icon.res")
+    add_custom_command(
+        OUTPUT "${APP_ICON_RESOURCE}"
+        COMMAND "${CMAKE_RC_COMPILER}" /fo "${APP_ICON_RESOURCE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/windows_icon.rc"
+        DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/windows_icon.rc"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resources/icons/main_logo.ico"
+        VERBATIM
+    )
+    set_source_files_properties("${APP_ICON_RESOURCE}" PROPERTIES
+        GENERATED TRUE
+        EXTERNAL_OBJECT TRUE
+    )
 else()
     set(APP_ICON_RESOURCE "")
 endif()
 
-add_executable(cppforge main.cpp ${APP_ICON_RESOURCE})
+add_executable(cppforge main.cpp ${APP_ICON_RESOURCE} src/gui/resources/resources.qrc)
 
 target_link_libraries(cppforge
     PRIVATE 
@@ -44,6 +58,34 @@ target_link_libraries(cppforge
     Qt6::Sql
     Qt6::Core
 )
+
+if(WIN32 AND DEFINED QT6_INSTALL_PREFIX AND EXISTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}")
+    foreach(_plugin_dir platforms sqldrivers imageformats iconengines styles tls networkinformation generic)
+        if(EXISTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${_plugin_dir}")
+            add_custom_command(TARGET cppforge POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_directory
+                        "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${_plugin_dir}"
+                        "$<TARGET_FILE_DIR:cppforge>/${_plugin_dir}"
+                COMMENT "Deploying Qt plugins (${_plugin_dir})"
+                VERBATIM
+            )
+        endif()
+    endforeach()
+endif()
+
+if(WIN32 AND DEFINED QT6_INSTALL_PREFIX)
+    foreach(_runtime_dll libpq.dll libssl-3-x64.dll libcrypto-3-x64.dll)
+        if(EXISTS "${QT6_INSTALL_PREFIX}/bin/${_runtime_dll}")
+            add_custom_command(TARGET cppforge POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                        "${QT6_INSTALL_PREFIX}/bin/${_runtime_dll}"
+                        "$<TARGET_FILE_DIR:cppforge>/${_runtime_dll}"
+                COMMENT "Deploying ${_runtime_dll}"
+                VERBATIM
+            )
+        endif()
+    endforeach()
+endif()
 
 set_target_properties(cppforge PROPERTIES
     WIN32_EXECUTABLE ON
@@ -98,7 +140,8 @@ if(WIN32)
 
 
     install(FILES "scripts/install_deps.ps1" DESTINATION "scripts")
-    
+
+    if(MINGW)
     get_filename_component(MSYS2_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
     find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt-qt6 windeployqt-qt6.exe windeployqt windeployqt.exe HINTS ${MSYS2_BIN_DIR})
 
@@ -194,11 +237,27 @@ if(WIN32)
     )
 
     install(DIRECTORY "${MSYS2_ROOT_DIR}/x86_64-w64-mingw32/" DESTINATION "x86_64-w64-mingw32")
-elseif(APPLE)
-    find_program(MACDEPLOYQT_EXECUTABLE macdeployqt)
+    else()
+        # MSVC + vcpkg: stage the vcpkg runtime DLLs and the Qt plugins next
+        # to the executable (vcpkg ships no windeployqt for this setup).
+        set(VCPKG_BIN_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin")
+        if(EXISTS "${VCPKG_BIN_DIR}")
+            file(GLOB VCPKG_RUNTIME_DLLS "${VCPKG_BIN_DIR}/*.dll")
+            install(FILES ${VCPKG_RUNTIME_DLLS} DESTINATION bin)
+        endif()
 
+        if(DEFINED QT6_INSTALL_PREFIX AND EXISTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}")
+            install(DIRECTORY "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/" DESTINATION bin)
+        endif()
+    endif()
+elseif(APPLE)
+    find_program(MACDEPLOYQT_EXECUTABLE macdeployqt
+        HINTS "${QT6_INSTALL_PREFIX}/bin" "${QT6_INSTALL_PREFIX}/bin/macdeployqt.app" "${QT6_INSTALL_PREFIX}/tools/Qt6/bin")
+
+    # Static vcpkg Qt works without macdeployqt; it is only needed to
+    # bundle frameworks of dynamic Qt builds.
     if(NOT MACDEPLOYQT_EXECUTABLE)
-        message(FATAL_ERROR "macdeployqt not found!")
+        message(WARNING "macdeployqt not found! Dynamic Qt resources might not be bundled.")
     endif()
 
     install(CODE "
@@ -231,7 +290,8 @@ elseif(APPLE)
 else()
     set(CPACK_GENERATOR "DEB;TGZ")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "cppforge")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6, libqt6sql6, libqt6sql6-psql, libqt6network6, libqt6core6t64, libqt6qml6, libqt6quick6, libqt6quickcontrols2-6, postgresql")
+    # Qt and libpq are linked statically from the vcpkg runtime.
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "postgresql")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
 endif()
 
