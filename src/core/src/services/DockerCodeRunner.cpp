@@ -2,7 +2,9 @@
 
 #include "../../include/entities/ExecutionResult.hpp"
 #include "../../include/entities/TestCase.hpp"
+#include "../../include/services/LocalCodeRunner.hpp"
 
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QProcess>
@@ -16,15 +18,24 @@ namespace cppforge::services
 
     bool DockerCodeRunner::isAvailable() const
     {
-        QProcess process;
-        process.start("docker", {"info"});
-        const bool available = process.waitForFinished(5000) && process.exitCode() == 0;
-        if (!available && process.state() == QProcess::Running)
+        QProcess infoProcess;
+        infoProcess.start("docker", {"info"});
+        const bool dockerRunning = infoProcess.waitForFinished(3000) && infoProcess.exitCode() == 0;
+        if (!dockerRunning)
         {
-            process.kill();
-            process.waitForFinished(1000);
+            return false;
         }
-        return available;
+
+        // Verify that target runner image exists locally
+        QProcess imageProcess;
+        imageProcess.start("docker", {"image", "inspect", m_imageName});
+        const bool imageExists = imageProcess.waitForFinished(3000) && imageProcess.exitCode() == 0;
+        if (!imageExists)
+        {
+            qWarning() << "[DockerCodeRunner] Docker is active, but runner image" << m_imageName
+                       << "is not found locally.";
+        }
+        return imageExists;
     }
 
     entities::ExecutionResult DockerCodeRunner::runBlocking(const QString &code,
@@ -57,7 +68,17 @@ namespace cppforge::services
         }
         catch (const std::runtime_error &e)
         {
-            return entities::ExecutionResult(0, false, "", QString::fromUtf8(e.what()), 0, 0);
+            qWarning() << "[DockerCodeRunner] Docker run failed:" << e.what()
+                       << "- attempting fallback to LocalCodeRunner";
+            try
+            {
+                LocalCodeRunner localFallback;
+                return localFallback.runBlocking(code, tests);
+            }
+            catch (const std::exception &localEx)
+            {
+                return entities::ExecutionResult(0, false, "", QString::fromUtf8(e.what()), 0, 0);
+            }
         }
     }
 
