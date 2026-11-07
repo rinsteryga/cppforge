@@ -29,9 +29,12 @@ foreach(TEST_FILE IN LISTS TEST_SOURCES)
 
     if(TEST_NAME STREQUAL "test_ServerIntegration")
         target_link_libraries(${TEST_NAME} PRIVATE cppforge_server_lib)
+    else()
+        target_link_libraries(${TEST_NAME} PRIVATE cppforge_qpsql_plugin)
     endif()
 
-    if(WIN32 AND (TEST_NAME STREQUAL "test_ServerIntegration" OR TEST_NAME STREQUAL "test_DataBaseConnection") AND
+    if(WIN32 AND (TEST_NAME STREQUAL "test_ServerIntegration" OR TEST_NAME STREQUAL "test_DataBaseConnection" OR
+                  TEST_NAME STREQUAL "test_SqlDriverAvailability") AND
        DEFINED QT6_INSTALL_PREFIX AND DEFINED QT6_INSTALL_PLUGINS)
         set(QT_SQL_DRIVER_DIR "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/sqldrivers")
         if(EXISTS "${QT_SQL_DRIVER_DIR}")

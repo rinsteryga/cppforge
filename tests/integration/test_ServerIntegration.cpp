@@ -9,6 +9,7 @@
 #include <QNetworkRequest>
 #include <QTimer>
 #include <QUrl>
+#include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
 #include <QtTest>
 
@@ -239,6 +240,16 @@ private:
 private slots: // NOLINT(readability-redundant-access-specifiers)
     void initTestCase()
     {
+        if (!QSqlDatabase::isDriverAvailable(QStringLiteral("QPSQL")))
+        {
+            const QString message = QStringLiteral("QPSQL driver is not available");
+            if (requireDatabase())
+            {
+                QFAIL(qPrintable(message));
+            }
+            QSKIP(qPrintable(message));
+        }
+
         const auto state = inspectTestDatabase(m_databaseConfig);
         if (state != TestDatabaseState::Ready)
         {

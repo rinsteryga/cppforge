@@ -55,6 +55,10 @@ target_link_libraries(cppforge
     Qt6::Core
 )
 
+if(TARGET cppforge_qpsql_plugin)
+    target_link_libraries(cppforge PRIVATE cppforge_qpsql_plugin)
+endif()
+
 if(WIN32 AND DEFINED QT6_INSTALL_PREFIX AND EXISTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}")
     foreach(_plugin_dir platforms sqldrivers imageformats iconengines styles tls networkinformation generic)
         if(EXISTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${_plugin_dir}")
