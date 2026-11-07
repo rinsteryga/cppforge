@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Module not found",
+    "details": {
+      "id": 404
+    }
+  }
+}
