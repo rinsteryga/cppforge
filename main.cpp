@@ -1,5 +1,6 @@
 #include "AuthController.hpp"
 #include "DashboardController.hpp"
+#include "TaskController.hpp"
 #include "ThemeManager.hpp"
 #include "WindowStateManager.hpp"
 #include "repositories/PgAchievementRepository.hpp"
@@ -16,6 +17,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QFontDatabase>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlComponent>
@@ -43,11 +45,27 @@ int main(int argc, char *argv[])
     app.setOrganizationName("CppForge");
     app.setOrganizationDomain("cppforge.org");
     app.setApplicationName("StudyApp");
+    app.setWindowIcon(QIcon(":/icons/main_logo.ico"));
 
     app.setStyleSheet("QToolTip { background-color: rgb(255, 255, 255); color: rgb(0, 0, 0); border: 1px solid "
                       "rgb(150, 150, 150); padding: 5px; }");
 
     app.setQuitOnLastWindowClosed(true);
+
+    // Register embedded high-quality fonts (IBM Plex Sans for UI/reading, Hack & IBM Plex Mono for code)
+    QFontDatabase::addApplicationFont(":/fonts/IBMPlexSans-Regular.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/IBMPlexSans-Medium.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/IBMPlexSans-SemiBold.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/IBMPlexSans-Bold.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Hack-Regular.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Hack-Bold.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Hack-Italic.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/IBMPlexMono-Regular.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/IBMPlexMono-SemiBold.ttf");
+
+    QFont appFont("IBM Plex Sans", 10);
+    appFont.setStyleHint(QFont::SansSerif);
+    app.setFont(appFont);
 
     QSqlDatabase db = cppforge::data::connectDatabase();
 
@@ -92,6 +110,15 @@ int main(int argc, char *argv[])
     auto dashboardController = std::make_unique<cppforge::gui::DashboardController>();
     dashboardController->setUserService(userService.get());
     dashboardController->setCourseService(courseService.get());
+    dashboardController->setAchievementService(achievementService.get());
+
+    auto taskController = std::make_unique<cppforge::gui::TaskController>();
+    taskController->setUserService(userService.get());
+    taskController->setCourseService(courseService.get());
+    taskController->setAchievementService(achievementService.get());
+
+    QObject::connect(taskController.get(), &cppforge::gui::TaskController::taskSolved,
+                     [&]() { dashboardController->refresh(); });
 
     QPointer<QQuickWindow> currentQuickWin;
 
@@ -101,6 +128,7 @@ int main(int argc, char *argv[])
     showMain = [&](const QString &username, int userId)
     {
         dashboardController->setUser(username, userId);
+        taskController->setUserId(userId);
 
         auto oldWin = currentQuickWin;
         currentQuickWin = nullptr;
@@ -117,7 +145,8 @@ int main(int argc, char *argv[])
         }
 
         QObject *mainObj = mainComp.createWithInitialProperties(
-            {{"dashboardController", QVariant::fromValue(dashboardController.get())}});
+            {{"dashboardController", QVariant::fromValue(dashboardController.get())},
+             {"taskController", QVariant::fromValue(taskController.get())}});
 
         if (auto *mainWin = qobject_cast<QQuickWindow *>(mainObj))
         {

@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>icons/main_logo.ico</file>
         <file>icons/main_logo_dark.ico</file>
+        <file>icons/main_logo_dark.png</file>
         <file>icons/main_logo_pale.ico</file>
         <file>icons/main_logo_transparent.png</file>
         <file>images/eye_open.png</file>
@@ -16,5 +17,14 @@
         <file>images/tony.png</file>
         <file>images/walter.png</file>
         <file>images/kanye.png</file>
+        <file>fonts/IBMPlexSans-Regular.ttf</file>
+        <file>fonts/IBMPlexSans-Medium.ttf</file>
+        <file>fonts/IBMPlexSans-SemiBold.ttf</file>
+        <file>fonts/IBMPlexSans-Bold.ttf</file>
+        <file>fonts/Hack-Regular.ttf</file>
+        <file>fonts/Hack-Bold.ttf</file>
+        <file>fonts/Hack-Italic.ttf</file>
+        <file>fonts/IBMPlexMono-Regular.ttf</file>
+        <file>fonts/IBMPlexMono-SemiBold.ttf</file>
     </qresource>
 </RCC>
