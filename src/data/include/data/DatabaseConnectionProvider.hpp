@@ -33,7 +33,12 @@ namespace cppforge::data
          */
         explicit DatabaseConnectionProvider(DatabaseConfig config);
 
-        /** @brief Closes the current thread's cached connection before provider destruction. */
+        /**
+         * @brief Closes the current thread's cached connection before provider destruction.
+         *
+         * The provider must be destroyed after all threads that used it have stopped. ServerApp
+         * guarantees this by calling stop() in its destructor before member destruction.
+         */
         ~DatabaseConnectionProvider() noexcept;
 
         DatabaseConnectionProvider(const DatabaseConnectionProvider &) = delete;
@@ -44,12 +49,28 @@ namespace cppforge::data
         /**
          * @brief Returns the open connection associated with the current thread.
          * @return Thread-local PostgreSQL connection.
-         * @throws std::runtime_error If the connection cannot be opened.
+         * @throws DatabaseUnavailable If the connection cannot be opened.
          */
         QSqlDatabase connectionForCurrentThread() const;
+
+        /**
+         * @brief Executes a lightweight health query on the current thread's connection.
+         *
+         * A failed check closes the cached connection so the next request retries opening it.
+         * @return true when SELECT 1 succeeds, false otherwise.
+         */
+        bool ping() const;
+
+        /**
+         * @brief Ensures that the current thread's database connection is usable.
+         * @throws DatabaseUnavailable If the health query fails.
+         */
+        void ensureHealthy() const;
 
     private:
         DatabaseConfig m_config;
         unsigned long long m_providerId;
+
+        void resetCurrentThreadConnection() const;
     };
 } // namespace cppforge::data
