@@ -2,8 +2,9 @@
 
 #include <atomic>
 #include <chrono>
-#include <iostream>
+#include <sstream>
 #include <string>
+#include <syncstream>
 
 namespace cppforge::server
 {
@@ -43,10 +44,13 @@ namespace cppforge::server
         }
     } // namespace
 
+    RequestLoggingMiddleware::RequestLoggingMiddleware(bool accessLogEnabled) : m_accessLogEnabled(accessLogEnabled) {}
+
     // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
     void RequestLoggingMiddleware::before_handle(crow::request &request, crow::response &response,
                                                  context &ctx) // NOLINT(readability-convert-member-functions-to-static)
     {
+        ctx.started = true;
         ctx.startedAt = std::chrono::steady_clock::now();
         ctx.requestId = "req-" + std::to_string(nextRequestId().fetch_add(1));
         response.set_header("X-Request-Id", ctx.requestId);
@@ -61,11 +65,24 @@ namespace cppforge::server
             // Crow completes unmatched OPTIONS requests before before_handle runs.
             ctx.requestId = "req-" + std::to_string(nextRequestId().fetch_add(1));
         }
+        if (!ctx.started)
+        {
+            ctx.startedAt = std::chrono::steady_clock::now();
+        }
+
         const auto elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - ctx.startedAt);
         response.set_header("X-Request-Id", ctx.requestId);
-        std::clog << "request_id=" << ctx.requestId << " method=" << methodName(request.method)
-                  << " path=" << pathOnly(request.url) << " status=" << response.code
-                  << " duration_ms=" << elapsed.count() << '\n';
+
+        if (!m_accessLogEnabled)
+        {
+            return;
+        }
+
+        std::ostringstream line;
+        line << "request_id=" << ctx.requestId << " method=" << methodName(request.method)
+             << " path=" << pathOnly(request.url) << " status=" << response.code << " duration_ms=" << elapsed.count();
+
+        std::osyncstream(std::clog) << line.str() << '\n';
     }
 } // namespace cppforge::server

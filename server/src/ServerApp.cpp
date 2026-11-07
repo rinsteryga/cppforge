@@ -38,7 +38,9 @@ namespace cppforge::server
 
     ServerApp::ServerApp(ServerConfig config, RouteConfigurator additionalRoutes)
         : m_config(std::move(config)), m_databaseProvider(m_config.database),
-          m_app(CorsMiddleware(m_config.allowedOrigin), RequestLoggingMiddleware()),
+          m_app(CorsMiddleware(m_config.allowedOrigin),
+                RequestLoggingMiddleware(crowLogLevel(m_config.logLevel) == crow::LogLevel::Info ||
+                                         crowLogLevel(m_config.logLevel) == crow::LogLevel::Debug)),
           m_additionalRoutes(std::move(additionalRoutes))
     {
         configure();
@@ -52,10 +54,18 @@ namespace cppforge::server
 
     void ServerApp::configure()
     {
+        auto applicationLogLevel = crowLogLevel(m_config.logLevel);
+        if (applicationLogLevel == crow::LogLevel::Info)
+        {
+            // The middleware emits one structured access line; suppress Crow's duplicate
+            // per-request Request/Response info logs while retaining warnings and errors.
+            applicationLogLevel = crow::LogLevel::Warning;
+        }
+
         m_app.port(m_config.port)
             .bindaddr(m_config.host)
             .concurrency(m_config.concurrency)
-            .loglevel(crowLogLevel(m_config.logLevel));
+            .loglevel(applicationLogLevel);
 
         m_app.exception_handler(
             [](crow::response &response)
