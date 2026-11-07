@@ -36,40 +36,22 @@ Devs: @rinsteryga, @Sernock
 
 3. **Database Setup (PostgreSQL):**
 
-   ### Option A: Via Docker Compose (Recommended)
-   The project includes a `docker-compose.yml` that automatically launches PostgreSQL 16 and applies all database migrations (`schema.sql` and `seed.sql`):
-
    ```bash
-   # Start the database container in the background
-   docker compose up -d
-
-   # Create the .env configuration file from example
-   cp .env.example .env
+   sudo -u postgres psql -c "CREATE DATABASE cppforge;"
    ```
 
-   *Useful Docker commands:*
-   - Check database status: `docker compose ps`
-   - View database logs: `docker compose logs -f`
-   - Access database console (psql): `docker exec -it cppforge-postgres psql -U cppforge -d cppforge`
-   - Stop database: `docker compose down`
-
-   ### Option B: Local PostgreSQL Installation (Manual)
-   If you prefer running PostgreSQL natively without Docker:
+   Since the `.env` file is in `.gitignore`, you need to create it manually from the example:
 
    ```bash
-   sudo apt install -y postgresql postgresql-contrib
-   sudo service postgresql start
-
-   # Create database and user
-   sudo -u postgres psql -c "CREATE USER cppforge WITH PASSWORD 'secret_password_123' SUPERUSER;"
-   sudo -u postgres psql -c "CREATE DATABASE cppforge OWNER cppforge;"
-
-   # Create .env file
    cp .env.example .env
+   nano .env # Or use any other text editor
+   ```
 
-   # Apply migrations
-   PGPASSWORD=secret_password_123 psql -h localhost -U cppforge -d cppforge -f src/data/migrations/schema.sql
-   PGPASSWORD=secret_password_123 psql -h localhost -U cppforge -d cppforge -f src/data/migrations/seed.sql
+   *Make sure to fill in your actual PostgreSQL credentials (`PG_USER` and `PG_PASSWORD`) inside the `.env` file before proceeding.*
+
+   ```bash
+   sudo -u postgres psql -d cppforge -f src/data/migrations/schema.sql
+   sudo -u postgres psql -d cppforge -f src/data/migrations/seed.sql
    ```
 
    **Database Reset / Update:**
@@ -128,3 +110,46 @@ If you prefer not to build from source, you can install the pre-compiled package
 1. Download the `cppforge-*-Darwin.dmg` image.
 2. Open the `.dmg` file and drag `cppforge` to your Applications folder.
 3. *(Note: You may need to manually configure the PostgreSQL database or .env file for macOS at this time)*
+
+## Backend API development
+
+The Crow server exposes the first versioned API slice under `/api/v1`. To start the local
+PostgreSQL instance, copy `.env.example` to `.env` if needed, set the `PG_*` values, then run:
+
+```bash
+docker compose up -d db
+docker compose ps
+```
+
+The Compose service publishes PostgreSQL only on `127.0.0.1` and includes a `pg_isready`
+healthcheck. Use a non-default host port to avoid a local PostgreSQL instance. To bring up the
+service and prepare `cppforge_test` from the repository's actual schema and seed data, run one
+script:
+
+```bash
+PG_PORT=55432 sh scripts/init-compose-test-db.sh
+```
+
+On PowerShell, use `$env:PG_PORT = '55432'; .\scripts\init-compose-test-db.ps1`. The init SQL
+only creates `cppforge_test`; the helper applies `src/data/migrations/schema.sql` and `seed.sql`
+to that dedicated test database. `schema.sql` drops existing tables, so the helper never applies
+it to `cppforge` or another user database. To initialize a disposable Compose `cppforge` database
+manually, explicitly target that database only after verifying it contains no user data. Re-running
+the helper rebuilds and reseeds `cppforge_test`, so it replaces any data in that test database.
+
+Run the server with `SERVER_HOST`, `SERVER_PORT`, and `LOG_LEVEL` from `.env`. The integration
+test does not load `.env`; opt in by setting `TEST_PG_HOST`, `TEST_PG_PORT`, `TEST_PG_DB`,
+`TEST_PG_USER`, and `TEST_PG_PASSWORD` in the process environment. For the Compose setup above,
+point these at `127.0.0.1:55432/cppforge_test` and use the Compose `PG_USER`/`PG_PASSWORD` values.
+If `cppforge_test` is unavailable or those settings are absent, the HTTP integration test skips;
+when connected, it asserts the real schema tables and seeded module data before starting the
+server. Set `CPPFORGE_REQUIRE_DB_TESTS=1` to turn an unavailable or incomplete test database into a
+failure instead of a skip; the Linux CI job uses this mode. The integration suite also exercises
+ephemeral port binding (`SERVER_PORT=0`) and concurrent module requests through Crow's worker pool.
+Unit tests do not require PostgreSQL, Docker, or network access. Stop the Compose service with
+`docker compose down` when finished; add `-v` only when you intentionally want to discard its data
+volume.
+
+The API contract and examples are in `contracts/openapi.yaml` and `contracts/fixtures/`.
+Planned backend stages are tracked in `docs/backend-roadmap.md`. React and QML clients are not
+part of this slice.
