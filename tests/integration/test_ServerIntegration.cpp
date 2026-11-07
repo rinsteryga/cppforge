@@ -50,15 +50,19 @@ namespace
                 .password = qEnvironmentVariable("TEST_PG_PASSWORD").toStdString()};
     }
 
-    HttpResult get(const QUrl &url)
+    HttpResult send(const QUrl &url, const QByteArray &method, const QByteArray &origin = {})
     {
         QNetworkAccessManager manager;
         QNetworkRequest request(url);
+        if (!origin.isEmpty())
+        {
+            request.setRawHeader("Origin", origin);
+        }
         QEventLoop loop;
         QTimer timeout;
         timeout.setSingleShot(true);
 
-        QNetworkReply *reply = manager.get(request);
+        QNetworkReply *reply = manager.sendCustomRequest(request, method);
         QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
         QObject::connect(&timeout, &QTimer::timeout, reply, &QNetworkReply::abort);
         timeout.start(5000);
@@ -69,6 +73,11 @@ namespace
                                 .requestId = reply->rawHeader("X-Request-Id")};
         reply->deleteLater();
         return result;
+    }
+
+    HttpResult get(const QUrl &url)
+    {
+        return send(url, QByteArrayLiteral("GET"));
     }
 
     std::vector<HttpResult> getConcurrent(const QUrl &url, std::size_t count)
@@ -245,7 +254,13 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         config.database = m_databaseConfig;
         config.port = 0;
         config.host = "127.0.0.1";
-        m_server = std::make_unique<cppforge::server::ServerApp>(std::move(config));
+        m_server = std::make_unique<cppforge::server::ServerApp>(
+            std::move(config),
+            [](cppforge::server::HttpApp &app)
+            {
+                CROW_ROUTE(app, "/api/v1/route-after-catchall")
+                    .methods(crow::HTTPMethod::Get)([] { return crow::response(200, "registered-after-catchall"); });
+            });
         m_server->start();
         m_baseUrl = QUrl(QStringLiteral("http://127.0.0.1:%1").arg(m_server->port()));
     }
@@ -300,6 +315,47 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         const auto missingModule = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules/404"))));
         QCOMPARE(missingModule.status, 404);
         QVERIFY(parseBody(missingModule) == readFixture(QStringLiteral("error_not_found.json")));
+    }
+
+    void unknownPathUsesNotFoundEnvelopeForAnyMethod()
+    {
+        const auto getResult = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/unknown-path"))));
+        QCOMPARE(getResult.status, 404);
+        QVERIFY(!getResult.requestId.isEmpty());
+        QCOMPARE(parseBody(getResult).at("error").at("code").get<std::string>(), std::string("NOT_FOUND"));
+
+        const auto postResult =
+            send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/unknown-path"))), QByteArrayLiteral("POST"));
+        QCOMPARE(postResult.status, 404);
+        QVERIFY(!postResult.requestId.isEmpty());
+        QCOMPARE(parseBody(postResult).at("error").at("code").get<std::string>(), std::string("NOT_FOUND"));
+    }
+
+    void knownPathWithWrongMethodUsesMethodNotAllowedEnvelope()
+    {
+        const auto postResult =
+            send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/health"))), QByteArrayLiteral("POST"));
+        QCOMPARE(postResult.status, 405);
+        QVERIFY(!postResult.requestId.isEmpty());
+        const auto error = parseBody(postResult);
+        QCOMPARE(error.at("error").at("code").get<std::string>(), std::string("METHOD_NOT_ALLOWED"));
+        QVERIFY(error.at("error").contains("message"));
+        QVERIFY(error.at("error").contains("details"));
+    }
+
+    void optionsPreflightIsHandledWithRequestId()
+    {
+        const auto options =
+            send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), QByteArrayLiteral("OPTIONS"));
+        QCOMPARE(options.status, 204);
+        QVERIFY(!options.requestId.isEmpty());
+    }
+
+    void routeRegisteredAfterCatchAllRemainsReachable()
+    {
+        const auto result = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/route-after-catchall"))));
+        QCOMPARE(result.status, 200);
+        QCOMPARE(result.body, QByteArrayLiteral("registered-after-catchall"));
     }
 
     void concurrentRequestsUseThreadLocalDatabaseConnections()

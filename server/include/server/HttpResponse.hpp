@@ -23,6 +23,22 @@ namespace cppforge::server
     }
 
     /**
+     * @brief Replaces a response body with a client-safe API error envelope.
+     * @param response Response to update in place.
+     * @param status HTTP status code.
+     * @param code Stable machine-readable error code.
+     * @param message Human-readable error message.
+     * @param details Optional JSON details.
+     */
+    inline void setErrorResponse(crow::response &response, int status, std::string code, std::string message,
+                                 nlohmann::json details = nlohmann::json::object())
+    {
+        response.code = status;
+        response.body = api::toJson(api::makeError(std::move(code), std::move(message), std::move(details)));
+        response.set_header("Content-Type", "application/json; charset=utf-8");
+    }
+
+    /**
      * @brief Creates a client-safe API error response.
      * @param status HTTP status code.
      * @param code Stable machine-readable error code.
@@ -33,7 +49,8 @@ namespace cppforge::server
     inline crow::response errorResponse(int status, std::string code, std::string message,
                                         nlohmann::json details = nlohmann::json::object())
     {
-        return jsonResponse(status,
-                            api::toJson(api::makeError(std::move(code), std::move(message), std::move(details))));
+        crow::response response;
+        setErrorResponse(response, status, std::move(code), std::move(message), std::move(details));
+        return response;
     }
 } // namespace cppforge::server

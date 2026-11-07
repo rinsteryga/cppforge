@@ -56,6 +56,11 @@ namespace cppforge::server
     void RequestLoggingMiddleware::after_handle(crow::request &request, crow::response &response,
                                                 context &ctx) // NOLINT(readability-convert-member-functions-to-static)
     {
+        if (ctx.requestId.empty())
+        {
+            // Crow completes unmatched OPTIONS requests before before_handle runs.
+            ctx.requestId = "req-" + std::to_string(nextRequestId().fetch_add(1));
+        }
         const auto elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - ctx.startedAt);
         response.set_header("X-Request-Id", ctx.requestId);

@@ -39,11 +39,5 @@ namespace cppforge::server::controllers
                     }
                     return jsonResponse(200, cppforge::api::toJson(cppforge::api::dto::toDto(*module)));
                 });
-
-        CROW_ROUTE(app, "/").methods(crow::HTTPMethod::Get)(
-            [] { return errorResponse(404, "NOT_FOUND", "Resource not found"); });
-        CROW_ROUTE(app, "/<path>")
-            .methods(crow::HTTPMethod::Get)([](const std::string &)
-                                            { return errorResponse(404, "NOT_FOUND", "Resource not found"); });
     }
 } // namespace cppforge::server::controllers

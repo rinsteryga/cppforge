@@ -36,7 +36,9 @@ namespace cppforge::server
         }
     } // namespace
 
-    ServerApp::ServerApp(ServerConfig config) : m_config(std::move(config)), m_databaseProvider(m_config.database)
+    ServerApp::ServerApp(ServerConfig config, RouteConfigurator additionalRoutes)
+        : m_config(std::move(config)), m_databaseProvider(m_config.database),
+          m_additionalRoutes(std::move(additionalRoutes))
     {
         configure();
         setupRoutes();
@@ -68,6 +70,27 @@ namespace cppforge::server
     {
         controllers::HealthController::registerRoutes(m_app, m_databaseProvider);
         controllers::ModulesController::registerRoutes(m_app, m_databaseProvider);
+        registerCatchAllRoute();
+
+        if (m_additionalRoutes)
+        {
+            m_additionalRoutes(m_app);
+        }
+    }
+
+    void ServerApp::registerCatchAllRoute()
+    {
+        CROW_CATCHALL_ROUTE(m_app)(
+            [](const crow::request &, crow::response &response)
+            {
+                if (response.code == 405)
+                {
+                    setErrorResponse(response, 405, "METHOD_NOT_ALLOWED", "Method not allowed");
+                    return;
+                }
+
+                setErrorResponse(response, 404, "NOT_FOUND", "Resource not found");
+            });
     }
 
     void ServerApp::run()
