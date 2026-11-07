@@ -18,16 +18,22 @@ Window {
     color: Theme.bgApp
 
     property var dashboardController
+    property var taskController
 
     signal openRoadmap(int moduleId, string title)
     signal logout()
 
-    TaskController {
-        id: taskCtrl
-        Component.onCompleted: {
-            if (mainWin.dashboardController) {
-                taskCtrl.setUserId(mainWin.dashboardController.userId)
-            }
+    Connections {
+        target: mainWin.dashboardController ? mainWin.dashboardController : null
+        function onAchievementUnlocked(name, desc, icon) {
+            achievementPopup.notify(name, desc, icon)
+        }
+    }
+
+    Connections {
+        target: mainWin.taskController ? mainWin.taskController : null
+        function onAchievementUnlocked(name, desc, icon) {
+            achievementPopup.notify(name, desc, icon)
         }
     }
 
@@ -45,7 +51,7 @@ Window {
             Layout.fillWidth: true
             title: {
                 if (currentPage === 3) return "cppforge — " + (dashboardController ? dashboardController.currentModuleTitle : "Roadmap")
-                if (currentPage === 4) return "cppforge — " + taskCtrl.title
+                if (currentPage === 4) return "cppforge — " + (taskController ? taskController.title : "Coding Task")
                 if (activeNav === 1) return "cppforge — Multiplayer Duels"
                 if (activeNav === 2) return "cppforge — Profile & Statistics"
                 return "cppforge — Main Menu"
@@ -116,6 +122,9 @@ Window {
                         onClicked: {
                             mainWin.activeNav = 0
                             mainWin.currentPage = 0
+                            if (mainWin.dashboardController) {
+                                mainWin.dashboardController.refresh()
+                            }
                         }
                     }
 
@@ -131,6 +140,9 @@ Window {
                         onClicked: {
                             mainWin.activeNav = 1
                             mainWin.currentPage = 1
+                            if (mainWin.dashboardController) {
+                                mainWin.dashboardController.refresh()
+                            }
                         }
                     }
 
@@ -144,6 +156,9 @@ Window {
                         onClicked: {
                             mainWin.activeNav = 2
                             mainWin.currentPage = 2
+                            if (mainWin.dashboardController) {
+                                mainWin.dashboardController.refresh()
+                            }
                         }
                     }
 
@@ -311,7 +326,9 @@ Window {
                     dashboardController: mainWin.dashboardController
                     onBackRequested: mainWin.currentPage = 0
                     onLessonSelected: function(lessonId) {
-                        taskCtrl.loadTask(lessonId)
+                        if (mainWin.taskController) {
+                            mainWin.taskController.loadTask(lessonId)
+                        }
                         mainWin.currentPage = 4
                     }
                 }
@@ -320,10 +337,16 @@ Window {
                 TaskView {
                     anchors.fill: parent
                     visible: mainWin.currentPage === 4
-                    taskController: taskCtrl
+                    taskController: mainWin.taskController
                     onBackRequested: mainWin.currentPage = 3
                 }
             }
         }
+    }
+
+    ForgeAchievementNotification {
+        id: achievementPopup
+        anchors.horizontalCenter: parent.horizontalCenter
+        z: 9999
     }
 }

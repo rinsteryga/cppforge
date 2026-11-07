@@ -17,7 +17,7 @@ Item {
     }
 
     // Dynamic logo depending on theme (transparent in both light and dark)
-    readonly property string logoPath: isDark ? "qrc:/icons/main_logo_dark.ico" : "qrc:/icons/main_logo_transparent.png"
+    readonly property string logoPath: isDark ? "qrc:/icons/main_logo_dark.png" : "qrc:/icons/main_logo_transparent.png"
 
     // Background surfaces (KDE Breeze design language)
     readonly property color bgApp: isDark ? "#232629" : "#eff0f1"
@@ -58,17 +58,18 @@ Item {
     readonly property color textMuted: isDark ? "#7a8288" : "#8f99a3"
     readonly property color textOnAccent: "#ffffff"
 
-    // Typography (KDE standard font hierarchy)
-    readonly property string fontFamily: "'Noto Sans', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif"
-    readonly property string fontCode: "'Hack', 'Noto Sans Mono', 'Fira Code', 'DejaVu Sans Mono', monospace"
+    // Typography (High-readability embedded typefaces)
+    readonly property string fontFamily: "IBM Plex Sans"
+    readonly property string fontCode: "Hack"
+    readonly property string fontCodeMono: "IBM Plex Mono"
 
     readonly property int fontSizeXs: 11
-    readonly property int fontSizeSm: 12
-    readonly property int fontSizeMd: 13
-    readonly property int fontSizeLg: 15
-    readonly property int fontSizeXl: 17
-    readonly property int fontSizeXxl: 20
-    readonly property int fontSizeTitle: 24
+    readonly property int fontSizeSm: 13
+    readonly property int fontSizeMd: 14
+    readonly property int fontSizeLg: 16
+    readonly property int fontSizeXl: 18
+    readonly property int fontSizeXxl: 22
+    readonly property int fontSizeTitle: 26
 
     // Dimensions & Spacings (KDE Breeze: 4px corner radius standard)
     readonly property int radiusXs: 2
