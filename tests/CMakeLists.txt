@@ -27,9 +27,10 @@ foreach(TEST_FILE IN LISTS TEST_SOURCES)
             Qt6::Network
     )
 
-    if(TEST_NAME STREQUAL "test_ServerIntegration" OR TEST_NAME STREQUAL "test_RequestLoggingMiddleware")
+    if(TEST_NAME STREQUAL "test_ServerIntegration" OR TEST_NAME STREQUAL "test_RequestLoggingMiddleware" OR
+       TEST_NAME STREQUAL "test_ServerApp" OR TEST_NAME STREQUAL "test_ServerConfig")
         target_link_libraries(${TEST_NAME} PRIVATE cppforge_server_lib)
-        if(TEST_NAME STREQUAL "test_RequestLoggingMiddleware")
+        if(TEST_NAME STREQUAL "test_RequestLoggingMiddleware" OR TEST_NAME STREQUAL "test_ServerApp")
             target_link_libraries(${TEST_NAME} PRIVATE Qt6::Network)
         endif()
     else()
