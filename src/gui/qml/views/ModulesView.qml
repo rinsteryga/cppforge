@@ -74,8 +74,16 @@ Item {
                             anchors.centerIn: parent
                             spacing: 6
 
+                            ForgeLockIcon {
+                                size: 13
+                                color: Theme.textMuted
+                                holeColor: Theme.isDark ? "#2a2e32" : "#e0e2e4"
+                                visible: modelData.isLocked
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
                             Text {
-                                text: modelData.isLocked ? "🔒 Locked" : (modelData.progress === 100 ? "✓ Review" : (modelData.progress > 0 ? "Continue" : "Start Learning"))
+                                text: modelData.isLocked ? "Locked" : (modelData.progress === 100 ? "✓ Review" : (modelData.progress > 0 ? "Continue" : "Start Learning"))
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 13
                                 font.weight: Font.Bold
