@@ -81,13 +81,16 @@ jobs:
           psql -h 127.0.0.1 -U cppforge -d cppforge_test -v ON_ERROR_STOP=1 -f src/data/migrations/schema.sql
           psql -h 127.0.0.1 -U cppforge -d cppforge_test -v ON_ERROR_STOP=1 -f src/data/migrations/seed.sql
 
-      - name: Initialize ephemeral CI service database
+      - name: Verify the service database stays unseeded
         env:
           PGPASSWORD: cppforge_ci
         run: |
-          # The PostgreSQL service is disposable per job; this is not a developer database.
-          psql -h 127.0.0.1 -U cppforge -d cppforge -v ON_ERROR_STOP=1 -f src/data/migrations/schema.sql
-          psql -h 127.0.0.1 -U cppforge -d cppforge -v ON_ERROR_STOP=1 -f src/data/migrations/seed.sql
+          # schema.sql and seed.sql must never touch the default cppforge database.
+          users_table="$(psql -h 127.0.0.1 -U cppforge -d cppforge -tAc "select to_regclass('public.users')")"
+          if [ -n "$users_table" ]; then
+            echo "cppforge must stay unseeded, but found table: $users_table" >&2
+            exit 1
+          fi
 
       - name: Configure
         run: cmake --preset linux-x64-vcpkg
@@ -119,7 +122,7 @@ jobs:
           CPPFORGE_REQUIRE_DB_TESTS: 1
           PG_HOST: 127.0.0.1
           PG_PORT: 5432
-          PG_DB: cppforge
+          PG_DB: cppforge_test
           PG_USER: cppforge
           PG_PASSWORD: cppforge_ci
           QT_QPA_PLATFORM: offscreen
