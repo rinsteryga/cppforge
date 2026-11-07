@@ -16,6 +16,20 @@ namespace cppforge::gui
         m_courseService = courseService;
     }
 
+    void DashboardController::setAchievementService(cppforge::services::AchievementService *achievementService)
+    {
+        m_achievementService = achievementService;
+        if (m_achievementService)
+        {
+            connect(m_achievementService, &cppforge::services::AchievementService::achievementUnlocked, this,
+                    [this](const cppforge::entities::Achievement &ach)
+                    {
+                        emit achievementUnlocked(ach.getName(), ach.getDescription(), ach.getIconPath());
+                        refresh();
+                    });
+        }
+    }
+
     void DashboardController::setUser(const QString &username, int userId)
     {
         m_username = username;
@@ -67,46 +81,26 @@ namespace cppforge::gui
         m_completedLessonsCount = static_cast<int>(userOpt->getCompletedLevelsIds().size());
         m_solvedTasksCount = m_userService->getTodaySolvedTasksCount(static_cast<uint64_t>(m_userId));
 
-        // Achievements
+        // Real Achievements directly from database
         m_achievements.clear();
-        const auto &achSet = userOpt->getAchievements();
-        for (const auto &ach : achSet)
+        auto allAchs = m_userService->getAllAchievementsStatus(static_cast<uint64_t>(m_userId));
+        for (const auto &ach : allAchs)
         {
             QVariantMap achMap;
             achMap["id"] = static_cast<int>(ach.getId());
             achMap["name"] = ach.getName();
             achMap["description"] = ach.getDescription();
-            achMap["iconPath"] = ach.getIconPath();
-            achMap["isUnlocked"] = true;
+            QString iconPath = ach.getIconPath().trimmed();
+            if (iconPath.startsWith(":/"))
+            {
+                iconPath = "qrc" + iconPath;
+            }
+            achMap["iconPath"] = iconPath;
+            achMap["isUnlocked"] = (ach.getDateEarned().time_since_epoch().count() > 0);
             m_achievements.append(achMap);
         }
 
-        // Default showcase achievements if list is empty
-        if (m_achievements.isEmpty())
-        {
-            static const struct
-            {
-                QString name;
-                QString desc;
-                QString icon;
-                bool unlocked;
-            } sampleAchs[] = {{"First Steps", "Complete your first lesson in CppForge", "🏆", true},
-                              {"Duel Master", "Win your first multiplayer coding duel", "⚔️", false},
-                              {"Code Streaker", "Maintain a 3-day study streak", "🔥", m_streak >= 3},
-                              {"Template Wizard", "Solve all tasks in Templates module", "🧙", false},
-                              {"Speed Demon", "Solve a task in under 60 seconds", "⚡", false}};
-
-            for (int i = 0; i < 5; ++i)
-            {
-                QVariantMap achMap;
-                achMap["id"] = i + 1;
-                achMap["name"] = sampleAchs[i].name;
-                achMap["description"] = sampleAchs[i].desc;
-                achMap["iconPath"] = sampleAchs[i].icon;
-                achMap["isUnlocked"] = sampleAchs[i].unlocked;
-                m_achievements.append(achMap);
-            }
-        }
+        emit userChanged();
     }
 
     void DashboardController::updateTip()

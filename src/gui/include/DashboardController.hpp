@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../core/include/services/AchievementService.hpp"
 #include "../../core/include/services/CourseService.hpp"
 #include "../../core/include/services/UserService.hpp"
 
@@ -51,6 +52,7 @@ namespace cppforge::gui
 
         void setUserService(cppforge::services::UserService *userService);
         void setCourseService(cppforge::services::CourseService *courseService);
+        void setAchievementService(cppforge::services::AchievementService *achievementService);
 
         void setUser(const QString &username, int userId);
 
@@ -90,6 +92,7 @@ namespace cppforge::gui
         void roadmapChanged();
         void openRoadmapRequested(int moduleId, const QString &moduleTitle);
         void logoutRequested();
+        void achievementUnlocked(const QString &name, const QString &description, const QString &iconPath);
 
     private:
         void updateModules();
@@ -99,6 +102,7 @@ namespace cppforge::gui
 
         cppforge::services::UserService *m_userService = nullptr;
         cppforge::services::CourseService *m_courseService = nullptr;
+        cppforge::services::AchievementService *m_achievementService = nullptr;
 
         QString m_username;
         int m_userId = -1;

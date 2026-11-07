@@ -136,7 +136,204 @@ Item {
                 }
             }
 
-            // 2. Statistics Grid
+            // 2. Achievements Showcase (Horizontal Row in Upper Part)
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 145
+                radius: Theme.radiusLg
+                color: Theme.bgCard
+                border.width: 1
+                border.color: Theme.borderStrong
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 10
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Text {
+                            text: "Achievements"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 16
+                            font.weight: Font.Bold
+                            color: Theme.textPrimary
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Text {
+                            text: {
+                                var achList = root.dashboardController ? root.dashboardController.achievements : []
+                                var unlocked = 0
+                                for (var i = 0; i < achList.length; i++) {
+                                    if (achList[i].isUnlocked) unlocked++
+                                }
+                                return unlocked + " of " + achList.length + " unlocked"
+                            }
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                            color: Theme.textSecondary
+                        }
+                    }
+
+                    // Horizontal Row of Achievements
+                    Flickable {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        contentWidth: achRow.implicitWidth
+                        contentHeight: height
+                        flickableDirection: Flickable.HorizontalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+                        clip: false
+
+                        Row {
+                            id: achRow
+                            spacing: 18
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Repeater {
+                                model: root.dashboardController ? root.dashboardController.achievements : []
+
+                                delegate: Item {
+                                    id: achItem
+                                    width: 76
+                                    height: 78
+
+                                    ColumnLayout {
+                                        anchors.centerIn: parent
+                                        spacing: 6
+
+                                        // Icon circle with status styling
+                                        Rectangle {
+                                            Layout.preferredWidth: 52
+                                            Layout.preferredHeight: 52
+                                            Layout.alignment: Qt.AlignHCenter
+                                            radius: 26
+                                            color: modelData.isUnlocked ? (Theme.isDark ? "#2d2415" : "#fef3c7") : (Theme.isDark ? "#232629" : "#eef0f2")
+                                            border.width: modelData.isUnlocked ? 2 : 1
+                                            border.color: modelData.isUnlocked ? "#f59e0b" : Theme.borderSubtle
+                                            scale: achMouse.containsMouse ? 1.12 : 1.0
+                                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                                            Image {
+                                                anchors.centerIn: parent
+                                                width: 36
+                                                height: 36
+                                                source: modelData.iconPath
+                                                fillMode: Image.PreserveAspectFit
+                                                opacity: modelData.isUnlocked ? 1.0 : 0.35
+                                            }
+
+                                            // Small lock overlay badge if locked
+                                            Rectangle {
+                                                visible: !modelData.isUnlocked
+                                                anchors.bottom: parent.bottom
+                                                anchors.right: parent.right
+                                                width: 18
+                                                height: 18
+                                                radius: 9
+                                                color: Theme.isDark ? "#1b1e20" : "#ffffff"
+                                                border.width: 1
+                                                border.color: Theme.borderStrong
+
+                                                ForgeLockIcon {
+                                                    anchors.centerIn: parent
+                                                    size: 10
+                                                    color: Theme.textMuted
+                                                    holeColor: Theme.isDark ? "#1b1e20" : "#ffffff"
+                                                }
+                                            }
+                                        }
+
+                                        // Short title
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: modelData.name
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 11
+                                            font.weight: Font.DemiBold
+                                            color: modelData.isUnlocked ? Theme.textPrimary : Theme.textMuted
+                                            horizontalAlignment: Text.AlignHCenter
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    // Interactive Hover Area with Rich ToolTip
+                                    MouseArea {
+                                        id: achMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    ToolTip {
+                                        id: achTip
+                                        visible: achMouse.containsMouse
+                                        delay: 150
+                                        timeout: 6000
+                                        y: -contentItem.implicitHeight - 12
+                                        x: (parent.width - contentItem.implicitWidth) / 2
+
+                                        contentItem: ColumnLayout {
+                                            spacing: 4
+
+                                            RowLayout {
+                                                spacing: 8
+
+                                                Text {
+                                                    text: modelData.name
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: 13
+                                                    font.weight: Font.Bold
+                                                    color: Theme.textPrimary
+                                                }
+
+                                                Rectangle {
+                                                    Layout.preferredHeight: 18
+                                                    Layout.preferredWidth: tipStatusLbl.implicitWidth + 8
+                                                    radius: 9
+                                                    color: modelData.isUnlocked ? Theme.successBg : (Theme.isDark ? "#232629" : "#eef0f2")
+
+                                                    Text {
+                                                        id: tipStatusLbl
+                                                        anchors.centerIn: parent
+                                                        text: modelData.isUnlocked ? "✓ Unlocked" : "Locked"
+                                                        font.family: Theme.fontFamily
+                                                        font.pixelSize: 10
+                                                        font.weight: Font.Bold
+                                                        color: modelData.isUnlocked ? Theme.success : Theme.textMuted
+                                                    }
+                                                }
+                                            }
+
+                                            Text {
+                                                text: modelData.description
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: 12
+                                                color: Theme.textSecondary
+                                                wrapMode: Text.WordWrap
+                                                Layout.maximumWidth: 260
+                                            }
+                                        }
+
+                                        background: Rectangle {
+                                            color: Theme.bgCard
+                                            border.width: 1
+                                            border.color: Theme.borderStrong
+                                            radius: Theme.radiusMd
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Statistics Grid
             Text {
                 text: "Statistics"
                 font.family: Theme.fontFamily
@@ -275,80 +472,7 @@ Item {
                 }
             }
 
-            // 4. Achievements List
-            Text {
-                text: "Achievements"
-                font.family: Theme.fontFamily
-                font.pixelSize: 18
-                font.weight: Font.Bold
-                color: Theme.textPrimary
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 12
-
-                Repeater {
-                    model: root.dashboardController ? root.dashboardController.achievements : []
-
-                    delegate: Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 70
-                        radius: Theme.radiusMd
-                        color: Theme.bgCard
-                        border.width: 1
-                        border.color: modelData.isUnlocked ? Theme.accent : Theme.borderSubtle
-                        opacity: modelData.isUnlocked ? 1.0 : 0.65
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 14
-                            spacing: 16
-
-                            Rectangle {
-                                Layout.preferredWidth: 42
-                                Layout.preferredHeight: 42
-                                radius: 21
-                                color: modelData.isUnlocked ? Theme.accentLight : Theme.bgApp
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.iconPath.length <= 4 ? modelData.iconPath : "🏆"
-                                    font.pixelSize: 20
-                                }
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-
-                                Text {
-                                    text: modelData.name
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: 14
-                                    font.weight: Font.Bold
-                                    color: Theme.textPrimary
-                                }
-
-                                Text {
-                                    text: modelData.description
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: 12
-                                    color: Theme.textSecondary
-                                }
-                            }
-
-                            Text {
-                                text: modelData.isUnlocked ? "✓ Unlocked" : "🔒 Locked"
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 12
-                                font.weight: Font.Bold
-                                color: modelData.isUnlocked ? Theme.success : Theme.textMuted
-                            }
-                        }
-                    }
-                }
-            }
+            // App Appearance ended
         }
     }
 
