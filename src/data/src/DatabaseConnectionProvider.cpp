@@ -107,13 +107,22 @@ namespace cppforge::data
             connection.database.setDatabaseName(toQString(m_config.database));
             connection.database.setUserName(toQString(m_config.user));
             connection.database.setPassword(toQString(m_config.password));
-            connection.database.setConnectOptions(QStringLiteral("connect_timeout=3;application_name=cppforge_server"));
+            connection.database.setConnectOptions(
+                QStringLiteral("connect_timeout=3;application_name=cppforge_server;client_encoding=UTF8"));
         }
 
-        if (!connection.database.isOpen() && !connection.database.open())
+        if (!connection.database.isOpen())
         {
-            qWarning() << "Server database connection unavailable";
-            throw DatabaseUnavailable("Database connection unavailable");
+            if (!connection.database.open())
+            {
+                qWarning() << "Server database connection unavailable";
+                throw DatabaseUnavailable("Database connection unavailable");
+            }
+
+            // Windows PostgreSQL clients may default to a legacy encoding that cannot
+            // represent Cyrillic seed data. Force UTF-8 explicitly for every connection.
+            QSqlQuery encodingQuery(connection.database);
+            encodingQuery.exec(QStringLiteral("SET client_encoding TO 'UTF8'"));
         }
 
         return connection.database;

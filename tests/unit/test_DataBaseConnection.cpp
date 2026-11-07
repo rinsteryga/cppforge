@@ -77,7 +77,7 @@ private slots:
         m_database.setDatabaseName(m_config.database);
         m_database.setUserName(m_config.user);
         m_database.setPassword(m_config.password);
-        m_database.setConnectOptions(QStringLiteral("connect_timeout=3"));
+        m_database.setConnectOptions(QStringLiteral("connect_timeout=3;client_encoding=UTF8"));
 
         if (!m_database.open())
         {

@@ -4,15 +4,19 @@
 
 #include <QEventLoop>
 #include <QFile>
+#include <QHostAddress>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QSet>
+#include <QTcpServer>
 #include <QTimer>
 #include <QUrl>
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
 #include <QtTest>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -170,23 +174,106 @@ namespace
 
     bool hasRealSchemaAndSeed(const cppforge::data::DatabaseConfig &config)
     {
+        const QStringList expectedTables = {QStringLiteral("users"),
+                                            QStringLiteral("modules"),
+                                            QStringLiteral("lessons"),
+                                            QStringLiteral("coding_tasks"),
+                                            QStringLiteral("test_cases"),
+                                            QStringLiteral("quizzes"),
+                                            QStringLiteral("quiz_options"),
+                                            QStringLiteral("matching_tasks"),
+                                            QStringLiteral("matching_pairs"),
+                                            QStringLiteral("achievements"),
+                                            QStringLiteral("user_achievements"),
+                                            QStringLiteral("submissions"),
+                                            QStringLiteral("execution_results"),
+                                            QStringLiteral("user_progress"),
+                                            QStringLiteral("tips")};
+
         cppforge::data::DatabaseConnectionProvider provider(config);
         auto database = provider.connectionForCurrentThread();
         QSqlQuery query(database);
-        if (!query.exec("SELECT COUNT(*) FROM information_schema.tables "
-                        "WHERE table_schema = 'public' AND table_name IN "
-                        "('users', 'modules', 'lessons', 'coding_tasks')") ||
-            !query.next() || query.value(0).toInt() != 4)
+        if (!query.exec(QStringLiteral("SELECT table_name FROM information_schema.tables "
+                                       "WHERE table_schema = 'public'")))
         {
             return false;
         }
 
-        return query.exec("SELECT COUNT(*) FROM modules") && query.next() && query.value(0).toInt() > 0;
+        QSet<QString> actualTables;
+        while (query.next())
+        {
+            actualTables.insert(query.value(0).toString());
+        }
+        for (const auto &table : expectedTables)
+        {
+            if (!actualTables.contains(table))
+            {
+                qWarning() << "Missing expected table" << table;
+                return false;
+            }
+        }
+
+        const auto seedFixture = readFixture(QStringLiteral("seed_modules.json"));
+        const auto expectedCount = seedFixture.at("count").get<std::size_t>();
+        const auto &expectedNames = seedFixture.at("names");
+
+        QSqlQuery modules(database);
+        if (!modules.exec(QStringLiteral("SELECT id, name FROM modules ORDER BY id ASC")))
+        {
+            return false;
+        }
+
+        std::size_t index = 0;
+        while (modules.next())
+        {
+            if (index >= expectedCount)
+            {
+                qWarning() << "More modules than the seed fixture expects";
+                return false;
+            }
+            const auto expectedName = QString::fromStdString(expectedNames.at(index).get<std::string>());
+            if (modules.value(1).toString() != expectedName)
+            {
+                qWarning() << "Module name mismatch at" << index << "actual" << modules.value(1).toString()
+                           << "expected" << expectedName;
+                return false;
+            }
+            ++index;
+        }
+        return index == expectedCount;
     }
 
     bool requireDatabase()
     {
         return qEnvironmentVariableIntValue("CPPFORGE_REQUIRE_DB_TESTS") == 1;
+    }
+
+    int closedLocalPort()
+    {
+        QTcpServer server;
+        if (!server.listen(QHostAddress::LocalHost, 0))
+        {
+            return 0;
+        }
+        const int port = server.serverPort();
+        server.close();
+        return port;
+    }
+
+    int serverBackendCount(const cppforge::data::DatabaseConfig &config)
+    {
+        cppforge::data::DatabaseConnectionProvider provider(config);
+        auto database = provider.connectionForCurrentThread();
+        QSqlQuery query(database);
+        if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM pg_stat_activity "
+                                       "WHERE datname = current_database() "
+                                       "AND application_name = 'cppforge_server' "
+                                       "AND pid <> pg_backend_pid()")) ||
+            !query.next())
+        {
+            return 0;
+        }
+        return query.value(0).toInt();
     }
 
     enum class TestDatabaseState : std::uint8_t
@@ -313,6 +400,13 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         QVERIFY(!payload.at("items").empty());
         QCOMPARE(payload.at("meta").at("total").get<std::size_t>(), payload.at("items").size());
 
+        const auto listFixture = readFixture(QStringLiteral("modules.json"));
+        QCOMPARE(payload.at("items").at(0).size(), listFixture.at("items").at(0).size());
+        for (auto it = listFixture.at("items").at(0).begin(); it != listFixture.at("items").at(0).end(); ++it)
+        {
+            QVERIFY2(payload.at("items").at(0).contains(it.key()), qPrintable(QString::fromStdString(it.key())));
+        }
+
         const auto moduleId = payload.at("items").at(0).at("id").get<std::uint64_t>();
         const auto module = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules/%1").arg(moduleId))));
         QCOMPARE(module.status, 200);
@@ -430,6 +524,7 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
 
     void concurrentRequestsUseThreadLocalDatabaseConnections()
     {
+        const int backendsBefore = serverBackendCount(m_databaseConfig);
         const auto results = getConcurrent(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), 16);
         QCOMPARE(results.size(), std::size_t(16));
         for (const auto &result : results)
@@ -438,13 +533,20 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
             QVERIFY(!result.requestId.isEmpty());
             QVERIFY(parseBody(result).at("meta").at("total").get<std::size_t>() > 0);
         }
+
+        const int backendsAfter = serverBackendCount(m_databaseConfig);
+        QVERIFY2(backendsAfter >= 2, "Expected multiple server worker connections in pg_stat_activity");
+        QVERIFY2(backendsAfter >= backendsBefore, "Server connection count unexpectedly decreased");
     }
 
     void healthDoesNotRequireDatabase()
     {
+        const int unavailablePort = closedLocalPort();
+        QVERIFY(unavailablePort > 0);
+
         auto config = cppforge::server::ServerConfig{};
         config.database = m_databaseConfig;
-        config.database.port = config.database.port == 1 ? 2 : 1;
+        config.database.port = unavailablePort;
         config.port = 0;
         config.host = "127.0.0.1";
 
