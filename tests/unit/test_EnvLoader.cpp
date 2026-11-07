@@ -27,7 +27,7 @@ private slots:
         QVERIFY(loadEnvFile(path));
 
         QCOMPARE(qgetenv("PG_HOST"), "localhost");
-        QCOMPARE(qgetenv("PG_PORT"), "5432");
+        QCOMPARE(qgetenv("PG_PORT"), "55432");
         QCOMPARE(qgetenv("PG_DB"), "cppforge");
         QCOMPARE(qgetenv("PG_USER"), "your_username");
         QCOMPARE(qgetenv("PG_PASSWORD"), "your_password");
