@@ -92,7 +92,8 @@ namespace cppforge::server
 
     void ServerApp::registerCatchAllRoute()
     {
-        CROW_CATCHALL_ROUTE(m_app)(
+        CROW_CATCHALL_ROUTE(m_app)
+        (
             [](const crow::request &, crow::response &response)
             {
                 if (response.code == 405)
