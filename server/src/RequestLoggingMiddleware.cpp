@@ -2,9 +2,9 @@
 
 #include <atomic>
 #include <chrono>
+#include <mutex>
 #include <sstream>
 #include <string>
-#include <syncstream>
 
 namespace cppforge::server
 {
@@ -14,6 +14,14 @@ namespace cppforge::server
         {
             static std::atomic<unsigned long long> requestId{1};
             return requestId;
+        }
+
+        std::mutex &accessLogMutex()
+        {
+            // std::osyncstream is not available in every standard library (notably
+            // Apple's libc++), so serialize complete access-log lines explicitly.
+            static std::mutex mutex;
+            return mutex;
         }
 
         std::string methodName(crow::HTTPMethod method)
@@ -83,6 +91,7 @@ namespace cppforge::server
         line << "request_id=" << ctx.requestId << " method=" << methodName(request.method)
              << " path=" << pathOnly(request.url) << " status=" << response.code << " duration_ms=" << elapsed.count();
 
-        std::osyncstream(std::clog) << line.str() << '\n';
+        const std::lock_guard<std::mutex> lock(accessLogMutex());
+        std::clog << line.str() << '\n';
     }
 } // namespace cppforge::server
