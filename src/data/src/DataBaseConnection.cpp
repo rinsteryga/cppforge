@@ -42,17 +42,25 @@ namespace cppforge
 
             QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
 
-            QString host = env.value("PG_HOST");
-            QString port = env.value("PG_PORT");
-            QString dbName = env.value("PG_DB");
-            QString user = env.value("PG_USER");
-            QString password = env.value("PG_PASSWORD");
-
-            if (host.isEmpty() || port.isEmpty() || dbName.isEmpty() || user.isEmpty())
+            auto getVal = [&](const char *name, const QString &defVal) -> QString
             {
-                qCritical() << "Missing environment variables PG_*";
-                return QSqlDatabase();
-            }
+                QByteArray qEnv = qgetenv(name);
+                if (!qEnv.isEmpty())
+                {
+                    return QString::fromLocal8Bit(qEnv);
+                }
+                if (env.contains(name) && !env.value(name).isEmpty())
+                {
+                    return env.value(name);
+                }
+                return defVal;
+            };
+
+            QString host = getVal("PG_HOST", "127.0.0.1");
+            QString port = getVal("PG_PORT", "5432");
+            QString dbName = getVal("PG_DB", "cppforge");
+            QString user = getVal("PG_USER", "cppforge");
+            QString password = getVal("PG_PASSWORD", "secret_password_123");
 
             QSqlDatabase db = QSqlDatabase::addDatabase("QPSQL");
             db.setHostName(host);
