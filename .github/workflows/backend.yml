@@ -66,7 +66,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vcpkg-cache
-          key: vcpkg-x64-linux-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-x64-linux-${{ hashFiles('vcpkg.json', 'tools/vcpkg-ports/**') }}
           restore-keys: vcpkg-x64-linux-
 
       - name: Create dedicated test database
@@ -182,7 +182,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vcpkg-cache
-          key: vcpkg-${{ matrix.triplet }}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ matrix.triplet }}-${{ hashFiles('vcpkg.json', 'tools/vcpkg-ports/**') }}
           restore-keys: vcpkg-${{ matrix.triplet }}-
 
       - name: Configure
