@@ -348,10 +348,21 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
             send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/health"))), QByteArrayLiteral("POST"));
         QCOMPARE(postResult.status, 405);
         QVERIFY(!postResult.requestId.isEmpty());
-        const auto error = parseBody(postResult);
-        QCOMPARE(error.at("error").at("code").get<std::string>(), std::string("METHOD_NOT_ALLOWED"));
-        QVERIFY(error.at("error").contains("message"));
-        QVERIFY(error.at("error").contains("details"));
+        QVERIFY(parseBody(postResult) == readFixture(QStringLiteral("error_method_not_allowed.json")));
+    }
+
+    void invalidModuleIdentifierUsesBadRequest()
+    {
+        for (const auto *id : {"18446744073709551615", "9223372036854775808"})
+        {
+            const auto result =
+                get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules/") + QString::fromLatin1(id))));
+            QCOMPARE(result.status, 400);
+            QVERIFY(!result.requestId.isEmpty());
+            const auto error = parseBody(result);
+            QCOMPARE(error.at("error").at("code").get<std::string>(), std::string("INVALID_ARGUMENT"));
+            QVERIFY(error.at("error").at("details").contains("id"));
+        }
     }
 
     void optionsPreflightIsHandledWithRequestId()
@@ -399,9 +410,8 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         QVERIFY(parseBody(ready).at("error").at("code").get<std::string>() == "DATABASE_UNAVAILABLE");
 
         const auto modules = get(baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))));
-        QCOMPARE(modules.status, 500);
-        const auto error = parseBody(modules);
-        QVERIFY(error.at("error").at("code").get<std::string>() == "INTERNAL_ERROR");
+        QCOMPARE(modules.status, 503);
+        QVERIFY(parseBody(modules) == readFixture(QStringLiteral("error_database_unavailable.json")));
         QVERIFY(!modules.body.contains("Database connection unavailable"));
         offlineServer.stop();
     }

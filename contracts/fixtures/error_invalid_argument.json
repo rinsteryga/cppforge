@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "INVALID_ARGUMENT",
+    "message": "Module id is out of range",
+    "details": {
+      "id": 9223372036854775808
+    }
+  }
+}
