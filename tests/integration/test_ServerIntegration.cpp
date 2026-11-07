@@ -4,14 +4,19 @@
 
 #include <QEventLoop>
 #include <QFile>
+#include <QHostAddress>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QSet>
+#include <QTcpServer>
 #include <QTimer>
 #include <QUrl>
+#include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
 #include <QtTest>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -24,6 +29,10 @@ namespace
         int status{};
         QByteArray body;
         QByteArray requestId;
+        QByteArray allowOrigin;
+        QByteArray allowMethods;
+        QByteArray allowHeaders;
+        QByteArray vary;
     };
 
     cppforge::data::DatabaseConfig testDatabaseConfig()
@@ -50,15 +59,19 @@ namespace
                 .password = qEnvironmentVariable("TEST_PG_PASSWORD").toStdString()};
     }
 
-    HttpResult get(const QUrl &url)
+    HttpResult send(const QUrl &url, const QByteArray &method, const QByteArray &origin = {})
     {
         QNetworkAccessManager manager;
         QNetworkRequest request(url);
+        if (!origin.isEmpty())
+        {
+            request.setRawHeader("Origin", origin);
+        }
         QEventLoop loop;
         QTimer timeout;
         timeout.setSingleShot(true);
 
-        QNetworkReply *reply = manager.get(request);
+        QNetworkReply *reply = manager.sendCustomRequest(request, method);
         QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
         QObject::connect(&timeout, &QTimer::timeout, reply, &QNetworkReply::abort);
         timeout.start(5000);
@@ -66,9 +79,18 @@ namespace
 
         const HttpResult result{.status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(),
                                 .body = reply->readAll(),
-                                .requestId = reply->rawHeader("X-Request-Id")};
+                                .requestId = reply->rawHeader("X-Request-Id"),
+                                .allowOrigin = reply->rawHeader("Access-Control-Allow-Origin"),
+                                .allowMethods = reply->rawHeader("Access-Control-Allow-Methods"),
+                                .allowHeaders = reply->rawHeader("Access-Control-Allow-Headers"),
+                                .vary = reply->rawHeader("Vary")};
         reply->deleteLater();
         return result;
+    }
+
+    HttpResult get(const QUrl &url, const QByteArray &origin = {})
+    {
+        return send(url, QByteArrayLiteral("GET"), origin);
     }
 
     std::vector<HttpResult> getConcurrent(const QUrl &url, std::size_t count)
@@ -152,23 +174,106 @@ namespace
 
     bool hasRealSchemaAndSeed(const cppforge::data::DatabaseConfig &config)
     {
+        const QStringList expectedTables = {QStringLiteral("users"),
+                                            QStringLiteral("modules"),
+                                            QStringLiteral("lessons"),
+                                            QStringLiteral("coding_tasks"),
+                                            QStringLiteral("test_cases"),
+                                            QStringLiteral("quizzes"),
+                                            QStringLiteral("quiz_options"),
+                                            QStringLiteral("matching_tasks"),
+                                            QStringLiteral("matching_pairs"),
+                                            QStringLiteral("achievements"),
+                                            QStringLiteral("user_achievements"),
+                                            QStringLiteral("submissions"),
+                                            QStringLiteral("execution_results"),
+                                            QStringLiteral("user_progress"),
+                                            QStringLiteral("tips")};
+
         cppforge::data::DatabaseConnectionProvider provider(config);
         auto database = provider.connectionForCurrentThread();
         QSqlQuery query(database);
-        if (!query.exec("SELECT COUNT(*) FROM information_schema.tables "
-                        "WHERE table_schema = 'public' AND table_name IN "
-                        "('users', 'modules', 'lessons', 'coding_tasks')") ||
-            !query.next() || query.value(0).toInt() != 4)
+        if (!query.exec(QStringLiteral("SELECT table_name FROM information_schema.tables "
+                                       "WHERE table_schema = 'public'")))
         {
             return false;
         }
 
-        return query.exec("SELECT COUNT(*) FROM modules") && query.next() && query.value(0).toInt() > 0;
+        QSet<QString> actualTables;
+        while (query.next())
+        {
+            actualTables.insert(query.value(0).toString());
+        }
+        for (const auto &table : expectedTables)
+        {
+            if (!actualTables.contains(table))
+            {
+                qWarning() << "Missing expected table" << table;
+                return false;
+            }
+        }
+
+        const auto seedFixture = readFixture(QStringLiteral("seed_modules.json"));
+        const auto expectedCount = seedFixture.at("count").get<std::size_t>();
+        const auto &expectedNames = seedFixture.at("names");
+
+        QSqlQuery modules(database);
+        if (!modules.exec(QStringLiteral("SELECT id, name FROM modules ORDER BY id ASC")))
+        {
+            return false;
+        }
+
+        std::size_t index = 0;
+        while (modules.next())
+        {
+            if (index >= expectedCount)
+            {
+                qWarning() << "More modules than the seed fixture expects";
+                return false;
+            }
+            const auto expectedName = QString::fromStdString(expectedNames.at(index).get<std::string>());
+            if (modules.value(1).toString() != expectedName)
+            {
+                qWarning() << "Module name mismatch at" << index << "actual" << modules.value(1).toString()
+                           << "expected" << expectedName;
+                return false;
+            }
+            ++index;
+        }
+        return index == expectedCount;
     }
 
     bool requireDatabase()
     {
         return qEnvironmentVariableIntValue("CPPFORGE_REQUIRE_DB_TESTS") == 1;
+    }
+
+    int closedLocalPort()
+    {
+        QTcpServer server;
+        if (!server.listen(QHostAddress::LocalHost, 0))
+        {
+            return 0;
+        }
+        const int port = server.serverPort();
+        server.close();
+        return port;
+    }
+
+    int serverBackendCount(const cppforge::data::DatabaseConfig &config)
+    {
+        cppforge::data::DatabaseConnectionProvider provider(config);
+        auto database = provider.connectionForCurrentThread();
+        QSqlQuery query(database);
+        if (!query.exec(QStringLiteral("SELECT COUNT(*) FROM pg_stat_activity "
+                                       "WHERE datname = current_database() "
+                                       "AND application_name = 'cppforge_server' "
+                                       "AND pid <> pg_backend_pid()")) ||
+            !query.next())
+        {
+            return 0;
+        }
+        return query.value(0).toInt();
     }
 
     enum class TestDatabaseState : std::uint8_t
@@ -230,6 +335,16 @@ private:
 private slots: // NOLINT(readability-redundant-access-specifiers)
     void initTestCase()
     {
+        if (!QSqlDatabase::isDriverAvailable(QStringLiteral("QPSQL")))
+        {
+            const QString message = QStringLiteral("QPSQL driver is not available");
+            if (requireDatabase())
+            {
+                QFAIL(qPrintable(message));
+            }
+            QSKIP(qPrintable(message));
+        }
+
         const auto state = inspectTestDatabase(m_databaseConfig);
         if (state != TestDatabaseState::Ready)
         {
@@ -245,7 +360,13 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         config.database = m_databaseConfig;
         config.port = 0;
         config.host = "127.0.0.1";
-        m_server = std::make_unique<cppforge::server::ServerApp>(std::move(config));
+        m_server = std::make_unique<cppforge::server::ServerApp>(
+            std::move(config),
+            [](cppforge::server::HttpApp &app)
+            {
+                CROW_ROUTE(app, "/api/v1/route-after-catchall")
+                    .methods(crow::HTTPMethod::Get)([] { return crow::response(200, "registered-after-catchall"); });
+            });
         m_server->start();
         m_baseUrl = QUrl(QStringLiteral("http://127.0.0.1:%1").arg(m_server->port()));
     }
@@ -279,6 +400,13 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         QVERIFY(!payload.at("items").empty());
         QCOMPARE(payload.at("meta").at("total").get<std::size_t>(), payload.at("items").size());
 
+        const auto listFixture = readFixture(QStringLiteral("modules.json"));
+        QCOMPARE(payload.at("items").at(0).size(), listFixture.at("items").at(0).size());
+        for (auto it = listFixture.at("items").at(0).begin(); it != listFixture.at("items").at(0).end(); ++it)
+        {
+            QVERIFY2(payload.at("items").at(0).contains(it.key()), qPrintable(QString::fromStdString(it.key())));
+        }
+
         const auto moduleId = payload.at("items").at(0).at("id").get<std::uint64_t>();
         const auto module = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules/%1").arg(moduleId))));
         QCOMPARE(module.status, 200);
@@ -302,8 +430,101 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         QVERIFY(parseBody(missingModule) == readFixture(QStringLiteral("error_not_found.json")));
     }
 
+    void unknownPathUsesNotFoundEnvelopeForAnyMethod()
+    {
+        const auto getResult = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/unknown-path"))));
+        QCOMPARE(getResult.status, 404);
+        QVERIFY(!getResult.requestId.isEmpty());
+        QCOMPARE(parseBody(getResult).at("error").at("code").get<std::string>(), std::string("NOT_FOUND"));
+
+        const auto postResult =
+            send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/unknown-path"))), QByteArrayLiteral("POST"));
+        QCOMPARE(postResult.status, 404);
+        QVERIFY(!postResult.requestId.isEmpty());
+        QCOMPARE(parseBody(postResult).at("error").at("code").get<std::string>(), std::string("NOT_FOUND"));
+    }
+
+    void knownPathWithWrongMethodUsesMethodNotAllowedEnvelope()
+    {
+        const auto postResult =
+            send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/health"))), QByteArrayLiteral("POST"));
+        QCOMPARE(postResult.status, 405);
+        QVERIFY(!postResult.requestId.isEmpty());
+        QVERIFY(parseBody(postResult) == readFixture(QStringLiteral("error_method_not_allowed.json")));
+    }
+
+    void invalidModuleIdentifierUsesBadRequest()
+    {
+        for (const auto *id : {"18446744073709551615", "9223372036854775808"})
+        {
+            const auto result =
+                get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules/") + QString::fromLatin1(id))));
+            QCOMPARE(result.status, 400);
+            QVERIFY(!result.requestId.isEmpty());
+            const auto error = parseBody(result);
+            QCOMPARE(error.at("error").at("code").get<std::string>(), std::string("INVALID_ARGUMENT"));
+            QVERIFY(error.at("error").at("details").contains("id"));
+        }
+    }
+
+    void optionsPreflightIsHandledWithRequestId()
+    {
+        const auto options =
+            send(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), QByteArrayLiteral("OPTIONS"));
+        QCOMPARE(options.status, 204);
+        QVERIFY(!options.requestId.isEmpty());
+    }
+
+    void corsHeadersFollowConfiguredOrigin()
+    {
+        const QByteArray allowedOrigin("https://cppforge.example");
+        auto config = cppforge::server::ServerConfig{};
+        config.database = m_databaseConfig;
+        config.port = 0;
+        config.host = "127.0.0.1";
+        config.allowedOrigin = allowedOrigin.toStdString();
+
+        cppforge::server::ServerApp corsServer(std::move(config));
+        corsServer.start();
+        const QUrl corsUrl(QStringLiteral("http://127.0.0.1:%1").arg(corsServer.port()));
+        const QUrl modulesUrl = corsUrl.resolved(QUrl(QStringLiteral("/api/v1/modules")));
+
+        const auto matching = get(modulesUrl, allowedOrigin);
+        QCOMPARE(matching.status, 200);
+        QCOMPARE(matching.allowOrigin, allowedOrigin);
+        QVERIFY(matching.vary.contains("Origin"));
+
+        const auto foreign = get(modulesUrl, QByteArrayLiteral("https://example.invalid"));
+        QCOMPARE(foreign.status, 200);
+        QVERIFY(foreign.allowOrigin.isEmpty());
+        QVERIFY(foreign.vary.contains("Origin"));
+
+        const auto preflight = send(modulesUrl, QByteArrayLiteral("OPTIONS"), allowedOrigin);
+        QCOMPARE(preflight.status, 204);
+        QCOMPARE(preflight.allowOrigin, allowedOrigin);
+        QVERIFY(preflight.allowMethods.contains("GET"));
+        QVERIFY(preflight.allowMethods.contains("OPTIONS"));
+        QVERIFY(preflight.allowHeaders.contains("Content-Type"));
+        QVERIFY(!preflight.requestId.isEmpty());
+
+        const auto disabled = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), allowedOrigin);
+        QCOMPARE(disabled.status, 200);
+        QVERIFY(disabled.allowOrigin.isEmpty());
+        QVERIFY(disabled.vary.isEmpty());
+
+        corsServer.stop();
+    }
+
+    void routeRegisteredAfterCatchAllRemainsReachable()
+    {
+        const auto result = get(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/route-after-catchall"))));
+        QCOMPARE(result.status, 200);
+        QCOMPARE(result.body, QByteArrayLiteral("registered-after-catchall"));
+    }
+
     void concurrentRequestsUseThreadLocalDatabaseConnections()
     {
+        const int backendsBefore = serverBackendCount(m_databaseConfig);
         const auto results = getConcurrent(m_baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))), 16);
         QCOMPARE(results.size(), std::size_t(16));
         for (const auto &result : results)
@@ -312,13 +533,20 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
             QVERIFY(!result.requestId.isEmpty());
             QVERIFY(parseBody(result).at("meta").at("total").get<std::size_t>() > 0);
         }
+
+        const int backendsAfter = serverBackendCount(m_databaseConfig);
+        QVERIFY2(backendsAfter >= 2, "Expected multiple server worker connections in pg_stat_activity");
+        QVERIFY2(backendsAfter >= backendsBefore, "Server connection count unexpectedly decreased");
     }
 
     void healthDoesNotRequireDatabase()
     {
+        const int unavailablePort = closedLocalPort();
+        QVERIFY(unavailablePort > 0);
+
         auto config = cppforge::server::ServerConfig{};
         config.database = m_databaseConfig;
-        config.database.port = config.database.port == 1 ? 2 : 1;
+        config.database.port = unavailablePort;
         config.port = 0;
         config.host = "127.0.0.1";
 
@@ -332,9 +560,8 @@ private slots: // NOLINT(readability-redundant-access-specifiers)
         QVERIFY(parseBody(ready).at("error").at("code").get<std::string>() == "DATABASE_UNAVAILABLE");
 
         const auto modules = get(baseUrl.resolved(QUrl(QStringLiteral("/api/v1/modules"))));
-        QCOMPARE(modules.status, 500);
-        const auto error = parseBody(modules);
-        QVERIFY(error.at("error").at("code").get<std::string>() == "INTERNAL_ERROR");
+        QCOMPARE(modules.status, 503);
+        QVERIFY(parseBody(modules) == readFixture(QStringLiteral("error_database_unavailable.json")));
         QVERIFY(!modules.body.contains("Database connection unavailable"));
         offlineServer.stop();
     }

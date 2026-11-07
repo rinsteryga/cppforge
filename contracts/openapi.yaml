@@ -19,6 +19,8 @@ paths:
                 $ref: '#/components/schemas/Health'
               example:
                 status: ok
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
   /ready:
     get:
       summary: Readiness probe
@@ -32,6 +34,8 @@ paths:
                 $ref: '#/components/schemas/Ready'
               example:
                 status: ready
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '503':
           $ref: '#/components/responses/DatabaseUnavailable'
   /modules:
@@ -52,8 +56,12 @@ paths:
                     description: Start here
                 meta:
                   total: 1
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
   /modules/{id}:
     get:
       summary: Get a module by identifier
@@ -66,6 +74,7 @@ paths:
             type: integer
             format: int64
             minimum: 0
+            maximum: 9223372036854775807
       responses:
         '200':
           description: The requested module.
@@ -77,10 +86,16 @@ paths:
                 id: 1
                 name: Intro
                 description: Start here
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '500':
           $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
 components:
   schemas:
     Health:
@@ -139,6 +154,29 @@ components:
             details:
               type: object
   responses:
+    BadRequest:
+      description: A path or query parameter is invalid, for example an integer identifier above INT64_MAX.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: INVALID_ARGUMENT
+              message: Module id is out of range
+              details:
+                id: 9223372036854775808
+    MethodNotAllowed:
+      description: The path exists, but the HTTP method is not supported.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: METHOD_NOT_ALLOWED
+              message: Method not allowed
+              details: {}
     NotFound:
       description: The requested resource does not exist.
       content:

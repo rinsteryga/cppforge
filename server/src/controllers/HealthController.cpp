@@ -3,8 +3,6 @@
 #include "server/HttpResponse.hpp"
 #include <nlohmann/json.hpp>
 
-#include <QtSql/QSqlQuery>
-
 #include <exception>
 
 namespace cppforge::server::controllers
@@ -20,12 +18,7 @@ namespace cppforge::server::controllers
                 {
                     try
                     {
-                        auto database = databaseProvider.connectionForCurrentThread();
-                        QSqlQuery query(database);
-                        if (!query.exec("SELECT 1") || !query.next() || query.value(0).toInt() != 1)
-                        {
-                            return errorResponse(503, "DATABASE_UNAVAILABLE", "Database is not ready");
-                        }
+                        databaseProvider.ensureHealthy();
                         return jsonResponse(200, nlohmann::json{{"status", "ready"}}.dump());
                     }
                     catch (const std::exception &)

@@ -4,6 +4,7 @@
 #include "server/ServerConfig.hpp"
 #include <data/DatabaseConnectionProvider.hpp>
 
+#include <functional>
 #include <future>
 
 namespace cppforge::server
@@ -14,11 +15,14 @@ namespace cppforge::server
     class ServerApp
     {
     public:
+        using RouteConfigurator = std::function<void(HttpApp &)>;
+
         /**
          * @brief Constructs the server and its per-thread database connection provider.
          * @param config Server and database configuration.
+         * @param additionalRoutes Optional routes registered after the global catch-all (tests).
          */
-        explicit ServerApp(ServerConfig config);
+        explicit ServerApp(ServerConfig config, RouteConfigurator additionalRoutes = {});
         ~ServerApp() noexcept;
 
         ServerApp(const ServerApp &) = delete;
@@ -53,8 +57,10 @@ namespace cppforge::server
         data::DatabaseConnectionProvider m_databaseProvider;
         HttpApp m_app;
         std::future<void> m_serverFuture;
+        RouteConfigurator m_additionalRoutes;
 
         void configure();
         void setupRoutes();
+        void registerCatchAllRoute();
     };
 } // namespace cppforge::server

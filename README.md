@@ -122,34 +122,59 @@ docker compose ps
 ```
 
 The Compose service publishes PostgreSQL only on `127.0.0.1` and includes a `pg_isready`
-healthcheck. Use a non-default host port to avoid a local PostgreSQL instance. To bring up the
-service and prepare `cppforge_test` from the repository's actual schema and seed data, run one
-script:
+healthcheck. The example `.env` uses `PG_PORT=55432` so the container does not conflict with a
+local PostgreSQL instance on the default `5432` port. To bring up the service and prepare the
+test database from the repository's actual schema and seed data, run one script:
 
 ```bash
-PG_PORT=55432 sh scripts/init-compose-test-db.sh
+sh scripts/init-compose-test-db.sh
 ```
 
-On PowerShell, use `$env:PG_PORT = '55432'; .\scripts\init-compose-test-db.ps1`. The init SQL
-only creates `cppforge_test`; the helper applies `src/data/migrations/schema.sql` and `seed.sql`
-to that dedicated test database. `schema.sql` drops existing tables, so the helper never applies
-it to `cppforge` or another user database. To initialize a disposable Compose `cppforge` database
-manually, explicitly target that database only after verifying it contains no user data. Re-running
-the helper rebuilds and reseeds `cppforge_test`, so it replaces any data in that test database.
+On PowerShell, use `.\scripts\init-compose-test-db.ps1`. The helper reads `TEST_PG_DB` (default
+`cppforge_test`), creates that database when needed, applies `src/data/migrations/schema.sql` and
+`seed.sql` only to it, and never applies them to `cppforge`. `schema.sql` drops existing tables,
+so re-running the helper replaces the contents of the test database. The Compose volume keeps the
+`POSTGRES_USER`/`POSTGRES_DB` values from its first initialization: changing `PG_USER` or `PG_DB`
+for an existing volume makes the helper stop with an explicit diagnostic. Fix that by using the
+original credentials, by recreating the volume with `docker compose down -v` (this deletes all
+data in that volume), or by using a separate Compose project/volume for `cppforge_test`. The
+`cppforge_dev` password in `compose.yaml` is a local-development default only; set a real
+`PG_PASSWORD` in `.env` for any shared environment and never commit `.env`.
 
-Run the server with `SERVER_HOST`, `SERVER_PORT`, and `LOG_LEVEL` from `.env`. The integration
-test does not load `.env`; opt in by setting `TEST_PG_HOST`, `TEST_PG_PORT`, `TEST_PG_DB`,
-`TEST_PG_USER`, and `TEST_PG_PASSWORD` in the process environment. For the Compose setup above,
-point these at `127.0.0.1:55432/cppforge_test` and use the Compose `PG_USER`/`PG_PASSWORD` values.
-If `cppforge_test` is unavailable or those settings are absent, the HTTP integration test skips;
-when connected, it asserts the real schema tables and seeded module data before starting the
-server. Set `CPPFORGE_REQUIRE_DB_TESTS=1` to turn an unavailable or incomplete test database into a
-failure instead of a skip; the Linux CI job uses this mode. The integration suite also exercises
-ephemeral port binding (`SERVER_PORT=0`) and concurrent module requests through Crow's worker pool.
-Unit tests do not require PostgreSQL, Docker, or network access. Stop the Compose service with
-`docker compose down` when finished; add `-v` only when you intentionally want to discard its data
-volume.
+Run the server with `SERVER_HOST`, `SERVER_PORT`, and `LOG_LEVEL` from `.env`. Process environment
+variables always win over `.env`; `loadEnvFile` only fills variables that are not already set.
+The integration test does not load `.env`; opt in by setting `TEST_PG_HOST`, `TEST_PG_PORT`,
+`TEST_PG_DB`, `TEST_PG_USER`, and `TEST_PG_PASSWORD` in the process environment. For the Compose
+setup above, point these at `127.0.0.1:55432/cppforge_test` and use the Compose
+`PG_USER`/`PG_PASSWORD` values. If the test database is unavailable or those settings are absent,
+the HTTP integration test skips; when connected, it asserts the real schema tables and seeded
+module data before starting the server. Set `CPPFORGE_REQUIRE_DB_TESTS=1` to turn an unavailable or
+incomplete test database into a failure instead of a skip; the Linux CI job uses this mode.
+
+The legacy `test_DataBaseConnection` test also runs against the test database. It reads
+`TEST_PG_*` first and falls back to `PG_*`, never hardcodes the database name, and honors
+`CPPFORGE_REQUIRE_DB_TESTS=1`. The integration suite also exercises ephemeral port binding
+(`SERVER_PORT=0`), CORS preflight, 404/405 envelopes, and concurrent module requests through
+Crow's worker pool. Unit tests that do not need a database still run without PostgreSQL or
+Docker. Stop the Compose service with `docker compose down` when finished; add `-v` only when you
+intentionally want to discard its data volume.
 
 The API contract and examples are in `contracts/openapi.yaml` and `contracts/fixtures/`.
 Planned backend stages are tracked in `docs/backend-roadmap.md`. React and QML clients are not
 part of this slice.
+
+### Backend breaking changes
+
+- Placeholder auth and task endpoints were removed; the Stage 1 API only exposes `/api/v1/health`,
+  `/api/v1/ready`, and `/api/v1/modules`.
+- `/api/v1/health` returns only `{"status":"ok"}`; `service`, `version`, and
+  `docker_sandbox_active` are no longer part of the response.
+- The server port is configured only through `SERVER_PORT` (`0` selects an ephemeral port).
+- CORS headers are emitted only when `CORS_ALLOWED_ORIGIN` is non-empty and the request `Origin`
+  matches it exactly.
+- Process environment variables take precedence over `.env`; the file never overwrites an
+  already-set variable.
+- Unknown paths return `404 NOT_FOUND`, known paths with the wrong method return
+  `405 METHOD_NOT_ALLOWED`, and both use the standard JSON error envelope.
+- Module identifiers above `INT64_MAX` return `400 INVALID_ARGUMENT`; an unavailable database
+  returns `503 DATABASE_UNAVAILABLE` instead of a generic `500`.

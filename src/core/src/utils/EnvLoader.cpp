@@ -35,11 +35,19 @@ namespace cppforge::utils
             QString key = line.left(eqPos).trimmed();
             QString value = line.mid(eqPos + 1).trimmed();
 
-            qputenv(key.toUtf8(), value.toUtf8());
+            const QByteArray keyBytes = key.toUtf8();
+            if (qEnvironmentVariableIsSet(keyBytes.constData()))
+            {
+                // Process environment always wins over the file, which keeps deployed
+                // overrides authoritative and makes the precedence explicit.
+                continue;
+            }
+
+            qputenv(keyBytes, value.toUtf8());
             loadedCount++;
         }
 
         qDebug() << "Loaded" << loadedCount << "environment variables from:" << filePath;
-        return loadedCount > 0;
+        return true;
     }
 } // namespace cppforge::utils

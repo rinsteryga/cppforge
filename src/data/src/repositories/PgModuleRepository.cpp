@@ -1,6 +1,7 @@
 #include "../../include/repositories/PgModuleRepository.hpp"
 
 #include "../../../core/include/entities/Module.hpp"
+#include "../../include/data/DatabaseErrors.hpp"
 
 #include <QDebug>
 #include <QVariant>
@@ -18,7 +19,7 @@ namespace cppforge::repositories
 
         if (!database_.isOpen())
         {
-            throw std::runtime_error("Module repository database is unavailable");
+            throw data::DatabaseUnavailable("Module repository database is unavailable");
         }
 
         QSqlQuery query(database_);
@@ -36,7 +37,7 @@ namespace cppforge::repositories
         else
         {
             qWarning() << "Module list query failed";
-            throw std::runtime_error("Module list query failed");
+            throw data::QueryError("Module list query failed");
         }
 
         return modules;
@@ -46,21 +47,21 @@ namespace cppforge::repositories
     {
         if (!database_.isOpen())
         {
-            throw std::runtime_error("Module repository database is unavailable");
+            throw data::DatabaseUnavailable("Module repository database is unavailable");
         }
 
         QSqlQuery query(database_);
         if (!query.prepare("SELECT id, name, description FROM modules WHERE id = :id"))
         {
             qWarning() << "Module lookup query failed";
-            throw std::runtime_error("Module lookup query failed");
+            throw data::QueryError("Module lookup query failed");
         }
         query.bindValue(":id", QVariant::fromValue(moduleId));
 
         if (!query.exec())
         {
             qWarning() << "Module lookup query failed";
-            throw std::runtime_error("Module lookup query failed");
+            throw data::QueryError("Module lookup query failed");
         }
 
         if (query.next())

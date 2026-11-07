@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "DATABASE_UNAVAILABLE",
+    "message": "Database is not ready",
+    "details": {}
+  }
+}

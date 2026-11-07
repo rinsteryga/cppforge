@@ -1,8 +1,11 @@
 #include "data/DatabaseConnectionProvider.hpp"
 
+#include "data/DatabaseErrors.hpp"
+
 #include <QDebug>
 #include <QString>
 #include <QtSql/QSqlError>
+#include <QtSql/QSqlQuery>
 
 #include <atomic>
 #include <stdexcept>
@@ -76,12 +79,18 @@ namespace cppforge::data
     {
         try
         {
-            threadConnections().erase(m_providerId);
+            resetCurrentThreadConnection();
         }
         catch (...)
         {
             qWarning() << "Failed to close the current thread's server database connection";
         }
+    }
+
+    void DatabaseConnectionProvider::resetCurrentThreadConnection() const
+    {
+        auto &connections = threadConnections();
+        connections.erase(m_providerId);
     }
 
     QSqlDatabase DatabaseConnectionProvider::connectionForCurrentThread() const
@@ -98,14 +107,55 @@ namespace cppforge::data
             connection.database.setDatabaseName(toQString(m_config.database));
             connection.database.setUserName(toQString(m_config.user));
             connection.database.setPassword(toQString(m_config.password));
+            connection.database.setConnectOptions(
+                QStringLiteral("connect_timeout=3;application_name=cppforge_server;client_encoding=UTF8"));
         }
 
-        if (!connection.database.isOpen() && !connection.database.open())
+        if (!connection.database.isOpen())
         {
-            qWarning() << "Server database connection unavailable";
-            throw std::runtime_error("Database connection unavailable");
+            if (!connection.database.open())
+            {
+                qWarning() << "Server database connection unavailable";
+                throw DatabaseUnavailable("Database connection unavailable");
+            }
+
+            // Windows PostgreSQL clients may default to a legacy encoding that cannot
+            // represent Cyrillic seed data. Force UTF-8 explicitly for every connection.
+            QSqlQuery encodingQuery(connection.database);
+            encodingQuery.exec(QStringLiteral("SET client_encoding TO 'UTF8'"));
         }
 
         return connection.database;
+    }
+
+    bool DatabaseConnectionProvider::ping() const
+    {
+        try
+        {
+            bool healthy = false;
+            {
+                auto database = connectionForCurrentThread();
+                QSqlQuery query(database);
+                healthy = query.exec(QStringLiteral("SELECT 1")) && query.next() && query.value(0).toInt() == 1;
+            }
+            if (!healthy)
+            {
+                resetCurrentThreadConnection();
+            }
+            return healthy;
+        }
+        catch (const std::exception &)
+        {
+            resetCurrentThreadConnection();
+            return false;
+        }
+    }
+
+    void DatabaseConnectionProvider::ensureHealthy() const
+    {
+        if (!ping())
+        {
+            throw DatabaseUnavailable("Database is not ready");
+        }
     }
 } // namespace cppforge::data

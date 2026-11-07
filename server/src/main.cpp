@@ -39,9 +39,10 @@ int main(int argc, char *argv[])
         cppforge::server::ServerApp server(cppforge::server::ServerConfig::fromEnvironment());
         server.run();
     }
-    catch (const std::exception &)
+    catch (const std::exception &error)
     {
-        std::cerr << "[CppForge Server] Failed to start; verify server and database configuration.\n";
+        std::cerr << "[CppForge Server] Failed to start: " << error.what()
+                  << "\nVerify server and database configuration.\n";
         return 1;
     }
 
