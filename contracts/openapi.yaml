@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: CppForge API
+  version: 1.0.0
+  description: First backend vertical slice for liveness, readiness, and module reads.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      operationId: getHealth
+      responses:
+        '200':
+          description: The server process is alive; this endpoint does not query PostgreSQL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              example:
+                status: ok
+  /ready:
+    get:
+      summary: Readiness probe
+      operationId: getReadiness
+      responses:
+        '200':
+          description: PostgreSQL is reachable and SELECT 1 succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ready'
+              example:
+                status: ready
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+  /modules:
+    get:
+      summary: List modules
+      operationId: getModules
+      responses:
+        '200':
+          description: Modules ordered by identifier.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+              example:
+                items:
+                  - id: 1
+                    name: Intro
+                    description: Start here
+                meta:
+                  total: 1
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /modules/{id}:
+    get:
+      summary: Get a module by identifier
+      operationId: getModuleById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+      responses:
+        '200':
+          description: The requested module.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
+              example:
+                id: 1
+                name: Intro
+                description: Start here
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    Ready:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready]
+    Module:
+      type: object
+      required: [id, name, description]
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+        name:
+          type: string
+        description:
+          type: string
+    ModuleList:
+      type: object
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Module'
+        meta:
+          type: object
+          required: [total]
+          properties:
+            total:
+              type: integer
+              minimum: 0
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+  responses:
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Module not found
+              details:
+                id: 404
+    DatabaseUnavailable:
+      description: PostgreSQL is unavailable or failed its readiness query.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: An unexpected server-side error occurred. Internal details are not exposed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

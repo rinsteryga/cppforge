@@ -23,7 +23,8 @@
     },
     "libpq",
     "asio",
-    "crow"
+    "crow",
+    "nlohmann-json"
   ],
   "vcpkg-configuration": {
     "overlay-ports": [

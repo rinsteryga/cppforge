@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${PG_DB:-cppforge}
+      POSTGRES_USER: ${PG_USER:-cppforge}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-cppforge_dev}
+    ports:
+      - "127.0.0.1:${PG_PORT:-5432}:5432"
+    volumes:
+      - cppforge_postgres_data:/var/lib/postgresql/data
+      - ./src/data/migrations:/migrations:ro
+      - ./deploy/postgres/init/10_test_db.sql:/docker-entrypoint-initdb.d/10_test_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cppforge_postgres_data:

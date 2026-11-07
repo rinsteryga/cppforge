@@ -1,25 +1,47 @@
-#include "ServerApp.hpp"
+#include "server/ServerApp.hpp"
+#include <utils/EnvLoader.hpp>
+
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QStringList>
 
 #include <iostream>
 
+namespace
+{
+    void loadEnvironment()
+    {
+        const QStringList paths = {QCoreApplication::applicationDirPath() + QStringLiteral("/.env"),
+                                   QDir::currentPath() + QStringLiteral("/.env"),
+                                   QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) +
+                                       QStringLiteral("/.env")};
+
+        for (const auto &path : paths)
+        {
+            if (QFileInfo::exists(path))
+            {
+                cppforge::utils::loadEnvFile(path);
+                return;
+            }
+        }
+    }
+} // namespace
+
 int main(int argc, char *argv[])
 {
-    uint16_t port = 18080;
-    if (argc > 1)
-    {
-        port = static_cast<uint16_t>(std::atoi(argv[1]));
-    }
-
-    std::cout << "[CppForge Server] Starting High-Performance C++ REST API on port " << port << "..." << std::endl;
+    QCoreApplication application(argc, argv);
+    loadEnvironment();
 
     try
     {
-        cppforge::server::ServerApp server(port);
+        cppforge::server::ServerApp server(cppforge::server::ServerConfig::fromEnvironment());
         server.run();
     }
-    catch (const std::exception &e)
+    catch (const std::exception &)
     {
-        std::cerr << "[CppForge Server] Fatal Error: " << e.what() << std::endl;
+        std::cerr << "[CppForge Server] Failed to start; verify server and database configuration.\n";
         return 1;
     }
 

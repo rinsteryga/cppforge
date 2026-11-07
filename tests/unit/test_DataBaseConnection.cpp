@@ -15,7 +15,16 @@ class TestDataBaseConnection : public QObject
 {
     Q_OBJECT
 
-private:
+private slots:
+    void initTestCase()
+    {
+        if (qEnvironmentVariableIsEmpty("PG_HOST") || qEnvironmentVariableIsEmpty("PG_PORT") ||
+            qEnvironmentVariableIsEmpty("PG_DB") || qEnvironmentVariableIsEmpty("PG_USER"))
+        {
+            QSKIP("Set PG_* process environment variables to run the legacy database repository test");
+        }
+    }
+
     void test_DataBaseConnection()
     {
         db_ = cppforge::data::connectDatabase();
@@ -52,6 +61,7 @@ private:
         }
     }
 
+private:
     QSqlDatabase db_;
 };
 
